@@ -1,9 +1,11 @@
 // server.js
+const fs = require('node:fs')
 const path = require('node:path')
 const express = require('express')
 const cors = require('cors')
 const app = express()
 const port = process.env.PORT || 3000
+const USERS_FILE = path.join(__dirname, 'users.json')
 
 app.use(express.json())
 
@@ -12,13 +14,35 @@ app.use(express.json())
 app.use(cors())
 
 
-// jednoduché úložiště uživatelů v paměti
-const users = []
-let nextUserId = 1
+// při startu serveru načteme uživatele
+let users = loadUsers()
+let nextUserId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1
+
 
 function findUserByEmail(email) {
   return users.find((u) => u.email === email)
 }
+
+
+function loadUsers() {
+  try {
+    const data = fs.readFileSync(USERS_FILE, 'utf8')
+    return JSON.parse(data)
+  } catch (err) {
+    console.error('Chyba při čtení users.json:', err)
+    return []
+  }
+}
+
+function saveUsers(users) {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8')
+  } catch (err) {
+    console.error('Chyba při zápisu users.json:', err)
+  }
+}
+
+
 
 // registrace
 app.post('/api/register', (req, res) => {
@@ -26,12 +50,14 @@ app.post('/api/register', (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ status: 'error', message: 'Email a heslo jsou povinné' })
   }
-  if (findUserByEmail(email)) {
+
+  if (users.some(u => u.email === email)) {
     return res.status(400).json({ status: 'error', message: 'Uživatel už existuje' })
   }
 
-  const user = { id: nextUserId++, email, password } // POZOR: jen na demo, ne v produkci
+  const user = { id: nextUserId++, email, password } // pořád jen demo, ne hash
   users.push(user)
+  saveUsers(users)
 
   res.json({ status: 'success', userId: user.id, email: user.email })
 })
@@ -39,15 +65,16 @@ app.post('/api/register', (req, res) => {
 // login
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body
-  const user = findUserByEmail(email)
+  const user = users.find(u => u.email === email)
+
   if (!user || user.password !== password) {
     return res.status(401).json({ status: 'error', message: 'Špatný email nebo heslo' })
   }
 
-  // jednoduchý "token" = userId jako string
   const token = String(user.id)
   res.json({ status: 'success', token, userId: user.id, email: user.email })
 })
+
 
 
 
