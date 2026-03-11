@@ -83,29 +83,27 @@ function App() {
 
     try {
       if (editingId === null) {
-        const res = await fetch("http://localhost:3000/api/workouts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) throw new Error("Chyba při ukládání tréninku")
-        const created = await res.json()
-        setWorkouts((prev) => [created, ...prev])
-      } else {
-        const res = await fetch(
-          `http://localhost:3000/api/workouts/${editingId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        )
-        if (!res.ok) throw new Error("Chyba při úpravě tréninku")
-        const updated = await res.json()
-        setWorkouts((prev) =>
-          prev.map((w) => (w.id === updated.id ? updated : w))
-        )
-      }
+  const res = await fetch('/api/workouts', {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error("Chyba při ukládání tréninku")
+  const created = await res.json()
+  setWorkouts((prev) => [created, ...prev])
+} else {
+  const res = await fetch(`/api/workouts/${editingId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error("Chyba při úpravě tréninku")
+  const updated = await res.json()
+  setWorkouts((prev) =>
+    prev.map((w) => (w.id === updated.id ? updated : w))
+  )
+}
+
 
       resetEditing()
     } catch (err) {
@@ -127,7 +125,7 @@ function App() {
   const handleDeleteWorkout = async (id) => {
     if (!confirm("Opravdu smazat celý trénink?")) return
     try {
-      const res = await fetch(`http://localhost:3000/api/workouts/${id}`, {
+      const res = await fetch(`/api/workouts/${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Chyba při mazání tréninku")
