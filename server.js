@@ -121,40 +121,6 @@ app.post('/api/login', async (req, res) => {
   }
 })
 
-    const token = String(user.id)
-    
-    return res.json({
-      status: 'success',
-      token,
-      userId: user.id,
-      email: user.email,
-    })
-    try {
-      const result = await pool.query(
-        'SELECT id, email, password FROM users WHERE email = $1',
-        [email]
-      )
-      const user = result.rows[0]
-
-      console.log('LOGIN DEBUG:', {
-        emailFromClient: email,
-        passwordFromClient: password,
-        userFromDb: user,
-      })
-
-      if (!user || user.password !== password) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Špatný email nebo heslo',
-        })
-      }
-  } catch (err) {
-    console.error('Chyba při loginu:', err)
-    return res.status(500).json({
-      status: 'error',
-      message: 'Server error při přihlášení',
-    })
-  }
 
 // debug users
 app.get('/api/debug-users', async (req, res) => {
