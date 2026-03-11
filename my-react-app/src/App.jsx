@@ -6,11 +6,14 @@ import WorkoutList from "./components/WorkoutList"
 import StatsPanel from "./components/StatsPanel"
 import WorkoutFilters from "./components/WorkoutFilters"
 import WeeklyPlan, { createDefaultWeeklyPlan } from "./components/WeeklyPlan"
+import Login from "./components/Login"
+
 
 function App() {
   const [workouts, setWorkouts] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState(null) // { userId, email } nebo null
 
   const [currentDate, setCurrentDate] = useState("")
   const [currentType, setCurrentType] = useState("push")
@@ -27,9 +30,7 @@ function App() {
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
 
   const filteredWorkouts = workouts.filter((w) => {
-    if (filters.type !== "all" && w.type !== filters.type) {
-      return false
-    }
+    if (filters.type !== "all" && w.type !== filters.type) return false
 
     if (filters.from) {
       const fromDate = new Date(filters.from)
@@ -46,29 +47,94 @@ function App() {
     return true
   })
 
-  const statsWorkouts =
-    statsSource === "all" ? workouts : filteredWorkouts
+  const statsWorkouts = statsSource === "all" ? workouts : filteredWorkouts
 
+  // načtení usera z localStorage po načtení appky
   useEffect(() => {
+    const stored = localStorage.getItem("user")
+    if (stored) {
+      setUser(JSON.parse(stored))
+    }
+  }, [])
+
+  // načtení tréninků – jen když je user přihlášený
+  useEffect(() => {
+    if (!user) return
+
     const fetchWorkouts = async () => {
       try {
         setLoading(true)
-        const res = await fetch("/api/workouts")
+        const res = await fetch("/api/workouts", {
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.userId,
+          },
+        })
         if (!res.ok) {
           throw new Error("Chyba při načítání tréninků")
         }
+
         const data = await res.json()
         setWorkouts(data)
       } catch (err) {
-        console.error(err)
-        alert("Nepovedlo se načíst tréninky ze serveru")
+        console.error("Chyba při načítání:", err)
+        alert("Nepovedlo se načíst tréninky: " + err.message)
       } finally {
         setLoading(false)
       }
     }
 
     fetchWorkouts()
-  }, [])
+  }, [user])
+
+  // LOGIN / REGISTER
+
+  async function handleLogin(email, password) {
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.message || "Chyba při přihlášení")
+      }
+
+      const userInfo = { userId: data.userId, email: data.email }
+      setUser(userInfo)
+      localStorage.setItem("user", JSON.stringify(userInfo))
+    } catch (err) {
+      console.error(err)
+      alert("Nepovedlo se přihlásit: " + err.message)
+    }
+  }
+
+  async function handleRegister(email, password) {
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.message || "Chyba při registraci")
+      }
+
+      // po registraci rovnou přihlásíme
+      await handleLogin(email, password)
+    } catch (err) {
+      console.error(err)
+      alert("Nepovedlo se zaregistrovat: " + err.message)
+    }
+  }
+
+  function handleLogout() {
+    setUser(null)
+    setWorkouts([])
+    localStorage.removeItem("user")
+  }
 
   const resetEditing = () => {
     setEditingId(null)
@@ -82,33 +148,41 @@ function App() {
     const payload = { date, type, exercises, note }
 
     try {
-      if (editingId === null) {
-  const res = await fetch('/api/workouts', {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) throw new Error("Chyba při ukládání tréninku")
-  const created = await res.json()
-  setWorkouts((prev) => [created, ...prev])
-} else {
-  const res = await fetch(`/api/workouts/${editingId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) throw new Error("Chyba při úpravě tréninku")
-  const updated = await res.json()
-  setWorkouts((prev) =>
-    prev.map((w) => (w.id === updated.id ? updated : w))
-  )
-}
+      const url =
+        editingId === null ? "/api/workouts" : `/api/workouts/${editingId}`
+      const method = editingId === null ? "POST" : "PUT"
 
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user.userId,
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        throw new Error(
+          editingId === null
+            ? "Chyba při ukládání tréninku"
+            : "Chyba při úpravě tréninku"
+        )
+      }
+
+      const savedWorkout = await res.json()
+
+      setWorkouts((prev) => {
+        if (editingId === null) {
+          return [savedWorkout, ...prev]
+        } else {
+          return prev.map((w) => (w.id === savedWorkout.id ? savedWorkout : w))
+        }
+      })
 
       resetEditing()
     } catch (err) {
-      console.error(err)
-      alert("Nepovedlo se uložit trénink na server")
+      console.error("Chyba při ukládání:", err)
+      alert("Nepovedlo se uložit trénink na server: " + err.message)
     }
   }
 
@@ -127,6 +201,9 @@ function App() {
     try {
       const res = await fetch(`/api/workouts/${id}`, {
         method: "DELETE",
+        headers: {
+          "x-user-id": user.userId,
+        },
       })
       if (!res.ok) throw new Error("Chyba při mazání tréninku")
       setWorkouts((prev) => prev.filter((w) => w.id !== id))
@@ -137,16 +214,43 @@ function App() {
     }
   }
 
+  if (!user) {
+  return (
+    <div className="app">
+      <h1 className="app-title">Fitness tracker</h1>
+      <Login onLogin={handleLogin} onRegister={handleRegister} />
+    </div>
+  )
+}
+
+
   return (
     <div className="app">
       <h1 className="app-title">
-        Fitness tracker
+        Fitness tracker{" "}
+        <span style={{ fontSize: 14, marginLeft: 8 }}>
+          ({user.email}){" "}
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ fontSize: 12, padding: "2px 8px" }}
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </span>
       </h1>
 
       {loading && <p>Načítám tréninky ze serveru…</p>}
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <h2>Zdroj statistik</h2>
           <div style={{ display: "flex", gap: 8 }}>
             <button
