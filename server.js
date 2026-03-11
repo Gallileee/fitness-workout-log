@@ -75,6 +75,9 @@ app.post('/api/login', (req, res) => {
   res.json({ status: 'success', token, userId: user.id, email: user.email })
 })
 
+app.get('/api/debug-users', (req, res) => {
+  res.json(users)
+})
 
 
 
