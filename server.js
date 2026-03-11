@@ -65,8 +65,9 @@ function findWorkout(id) {
 
 /* ====== API ROUTES ====== */
 
-
-
+app.get('/api/debug-users', (req, res) => {
+  res.json(users)
+})
 
 
 // vrátí všechny tréninky
