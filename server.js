@@ -1,4 +1,4 @@
-// server/server.js
+// server.js
 const path = require('node:path')
 const express = require('express')
 const cors = require('cors')
@@ -6,6 +6,9 @@ const app = express()
 const port = process.env.PORT || 3000
 
 app.use(express.json())
+
+// CORS – v produkci Render + React na stejné doméně, takže to můžeš i vypnout
+// ale pro jistotu necháme povolené vše
 app.use(cors())
 
 // "DB" v paměti
@@ -15,7 +18,7 @@ function findWorkout(id) {
   return workouts.find((w) => w.id === Number(id))
 }
 
-/* ===== API ROUTES ===== */
+/* ====== API ROUTES ====== */
 
 // vrátí všechny tréninky
 app.get('/api/workouts', (req, res) => {
@@ -54,18 +57,116 @@ app.post('/api/workouts', (req, res) => {
   res.json(workout)
 })
 
-// přidání cviku, update, delete – nechávám stejné jako máš teď...
-// (přenes si sem svoje /api/workouts/:id/exercises, PUT, DELETE atd.)
+// přidá cvik k existujícímu tréninku
+app.post('/api/workouts/:id/exercises', (req, res) => {
+  const { id } = req.params
+  const { exercise, sets } = req.body
 
-/* ===== REACT BUILD ===== */
+  const workout = findWorkout(id)
+  if (!workout) {
+    return res.status(404).json({ status: 'error', message: 'Trénink nenalezen' })
+  }
+  if (!exercise || !sets) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'exercise a sets jsou povinné',
+    })
+  }
 
-// absolutní cesta k buildu z my-react-app/dist
-const buildPath = path.join(__dirname, '..', 'my-react-app', 'dist')
+  const exerciseObj = { name: exercise, sets: Number(sets) }
+  workout.exercises.push(exerciseObj)
+
+  console.log(`Přidán cvik k tréninku ${id}:`, exerciseObj)
+  res.json({ status: 'success', workout })
+})
+
+// update tréninku
+app.put('/api/workouts/:id', (req, res) => {
+  const workoutId = Number(req.params.id)
+  const { date, type, exercises, note } = req.body
+
+  const index = workouts.findIndex((w) => w.id === workoutId)
+  if (index === -1) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'Trénink s tímto ID neexistuje',
+    })
+  }
+
+  if (!Array.isArray(exercises) || exercises.length === 0) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Musí být alespoň jeden cvik',
+    })
+  }
+
+  const normalizedExercises = exercises.map((ex) => ({
+    id: ex.id ?? Date.now() + Math.random(),
+    name: String(ex.name),
+    sets: Number(ex.sets),
+    reps: Number(ex.reps),
+    weight: Number(ex.weight),
+  }))
+
+  const updatedWorkout = {
+    ...workouts[index],
+    date: date || null,
+    type: type || null,
+    note:
+      note !== undefined && note !== null
+        ? note
+        : workouts[index].note || '',
+    exercises: normalizedExercises,
+  }
+
+  workouts[index] = updatedWorkout
+  console.log('Upravený trénink:', updatedWorkout)
+  res.json(updatedWorkout)
+})
+
+// smazat celý trénink
+app.delete('/api/workouts/:id', (req, res) => {
+  const id = Number(req.params.id)
+  const index = workouts.findIndex((w) => w.id === id)
+
+  if (index === -1) {
+    return res.status(404).json({ status: 'error', message: 'Trénink nenalezen' })
+  }
+
+  workouts.splice(index, 1)
+  console.log('Smazán trénink', id)
+  res.status(204).end()
+})
+
+// smazat konkrétní cvik z tréninku
+app.delete('/api/workouts/:id/exercises/:exerciseIndex', (req, res) => {
+  const id = Number(req.params.id)
+  const exerciseIndex = Number(req.params.exerciseIndex)
+
+  const workout = findWorkout(id)
+  if (!workout) {
+    return res.status(404).json({ status: 'error', message: 'Trénink nenalezen' })
+  }
+  if (exerciseIndex < 0 || exerciseIndex >= workout.exercises.length) {
+    return res.status(400).json({ status: 'error', message: 'Cvik nenalezen' })
+  }
+
+  workout.exercises.splice(exerciseIndex, 1)
+  console.log(`Smazán cvik ${exerciseIndex} z tréninku ${id}`)
+  res.json({ status: 'success', workout })
+})
+
+/* ====== REACT BUILD ====== */
+
+// cesta k buildu (uprav na 'build', pokud používáš CRA)
+const buildPath = path.join('/Users/leo/VSCode', 'my-react-app', 'dist')
+console.log('Build path:', buildPath)
+
 
 app.use(express.static(buildPath))
 
-// všechny ostatní cesty poslat do Reactu
-app.get('*', (req, res) => {
+// všechno ostatní pošleme do Reactu
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'))
 })
 
