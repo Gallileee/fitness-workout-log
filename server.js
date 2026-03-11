@@ -159,7 +159,7 @@ app.delete('/api/workouts/:id/exercises/:exerciseIndex', (req, res) => {
 /* ====== REACT BUILD ====== */
 
 // cesta k buildu (uprav na 'build', pokud používáš CRA)
-const buildPath = path.join('/Users/leo/VSCode', 'my-react-app', 'dist')
+const buildPath = path.join(__dirname, 'my-react-app', 'dist')
 console.log('Build path:', buildPath)
 
 
