@@ -1,25 +1,33 @@
 // server.js
 const path = require('node:path')
-const fs = require('node:fs')
 const express = require('express')
 const cors = require('cors')
-const Database = require('better-sqlite3')
+const { Pool } = require('pg')
 
 const app = express()
 const port = process.env.PORT || 3000
 
-// ====== DB (SQLite) ======
-const dbPath = path.join(__dirname, 'db.sqlite')
-const db = new Database(dbPath)
+// ====== DB (Postgres via Supabase) ======
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // Supabase vyžaduje SSL
+})
 
-// tabulka users
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
-  )
-`).run()
+// vytvoření tabulky users, pokud neexistuje
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL
+    )
+  `)
+}
+
+initDb().catch((err) => {
+  console.error('Chyba při init DB:', err)
+  process.exit(1)
+})
 
 // ====== MIDDLEWARE ======
 app.use(express.json())
@@ -28,7 +36,7 @@ app.use(cors())
 // ====== AUTH ROUTES ======
 
 // registrace
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { email, password } = req.body
   if (!email || !password) {
     return res.status(400).json({
@@ -38,19 +46,21 @@ app.post('/api/register', (req, res) => {
   }
 
   try {
-    const insert = db.prepare(`
-      INSERT INTO users (email, password)
-      VALUES (?, ?)
-    `)
-    const result = insert.run(email, password) // jen demo, nehashujeme
+    const result = await pool.query(
+      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email',
+      [email, password] // demo: nehashované
+    )
+
+    const user = result.rows[0]
 
     return res.json({
       status: 'success',
-      userId: result.lastInsertRowid,
-      email,
+      userId: user.id,
+      email: user.email,
     })
   } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    if (err.code === '23505') {
+      // unique_violation
       return res.status(400).json({
         status: 'error',
         message: 'Uživatel už existuje',
@@ -65,7 +75,7 @@ app.post('/api/register', (req, res) => {
 })
 
 // login
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body
   if (!email || !password) {
     return res.status(400).json({
@@ -75,19 +85,17 @@ app.post('/api/login', (req, res) => {
   }
 
   try {
-    const select = db.prepare(`
-      SELECT id, email, password
-      FROM users
-      WHERE email = ?
-    `)
-    const user = select.get(email)
+    const result = await pool.query(
+      'SELECT id, email, password FROM users WHERE email = $1',
+      [email]
+    )
+    const user = result.rows[0]
 
-console.log('LOGIN DEBUG:', {
+    console.log('LOGIN DEBUG:', {
       emailFromClient: email,
       passwordFromClient: password,
       userFromDb: user,
     })
-
 
     if (!user || user.password !== password) {
       return res.status(401).json({
@@ -113,10 +121,53 @@ console.log('LOGIN DEBUG:', {
   }
 })
 
+    const token = String(user.id)
+    
+    return res.json({
+      status: 'success',
+      token,
+      userId: user.id,
+      email: user.email,
+    })
+    try {
+      const result = await pool.query(
+        'SELECT id, email, password FROM users WHERE email = $1',
+        [email]
+      )
+      const user = result.rows[0]
+
+      console.log('LOGIN DEBUG:', {
+        emailFromClient: email,
+        passwordFromClient: password,
+        userFromDb: user,
+      })
+
+      if (!user || user.password !== password) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Špatný email nebo heslo',
+        })
+      }
+  } catch (err) {
+    console.error('Chyba při loginu:', err)
+    return res.status(500).json({
+      status: 'error',
+      message: 'Server error při přihlášení',
+    })
+  }
+
 // debug users
-app.get('/api/debug-users', (req, res) => {
-  const rows = db.prepare('SELECT id, email FROM users').all()
-  res.json(rows)
+app.get('/api/debug-users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, email FROM users')
+    res.json(result.rows)
+  } catch (err) {
+    console.error('Chyba při debugování uživatelů:', err)
+    res.status(500).json({
+      status: 'error',
+      message: 'Server error při debugování uživatelů',
+    })
+  }
 })
 
 // ====== WORKOUTS (v paměti) ======
