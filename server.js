@@ -11,6 +11,51 @@ app.use(express.json())
 // ale pro jistotu necháme povolené vše
 app.use(cors())
 
+
+// jednoduché úložiště uživatelů v paměti
+const users = []
+let nextUserId = 1
+
+function findUserByEmail(email) {
+  return users.find((u) => u.email === email)
+}
+
+// registrace
+app.post('/api/register', (req, res) => {
+  const { email, password } = req.body
+  if (!email || !password) {
+    return res.status(400).json({ status: 'error', message: 'Email a heslo jsou povinné' })
+  }
+  if (findUserByEmail(email)) {
+    return res.status(400).json({ status: 'error', message: 'Uživatel už existuje' })
+  }
+
+  const user = { id: nextUserId++, email, password } // POZOR: jen na demo, ne v produkci
+  users.push(user)
+
+  res.json({ status: 'success', userId: user.id, email: user.email })
+})
+
+// login
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body
+  const user = findUserByEmail(email)
+  if (!user || user.password !== password) {
+    return res.status(401).json({ status: 'error', message: 'Špatný email nebo heslo' })
+  }
+
+  // jednoduchý "token" = userId jako string
+  const token = String(user.id)
+  res.json({ status: 'success', token, userId: user.id, email: user.email })
+})
+
+
+
+
+
+
+
+
 // "DB" v paměti
 const workouts = []
 
@@ -20,10 +65,22 @@ function findWorkout(id) {
 
 /* ====== API ROUTES ====== */
 
+
+
+
+
 // vrátí všechny tréninky
 app.get('/api/workouts', (req, res) => {
-  res.json(workouts)
+const userId = Number(req.headers['x-user-id'])
+  if (!userId) {
+    return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+  }
+  const userWorkouts = workouts.filter((w) => w.userId === userId)
+  res.json(userWorkouts)
 })
+
+
+
 
 // vytvoří nový trénink
 app.post('/api/workouts', (req, res) => {
@@ -36,6 +93,14 @@ app.post('/api/workouts', (req, res) => {
     })
   }
 
+  const userId = Number(req.headers['x-user-id'])
+if (!userId) {
+  return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+}
+
+  
+
+
   const normalizedExercises = exercises.map((ex) => ({
     id: ex.id ?? Date.now() + Math.random(),
     name: String(ex.name),
@@ -46,6 +111,7 @@ app.post('/api/workouts', (req, res) => {
 
   const workout = {
     id: workouts.length + 1,
+    userId, 
     date: date || null,
     type: type || null,
     note: note || '',
@@ -85,7 +151,12 @@ app.put('/api/workouts/:id', (req, res) => {
   const workoutId = Number(req.params.id)
   const { date, type, exercises, note } = req.body
 
-  const index = workouts.findIndex((w) => w.id === workoutId)
+  const userId = Number(req.headers['x-user-id'])
+  if (!userId) {
+    return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+  }
+
+  const index = workouts.findIndex((w) => w.id === workoutId && w.userId === userId)
   if (index === -1) {
     return res.status(404).json({
       status: 'error',
@@ -127,8 +198,12 @@ app.put('/api/workouts/:id', (req, res) => {
 // smazat celý trénink
 app.delete('/api/workouts/:id', (req, res) => {
   const id = Number(req.params.id)
-  const index = workouts.findIndex((w) => w.id === id)
+  const userId = Number(req.headers['x-user-id'])
+  if (!userId) {
+    return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+  }
 
+  const index = workouts.findIndex((w) => w.id === id && w.userId === userId)
   if (index === -1) {
     return res.status(404).json({ status: 'error', message: 'Trénink nenalezen' })
   }
@@ -142,6 +217,11 @@ app.delete('/api/workouts/:id', (req, res) => {
 app.delete('/api/workouts/:id/exercises/:exerciseIndex', (req, res) => {
   const id = Number(req.params.id)
   const exerciseIndex = Number(req.params.exerciseIndex)
+
+  const userId = Number(req.headers['x-user-id'])
+  if (!userId) {
+    return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+  }
 
   const workout = findWorkout(id)
   if (!workout) {
