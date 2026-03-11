@@ -97,6 +97,8 @@ function App() {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
+      console.log("LOGIN RESPONSE:", data)   
+
       if (!res.ok || data.status !== "success") {
         throw new Error(data.message || "Chyba při přihlášení")
       }
@@ -130,18 +132,22 @@ function App() {
   //   }
   // }
 
-  async function handleRegister(email, password) {
+async function handleRegister(email, password) {
   try {
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     })
+    const data = await res.json()
+    console.log("REGISTER RESPONSE:", data)
 
-    const text = await res.text()
-    console.log("REGISTER RESPONSE:", text)
+    if (!res.ok || data.status !== "success") {
+      throw new Error(data.message || "Chyba při registraci")
+    }
 
-    // dál nic, jen debug
+    // po úspěšné registraci rovnou přihlásíme
+    await handleLogin(email, password)
   } catch (err) {
     console.error(err)
     alert("Nepovedlo se zaregistrovat: " + err.message)
