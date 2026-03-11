@@ -4,5 +4,11 @@
     "ajv": "^8.18.0",
     "cors": "^2.8.6",
     "express": "^5.2.1"
+  },
+
+
+  "scripts": {
+    "build": "cd my-react-app && npm install && npm run build",
+    "start": "cd server && npm install && node server.js"
   }
 }
