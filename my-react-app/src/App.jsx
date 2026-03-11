@@ -110,25 +110,44 @@ function App() {
     }
   }
 
-  async function handleRegister(email, password) {
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-      if (!res.ok || data.status !== "success") {
-        throw new Error(data.message || "Chyba při registraci")
-      }
+  // async function handleRegister(email, password) {
+  //   try {
+  //     const res = await fetch("/api/register", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password }),
+  //     })
+  //     const data = await res.json()
+  //     if (!res.ok || data.status !== "success") {
+  //       throw new Error(data.message || "Chyba při registraci")
+  //     }
 
-      // po registraci rovnou přihlásíme
-      await handleLogin(email, password)
-    } catch (err) {
-      console.error(err)
-      alert("Nepovedlo se zaregistrovat: " + err.message)
-    }
+  //     // po registraci rovnou přihlásíme
+  //     await handleLogin(email, password)
+  //   } catch (err) {
+  //     console.error(err)
+  //     alert("Nepovedlo se zaregistrovat: " + err.message)
+  //   }
+  // }
+
+  async function handleRegister(email, password) {
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const text = await res.text()
+    console.log("REGISTER RESPONSE:", text)
+
+    // dál nic, jen debug
+  } catch (err) {
+    console.error(err)
+    alert("Nepovedlo se zaregistrovat: " + err.message)
   }
+}
+
 
   function handleLogout() {
     setUser(null)
