@@ -16,7 +16,7 @@ function Login({ onLogin, onRegister }) {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 400, margin: "0 auto" }}>
+    <div className="card" style={{ maxWidth: 400, margin: "0 auto", alignSelf: "center" }}>
       <h2>Přihlášení</h2>
       <form>
         <div className="field">
