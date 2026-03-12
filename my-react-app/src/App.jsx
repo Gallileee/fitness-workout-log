@@ -320,6 +320,8 @@ return (
     <WorkoutFilters filters={filters} onChange={setFilters} />
 
     <div className="grid">
+      {console.log("DEBUG filteredWorkouts:", filteredWorkouts)}
+
       <WorkoutList
         workouts={filteredWorkouts}
         onEdit={handleEditWorkout}

@@ -1,46 +1,56 @@
 // src/components/WorkoutList.jsx
-
 function WorkoutList({ workouts, onEdit, onDelete }) {
+  const list = Array.isArray(workouts) ? workouts : []
+
   return (
     <div className="card">
       <h2>Uložené tréninky</h2>
-      {workouts.length === 0 && <p>Zatím žádné tréninky.</p>}
 
-      {workouts.map((w) => (
-  <div key={w.id} className="workout-card">
-    <div className="workout-header">
-      <span>
-        {w.date} – {w.type}
-      </span>
-      <span className="chip">
-        {w.exercises?.length || 0} cviků
-      </span>
-    </div>
-    <ul className="exercise-list">
-      {(w.exercises || []).map((ex) => (
-        <li key={ex.id}>
-          <strong>{ex.name}</strong>{" "}
-          — {ex.sets}×{ex.reps} @ {ex.weight} kg
-        </li>
-      ))}
-    </ul>
+      {list.length === 0 ? (
+        <p>Zatím žádné tréninky.</p>
+      ) : (
+        <ul className="workout-list">
+          {list.map((w) => (
+            <li key={w.id} className="workout-item">
+              <div className="workout-header">
+                <span>
+                  {w.date || "Bez data"} • {w.type || "Bez typu"}
+                </span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn btn-small"
+                    onClick={() => onEdit(w.id)}
+                  >
+                    Upravit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-small"
+                    onClick={() => onDelete(w.id)}
+                  >
+                    Smazat
+                  </button>
+                </div>
+              </div>
 
-    {w.note && (
-      <p style={{ marginTop: 8, fontSize: 14, color: "#9ca3af" }}>
-        Poznámka: {w.note}
-      </p>
-    )}
+              {w.note && (
+                <p style={{ marginTop: 4, fontSize: 14 }}>
+                  Poznámka: {w.note}
+                </p>
+              )}
 
-    <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-      <button className="btn btn-outline" onClick={() => onEdit(w.id)}>
-        Upravit
-      </button>
-      <button className="btn btn-danger" onClick={() => onDelete(w.id)}>
-        Smazat
-      </button>
-    </div>
-  </div>
-))}
+              <ul className="exercise-list">
+                {(w.exercises || []).map((ex) => (
+                  <li key={ex.id} className="exercise-item">
+                    {ex.name}: {ex.sets}×{ex.reps} @ {ex.weight} kg
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
