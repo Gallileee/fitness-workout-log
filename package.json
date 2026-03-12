@@ -10,5 +10,8 @@
   "scripts": {
     "build": "cd my-react-app && npm install && npm run build",
     "start": "cd server && npm install && node server.js"
+  },
+  "devDependencies": {
+    "supabase": "^2.78.1"
   }
 }
