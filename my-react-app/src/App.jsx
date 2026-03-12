@@ -255,39 +255,26 @@ return (
       {loading && <p>Načítám tréninky ze serveru…</p>}
 
       {/* OVERLAY KARTA */}
-      {view !== "dashboard" && (
-        <div className="overlay">
-          <div className="overlay-card">
-            <button
-              type="button"
-              className="btn btn-outline"
-              style={{ marginBottom: 12 }}
-              onClick={() => {
-                setView("dashboard")
-                resetEditing()
-              }}
-            >
-              Back to dashboard
-            </button>
+<div className="grid">
+  {view === "dashboard" && (
+    <WorkoutForm
+      initialDate={currentDate}
+      initialType={currentType}
+      initialExercises={currentExercises}
+      initialNote={currentNote}
+      onSave={handleSave}
+      onCancel={resetEditing}
+      isEditing={editingId !== null}
+    />
+  )}
 
-            <WorkoutForm
-              initialDate={currentDate}
-              initialType={currentType}
-              initialExercises={currentExercises}
-              initialNote={currentNote}
-              onSave={async (values) => {
-                await handleSave(values)
-                setView("dashboard")
-              }}
-              onCancel={() => {
-                resetEditing()
-                setView("dashboard")
-              }}
-              isEditing={view === "editWorkout" && editingId !== null}
-            />
-          </div>
-        </div>
-      )}
+  <WorkoutList
+    workouts={filteredWorkouts}
+    onEdit={handleEditWorkout}
+    onDelete={handleDeleteWorkout}
+  />
+</div>
+      
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div
