@@ -253,21 +253,21 @@ return (
     {loading && <p>Načítám tréninky ze serveru…</p>}
 
     <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-start" }}>
-      <button
-        type="button"
-        className="btn"
-        style={{
-          padding: "12px 24px",
-          fontSize: 16,
-          borderRadius: 9999,
-        }}
-        onClick={() => {
-          resetEditing()
-          setView("newWorkout")
-        }}
-      >
-        Nový trénink
-      </button>
+<button
+  type="button"
+  className="btn btn-primary"
+  style={{
+    padding: "12px 24px",
+    fontSize: 16,
+    borderRadius: 9999,
+  }}
+  onClick={() => {
+    resetEditing()
+    setView("newWorkout")
+  }}
+>
+  Nový trénink
+</button>
     </div>
 
     {/* OVERLAY – jediný formulář */}

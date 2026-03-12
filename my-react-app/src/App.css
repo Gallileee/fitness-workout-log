@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a;
+  background: #020617;
   color: #e5e7eb;
 }
 
@@ -29,12 +29,6 @@ body {
   }
 }
 
-.card {
-  background: #020617;
-  border-radius: 16px;
-  padding: 20px 18px;
-  border: 1px solid #111827;
-}
 
 .card h2 {
   font-size: 18px;
@@ -88,19 +82,11 @@ body {
   font-weight: 500;
 }
 
-.btn-primary {
-  background: #203351;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-}
-
+/* sekundární akcent – třeba na „Smazat“ nebo chipy */
 .btn-outline {
   background: transparent;
-  color: #e5e7eb;
-  border: 1px solid #4b5563;
+  color: #22d3ee;
+  border: 1px solid #22d3ee;
 }
 
 .btn-danger {
@@ -108,8 +94,8 @@ body {
   color: white;
 }
 
-.btn-danger:hover {
-  background: #dc2626;
+.btn-outline:hover {
+  background: rgba(34, 211, 238, 0.1);
 }
 
 .workout-card {
@@ -129,11 +115,12 @@ body {
   color: #9ca3af;
 }
 
+/* chip u typu tréninku */
 .chip {
   padding: 2px 8px;
   border-radius: 999px;
-  background: #1d4ed8;
-  color: white;
+  background: #22c55e;
+  color: #022c22;
   font-size: 12px;
 }
 
@@ -185,4 +172,23 @@ body {
 
 .card + .card {
   margin-top: 20px;
+}
+
+
+/* primární modrá */
+.btn-primary {
+  background: #2563eb;
+  color: #e5e7eb;
+}
+
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.card {
+  background: #030712;
+  border-radius: 16px;
+  padding: 20px 18px;
+  border: 1px solid #1f2937;
 }
