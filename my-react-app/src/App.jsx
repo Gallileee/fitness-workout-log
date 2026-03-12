@@ -20,6 +20,10 @@ function App() {
   const [currentExercises, setCurrentExercises] = useState([])
   const [currentNote, setCurrentNote] = useState("")
 
+  const [view, setView] = useState("dashboard") 
+// "dashboard" | "newWorkout" | "editWorkout"
+
+
   const [filters, setFilters] = useState({
     type: "all",
     from: "",
@@ -112,26 +116,6 @@ function App() {
     }
   }
 
-  // async function handleRegister(email, password) {
-  //   try {
-  //     const res = await fetch("/api/register", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ email, password }),
-  //     })
-  //     const data = await res.json()
-  //     if (!res.ok || data.status !== "success") {
-  //       throw new Error(data.message || "Chyba při registraci")
-  //     }
-
-  //     // po registraci rovnou přihlásíme
-  //     await handleLogin(email, password)
-  //   } catch (err) {
-  //     console.error(err)
-  //     alert("Nepovedlo se zaregistrovat: " + err.message)
-  //   }
-  // }
-
 async function handleRegister(email, password) {
   try {
     const res = await fetch("/api/register", {
@@ -211,15 +195,16 @@ async function handleRegister(email, password) {
     }
   }
 
-  const handleEditWorkout = (id) => {
-    const workout = workouts.find((w) => w.id === id)
-    if (!workout) return
-    setEditingId(id)
-    setCurrentDate(workout.date || "")
-    setCurrentType(workout.type || "push")
-    setCurrentExercises(workout.exercises || [])
-    setCurrentNote(workout.note || "")
-  }
+const handleEditWorkout = (id) => {
+  const workout = workouts.find((w) => w.id === id)
+  if (!workout) return
+  setEditingId(id)
+  setCurrentDate(workout.date || "")
+  setCurrentType(workout.type || "push")
+  setCurrentExercises(workout.exercises || [])
+  setCurrentNote(workout.note || "")
+  setView("editWorkout")
+}
 
   const handleDeleteWorkout = async (id) => {
     if (!confirm("Opravdu smazat celý trénink?")) return
@@ -249,7 +234,8 @@ async function handleRegister(email, password) {
 }
 
 
-  return (
+
+return (
     <div className="app">
       <h1 className="app-title">
         Fitness tracker{" "}
@@ -267,6 +253,41 @@ async function handleRegister(email, password) {
       </h1>
 
       {loading && <p>Načítám tréninky ze serveru…</p>}
+
+      {/* OVERLAY KARTA */}
+      {view !== "dashboard" && (
+        <div className="overlay">
+          <div className="overlay-card">
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ marginBottom: 12 }}
+              onClick={() => {
+                setView("dashboard")
+                resetEditing()
+              }}
+            >
+              Back to dashboard
+            </button>
+
+            <WorkoutForm
+              initialDate={currentDate}
+              initialType={currentType}
+              initialExercises={currentExercises}
+              initialNote={currentNote}
+              onSave={async (values) => {
+                await handleSave(values)
+                setView("dashboard")
+              }}
+              onCancel={() => {
+                resetEditing()
+                setView("dashboard")
+              }}
+              isEditing={view === "editWorkout" && editingId !== null}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div
@@ -297,6 +318,9 @@ async function handleRegister(email, password) {
           </div>
         </div>
       </div>
+
+      
+
 
       <StatsPanel workouts={statsWorkouts} />
 

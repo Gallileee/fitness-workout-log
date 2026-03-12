@@ -18,6 +18,7 @@ function WorkoutFilters({ filters, onChange }) {
   }
 
   return (
+    
     <div className="card" style={{ marginBottom: 24 }}>
       <h2>Filtry</h2>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -62,8 +63,21 @@ function WorkoutFilters({ filters, onChange }) {
           <button className="btn btn-outline" type="button" onClick={handleReset}>
             Vyčistit filtr
           </button>
+
+          <div style={{ marginBottom: 16 }}>
+  <button
+    type="button"
+    className="btn"
+    onClick={() => {
+      resetEditing()
+      setView("newWorkout")
+    }}
+  >
+    Nový trénink (karta)
+  </button>
         </div>
       </div>
+    </div>
     </div>
   )
 }
