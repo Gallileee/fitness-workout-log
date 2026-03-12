@@ -252,77 +252,81 @@ return (
 
     {loading && <p>Načítám tréninky ze serveru…</p>}
 
+    <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-start" }}>
+      <button
+        type="button"
+        className="btn"
+        style={{
+          padding: "12px 24px",
+          fontSize: 16,
+          borderRadius: 9999,
+        }}
+        onClick={() => {
+          resetEditing()
+          setView("newWorkout")
+        }}
+      >
+        Nový trénink
+      </button>
+    </div>
+
     {/* OVERLAY – jediný formulář */}
     {view !== "dashboard" && (
       <div className="overlay">
-        <div className="overlay-card">
-          <button
-            type="button"
-            className="btn btn-outline"
-            style={{ marginBottom: 12 }}
-            onClick={() => {
-              setView("dashboard")
-              resetEditing()
-            }}
-          >
-            Back to dashboard
-          </button>
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={() => {
+            setView("dashboard")
+            resetEditing()
+          }}
+        >
+          Back to dashboard
+        </button>
 
-          <WorkoutForm
-            initialDate={currentDate}
-            initialType={currentType}
-            initialExercises={currentExercises}
-            initialNote={currentNote}
-            onSave={async (values) => {
-              await handleSave(values)
-              setView("dashboard")
-            }}
-            onCancel={() => {
-              resetEditing()
-              setView("dashboard")
-            }}
-            isEditing={view === "editWorkout" && editingId !== null}
-          />
-        </div>
+        <WorkoutForm
+          initialDate={currentDate}
+          initialType={currentType}
+          initialExercises={currentExercises}
+          initialNote={currentNote}
+          onSave={async (values) => {
+            await handleSave(values)
+            setView("dashboard")
+          }}
+          onCancel={() => {
+            resetEditing()
+            setView("dashboard")
+          }}
+          isEditing={view === "editWorkout" && editingId !== null}
+        />
       </div>
     )}
 
     <div className="card" style={{ marginBottom: 16 }}>
-      {/* ... Zdroj statistik, beze změny ... */}
-    </div>
-
-    <StatsPanel workouts={statsWorkouts} />
-
-    <WeeklyPlan
-      plan={weeklyPlan}
-      onChange={setWeeklyPlan}
-      onDayClick={(index, dayPlan) => {
-        if (dayPlan.type === "off") {
-          setFilters((prev) => ({ ...prev, type: "all" }))
-        } else {
-          setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-        }
-        setStatsSource("filtered")
-      }}
-    />
-
-    <WorkoutFilters
-      filters={filters}
-      onChange={setFilters}
-      onNewCard={() => {
-        resetEditing()
-        setView("newWorkout")
-      }}
-    />
-
-    <div className="grid">
-      {/* TADY už NENÍ WorkoutForm – jen seznam */}
-      <WorkoutList
-        workouts={filteredWorkouts}
-        onEdit={handleEditWorkout}
-        onDelete={handleDeleteWorkout}
-      />
-    </div>
+  {/* ... Zdroj statistik, beze změny ... */}
+</div><StatsPanel workouts={statsWorkouts} /><WeeklyPlan
+    plan={WeeklyPlan}
+    onChange={WeeklyPlan}
+    onDayClick={(_index, dayPlan) => {
+      if (dayPlan.type === "off") {
+        setFilters((prev) => ({ ...prev, type: "all" }))
+      } else {
+        setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+      }
+      setStatsSource("filtered")
+    } } /><WorkoutFilters
+    filters={filters}
+    onChange={setFilters}
+    onNewCard={() => {
+      resetEditing()
+      setView("newWorkout")
+    } } /><div className="grid">
+    {/* TADY už NENÍ WorkoutForm – jen seznam */}
+    <WorkoutList
+      workouts={filteredWorkouts}
+      onEdit={handleEditWorkout}
+      onDelete={handleDeleteWorkout} />
+  </div>
   </div>
 )
 }
