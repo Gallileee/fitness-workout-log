@@ -304,7 +304,9 @@ return (
 
     <div className="card" style={{ marginBottom: 16 }}>
   {/* ... Zdroj statistik, beze změny ... */}
-</div><StatsPanel workouts={statsWorkouts} /><WeeklyPlan
+</div>
+<StatsPanel workouts={statsWorkouts} />
+<WeeklyPlan
     plan={WeeklyPlan}
     onChange={WeeklyPlan}
     onDayClick={(_index, dayPlan) => {
@@ -314,18 +316,15 @@ return (
         setFilters((prev) => ({ ...prev, type: dayPlan.type }))
       }
       setStatsSource("filtered")
-    } } /><WorkoutFilters
-    filters={filters}
-    onChange={setFilters}
-    onNewCard={() => {
-      resetEditing()
-      setView("newWorkout")
-    } } /><div className="grid">
-    {/* TADY už NENÍ WorkoutForm – jen seznam */}
-    <WorkoutList
-      workouts={filteredWorkouts}
-      onEdit={handleEditWorkout}
-      onDelete={handleDeleteWorkout} />
+    } } />
+    <WorkoutFilters filters={filters} onChange={setFilters} />
+
+    <div className="grid">
+      <WorkoutList
+        workouts={filteredWorkouts}
+        onEdit={handleEditWorkout}
+        onDelete={handleDeleteWorkout}
+      />
   </div>
   </div>
 )
