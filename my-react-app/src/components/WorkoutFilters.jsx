@@ -1,6 +1,5 @@
 // src/components/WorkoutFilters.jsx
-
-function WorkoutFilters({ filters, onChange }) {
+function WorkoutFilters({ filters, onChange, onNewCard }) {
   const handleTypeChange = (e) => {
     onChange({ ...filters, type: e.target.value })
   }
@@ -18,7 +17,6 @@ function WorkoutFilters({ filters, onChange }) {
   }
 
   return (
-    
     <div className="card" style={{ marginBottom: 24 }}>
       <h2>Filtry</h2>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -59,25 +57,24 @@ function WorkoutFilters({ filters, onChange }) {
           />
         </div>
 
-        <div className="field" style={{ alignSelf: "flex-end" }}>
-          <button className="btn btn-outline" type="button" onClick={handleReset}>
+        <div className="field" style={{ alignSelf: "flex-end", display: "flex", gap: 8 }}>
+          <button
+            className="btn btn-outline"
+            type="button"
+            onClick={handleReset}
+          >
             Vyčistit filtr
           </button>
 
-          <div style={{ marginBottom: 16 }}>
-  <button
-    type="button"
-    className="btn"
-    onClick={() => {
-      resetEditing()
-      setView("newWorkout")
-    }}
-  >
-    Nový trénink (karta)
-  </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={onNewCard}
+          >
+            Nový trénink (karta)
+          </button>
         </div>
       </div>
-    </div>
     </div>
   )
 }

@@ -343,7 +343,17 @@ return (
         }}
       />
 
-      <WorkoutFilters filters={filters} onChange={setFilters} />
+      <WorkoutFilters 
+      filters={filters} 
+      onChange={setFilters} 
+      onNewCard={() => {
+    resetEditing()
+    setView("newWorkout")
+  }}
+/>
+
+
+
 
       <div className="grid">
         <WorkoutForm
