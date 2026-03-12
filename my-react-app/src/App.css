@@ -6,9 +6,9 @@ body {
 }
 
 .app {
-  max-width: 1150px;
-  margin: 32px auto;
-  padding: 0 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px;
 }
 
 .app-title {
@@ -32,15 +32,18 @@ body {
 .card {
   background: #020617;
   border-radius: 16px;
-  padding: 20px 20px 24px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-  border: 1px solid #1e293b;
+  padding: 20px 18px;
+  border: 1px solid #111827;
 }
 
 .card h2 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 20px;
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.card p {
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .field {
@@ -161,4 +164,25 @@ body {
   width: 100%;
   max-width: 480px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.card + .card {
+  margin-top: 20px;
 }

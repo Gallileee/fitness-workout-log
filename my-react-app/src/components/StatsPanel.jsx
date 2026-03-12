@@ -37,32 +37,25 @@ function StatsPanel({ workouts }) {
     totalWorkouts > 0 ? Math.round(totalVolume / totalWorkouts) : 0
 
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <h2>Souhrn</h2>
-
-      {totalWorkouts === 0 ? (
-        <p>Zatím žádná data pro statistiky.</p>
-      ) : (
-        <div className="stats-grid">
-          <div className="stat">
-            <div className="stat-label">Počet tréninků</div>
-            <div className="stat-value">{totalWorkouts}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Celkový objem (kg)</div>
-            <div className="stat-value">{totalVolume}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Objem za 7 dní (kg)</div>
-            <div className="stat-value">{volumeLast7Days}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Průměrný objem / trénink</div>
-            <div className="stat-value">{avgVolumePerWorkout}</div>
-          </div>
-        </div>
-      )}
-    </div>
+// StatsPanel.jsx – uvnitř return, místo prostých <div> pod sebou
+<div className="stats-grid">
+  <div className="stat">
+    <div className="stat-label">Počet tréninků</div>
+    <div className="stat-value">{totalWorkouts}</div>
+  </div>
+  <div className="stat">
+    <div className="stat-label">Celkový objem (kg)</div>
+    <div className="stat-value">{totalVolume}</div>
+  </div>
+  <div className="stat">
+    <div className="stat-label">Objem za 7 dní (kg)</div>
+    <div className="stat-value">{volumeLast7Days}</div>
+  </div>
+  <div className="stat">
+    <div className="stat-label">Průměrný objem / trénink</div>
+    <div className="stat-value">{avgVolumePerWorkout}</div>
+  </div>
+</div>
   )
 }
 
