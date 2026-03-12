@@ -1,10 +1,10 @@
 // src/components/WorkoutFilters.jsx
 function WorkoutFilters({ filters, onChange, onNewCard }) {
-  const handleTypeChange = (e) => {
-    onChange({ ...filters, type: e.target.value })
-  }
+const handleTypeChange = (e) => {
+  onChange({ ...filters, type: e.target.value })
+}
 
-  const handleFromChange = (e) => {
+const handleFromChange = (e) => {
     onChange({ ...filters, from: e.target.value })
   }
 

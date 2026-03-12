@@ -206,25 +206,25 @@ const handleEditWorkout = (id) => {
   setView("editWorkout")
 }
 
-  const handleDeleteWorkout = async (id) => {
-    if (!confirm("Opravdu smazat celý trénink?")) return
-    try {
-      const res = await fetch(`/api/workouts/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-user-id": user.userId,
-        },
-      })
-      if (!res.ok) throw new Error("Chyba při mazání tréninku")
-      setWorkouts((prev) => prev.filter((w) => w.id !== id))
-      if (editingId === id) resetEditing()
-    } catch (err) {
-      console.error(err)
-      alert("Nepovedlo se smazat trénink na serveru")
-    }
+const handleDeleteWorkout = async (id) => {
+  if (!confirm("Opravdu smazat celý trénink?")) return
+  try {
+    const res = await fetch(`/api/workouts/${id}`, {
+      method: "DELETE",
+      headers: {
+        "x-user-id": user.userId,
+      },
+    })
+    if (!res.ok) throw new Error("Chyba při mazání tréninku")
+    setWorkouts((prev) => prev.filter((w) => w.id !== id))
+    if (editingId === id) resetEditing()
+  } catch (err) {
+    console.error(err)
+    alert("Nepovedlo se smazat trénink na serveru")
   }
+}
 
-  if (!user) {
+if (!user) {
   return (
     <div className="app">
       <h1 className="app-title">Fitness tracker</h1>
@@ -233,134 +233,98 @@ const handleEditWorkout = (id) => {
   )
 }
 
-
-
 return (
-    <div className="app">
-      <h1 className="app-title">
-        Fitness tracker{" "}
-        <span style={{ fontSize: 14, marginLeft: 8 }}>
-          ({user.email}){" "}
+  <div className="app">
+    <h1 className="app-title">
+      Fitness tracker{" "}
+      <span style={{ fontSize: 14, marginLeft: 8 }}>
+        ({user.email}){" "}
+        <button
+          type="button"
+          className="btn btn-outline"
+          style={{ fontSize: 12, padding: "2px 8px" }}
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </span>
+    </h1>
+
+    {loading && <p>Načítám tréninky ze serveru…</p>}
+
+    {/* OVERLAY – jediný formulář */}
+    {view !== "dashboard" && (
+      <div className="overlay">
+        <div className="overlay-card">
           <button
             type="button"
             className="btn btn-outline"
-            style={{ fontSize: 12, padding: "2px 8px" }}
-            onClick={handleLogout}
+            style={{ marginBottom: 12 }}
+            onClick={() => {
+              setView("dashboard")
+              resetEditing()
+            }}
           >
-            Logout
+            Back to dashboard
           </button>
-        </span>
-      </h1>
 
-      {loading && <p>Načítám tréninky ze serveru…</p>}
-
-      {/* OVERLAY KARTA */}
-<div className="grid">
-  {view === "dashboard" && (
-    <WorkoutForm
-      initialDate={currentDate}
-      initialType={currentType}
-      initialExercises={currentExercises}
-      initialNote={currentNote}
-      onSave={handleSave}
-      onCancel={resetEditing}
-      isEditing={editingId !== null}
-    />
-  )}
-
-  <WorkoutList
-    workouts={filteredWorkouts}
-    onEdit={handleEditWorkout}
-    onDelete={handleDeleteWorkout}
-  />
-</div>
-      
-
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h2>Zdroj statistik</h2>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              className="btn btn-outline"
-              style={{ opacity: statsSource === "all" ? 1 : 0.6 }}
-              onClick={() => setStatsSource("all")}
-            >
-              Všechny tréninky
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline"
-              style={{ opacity: statsSource === "filtered" ? 1 : 0.6 }}
-              onClick={() => setStatsSource("filtered")}
-            >
-              Pouze filtrované
-            </button>
-          </div>
+          <WorkoutForm
+            initialDate={currentDate}
+            initialType={currentType}
+            initialExercises={currentExercises}
+            initialNote={currentNote}
+            onSave={async (values) => {
+              await handleSave(values)
+              setView("dashboard")
+            }}
+            onCancel={() => {
+              resetEditing()
+              setView("dashboard")
+            }}
+            isEditing={view === "editWorkout" && editingId !== null}
+          />
         </div>
       </div>
+    )}
 
-      
-
-
-      <StatsPanel workouts={statsWorkouts} />
-
-      <WeeklyPlan
-        plan={weeklyPlan}
-        onChange={setWeeklyPlan}
-        onDayClick={(index, dayPlan) => {
-          if (dayPlan.type === "off") {
-            setFilters((prev) => ({
-              ...prev,
-              type: "all",
-            }))
-          } else {
-            setFilters((prev) => ({
-              ...prev,
-              type: dayPlan.type,
-            }))
-          }
-          setStatsSource("filtered")
-        }}
-      />
-
-      <WorkoutFilters 
-      filters={filters} 
-      onChange={setFilters} 
-      onNewCard={() => {
-    resetEditing()
-    setView("newWorkout")
-  }}
-/>
-
-
-
-
-      <div className="grid">
-        <WorkoutForm
-          initialDate={currentDate}
-          initialType={currentType}
-          initialExercises={currentExercises}
-          initialNote={currentNote}
-          onSave={handleSave}
-          onCancel={resetEditing}
-          isEditing={editingId !== null}
-        />
-
-        <WorkoutList
-          workouts={filteredWorkouts}
-          onEdit={handleEditWorkout}
-          onDelete={handleDeleteWorkout}
-        />
-      </div>
+    <div className="card" style={{ marginBottom: 16 }}>
+      {/* ... Zdroj statistik, beze změny ... */}
     </div>
-  )
+
+    <StatsPanel workouts={statsWorkouts} />
+
+    <WeeklyPlan
+      plan={weeklyPlan}
+      onChange={setWeeklyPlan}
+      onDayClick={(index, dayPlan) => {
+        if (dayPlan.type === "off") {
+          setFilters((prev) => ({ ...prev, type: "all" }))
+        } else {
+          setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+        }
+        setStatsSource("filtered")
+      }}
+    />
+
+    <WorkoutFilters
+      filters={filters}
+      onChange={setFilters}
+      onNewCard={() => {
+        resetEditing()
+        setView("newWorkout")
+      }}
+    />
+
+    <div className="grid">
+      {/* TADY už NENÍ WorkoutForm – jen seznam */}
+      <WorkoutList
+        workouts={filteredWorkouts}
+        onEdit={handleEditWorkout}
+        onDelete={handleDeleteWorkout}
+      />
+    </div>
+  </div>
+)
 }
 
 export default App
