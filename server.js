@@ -2,41 +2,24 @@
 const path = require('node:path')
 const express = require('express')
 const cors = require('cors')
-const { Pool } = require('pg')
 
 const app = express()
 const port = process.env.PORT || 3000
-
-// ====== DB (Postgres via Supabase) ======
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Supabase vyžaduje SSL
-})
-
-// vytvoření tabulky users, pokud neexistuje
-async function initDb() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
-    )
-  `)
-}
-
-initDb().catch((err) => {
-  console.error('Chyba při init DB:', err)
-  process.exit(1)
-})
 
 // ====== MIDDLEWARE ======
 app.use(express.json())
 app.use(cors())
 
-// ====== AUTH ROUTES ======
+// ====== USERS (v paměti) ======
+const users = []
+let nextUserId = 1
+
+function findUserByEmail(email) {
+  return users.find((u) => u.email === email)
+}
 
 // registrace
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', (req, res) => {
   const { email, password } = req.body
   if (!email || !password) {
     return res.status(400).json({
@@ -45,37 +28,25 @@ app.post('/api/register', async (req, res) => {
     })
   }
 
-  try {
-    const result = await pool.query(
-      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email',
-      [email, password] // demo: nehashované
-    )
-
-    const user = result.rows[0]
-
-    return res.json({
-      status: 'success',
-      userId: user.id,
-      email: user.email,
-    })
-  } catch (err) {
-    if (err.code === '23505') {
-      // unique_violation
-      return res.status(400).json({
-        status: 'error',
-        message: 'Uživatel už existuje',
-      })
-    }
-    console.error('Chyba při registraci:', err)
-    return res.status(500).json({
+  if (findUserByEmail(email)) {
+    return res.status(400).json({
       status: 'error',
-      message: 'Server error při registraci',
+      message: 'Uživatel už existuje',
     })
   }
+
+  const user = { id: nextUserId++, email, password } // demo: nehashované
+  users.push(user)
+
+  return res.json({
+    status: 'success',
+    userId: user.id,
+    email: user.email,
+  })
 })
 
 // login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', (req, res) => {
   const { email, password } = req.body
   if (!email || !password) {
     return res.status(400).json({
@@ -84,56 +55,28 @@ app.post('/api/login', async (req, res) => {
     })
   }
 
-  try {
-    const result = await pool.query(
-      'SELECT id, email, password FROM users WHERE email = $1',
-      [email]
-    )
-    const user = result.rows[0]
+  const user = findUserByEmail(email)
 
-    console.log('LOGIN DEBUG:', {
-      emailFromClient: email,
-      passwordFromClient: password,
-      userFromDb: user,
-    })
-
-    if (!user || user.password !== password) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Špatný email nebo heslo',
-      })
-    }
-
-    const token = String(user.id)
-
-    return res.json({
-      status: 'success',
-      token,
-      userId: user.id,
-      email: user.email,
-    })
-  } catch (err) {
-    console.error('Chyba při loginu:', err)
-    return res.status(500).json({
+  if (!user || user.password !== password) {
+    return res.status(401).json({
       status: 'error',
-      message: 'Server error při přihlášení',
+      message: 'Špatný email nebo heslo',
     })
   }
+
+  const token = String(user.id)
+
+  return res.json({
+    status: 'success',
+    token,
+    userId: user.id,
+    email: user.email,
+  })
 })
 
-
 // debug users
-app.get('/api/debug-users', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, email FROM users')
-    res.json(result.rows)
-  } catch (err) {
-    console.error('Chyba při debugování uživatelů:', err)
-    res.status(500).json({
-      status: 'error',
-      message: 'Server error při debugování uživatelů',
-    })
-  }
+app.get('/api/debug-users', (req, res) => {
+  res.json(users.map(({ id, email }) => ({ id, email })))
 })
 
 // ====== WORKOUTS (v paměti) ======
@@ -147,7 +90,9 @@ function findWorkout(id) {
 app.get('/api/workouts', (req, res) => {
   const userId = Number(req.headers['x-user-id'])
   if (!userId) {
-    return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+    return res
+      .status(401)
+      .json({ status: 'error', message: 'Chybí user id' })
   }
   const userWorkouts = workouts.filter((w) => w.userId === userId)
   res.json(userWorkouts)
@@ -166,7 +111,9 @@ app.post('/api/workouts', (req, res) => {
 
   const userId = Number(req.headers['x-user-id'])
   if (!userId) {
-    return res.status(401).json({ status: 'error', message: 'Chybí user id' })
+    return res
+      .status(401)
+      .json({ status: 'error', message: 'Chybí user id' })
   }
 
   const normalizedExercises = exercises.map((ex) => ({
@@ -191,8 +138,7 @@ app.post('/api/workouts', (req, res) => {
   res.json(workout)
 })
 
-// ... (další workout routes nech stejné)
-
+// TOD: sem můžeš vrátit svoje PUT/DELETE routes, zůstávají stejné jako dřív
 
 // ====== REACT BUILD ======
 const buildPath = path.join(__dirname, 'my-react-app', 'dist')
