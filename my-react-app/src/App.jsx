@@ -13,50 +13,39 @@ function App() {
   const [workouts, setWorkouts] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState(null) // { userId, email } nebo null
+  const [user, setUser] = useState(null)
 
   const [currentDate, setCurrentDate] = useState("")
   const [currentType, setCurrentType] = useState("push")
   const [currentExercises, setCurrentExercises] = useState([])
   const [currentNote, setCurrentNote] = useState("")
 
-  const [view, setView] = useState("dashboard") // "dashboard" | "newWorkout" | "editWorkout"
-
-  const [filters, setFilters] = useState({
-    type: "all",
-    from: "",
-    to: "",
-  })
-
-  const [statsSource, setStatsSource] = useState("all") // "all" nebo "filtered"
+  const [view, setView] = useState("dashboard")
+  const [filters, setFilters] = useState({ type: "all", from: "", to: "" })
+  const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
 
   const filteredWorkouts = workouts.filter((w) => {
     if (filters.type !== "all" && w.type !== filters.type) return false
-
     if (filters.from) {
       const fromDate = new Date(filters.from)
       const workoutDate = new Date(w.date)
       if (workoutDate < fromDate) return false
     }
-
     if (filters.to) {
       const toDate = new Date(filters.to)
       const workoutDate = new Date(w.date)
       if (workoutDate > toDate) return false
     }
-
     return true
   })
 
   const statsWorkouts = statsSource === "all" ? workouts : filteredWorkouts
 
-  // === AUTH – načtení session + posluchač změn ===
+  // AUTH
   useEffect(() => {
     const stored = localStorage.getItem("user")
-    if (stored) {
-      setUser(JSON.parse(stored))
-    }
+    if (stored) setUser(JSON.parse(stored))
 
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
@@ -84,7 +73,6 @@ function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // Login callback z Login komponenty (už používá Supabase)
   const handleLogin = (userInfo) => {
     setUser(userInfo)
     localStorage.setItem("user", JSON.stringify(userInfo))
@@ -97,7 +85,7 @@ function App() {
     localStorage.removeItem("user")
   }
 
-  // === Načtení tréninků ze Supabase (žádné /api už nepotřebuješ) ===
+  // LOAD WORKOUTS
   useEffect(() => {
     if (!user) return
 
@@ -131,7 +119,6 @@ function App() {
     setCurrentNote("")
   }
 
-  // === Uložení / update tréninku v Supabase ===
   const handleSave = async ({ date, type, exercises, note }) => {
     const payload = {
       user_id: user.userId,
@@ -143,7 +130,6 @@ function App() {
 
     try {
       let result
-
       if (editingId === null) {
         result = await supabase.from("workouts").insert(payload).select().single()
       } else {
@@ -159,13 +145,11 @@ function App() {
       const { data: savedWorkout, error } = result
       if (error) throw error
 
-      setWorkouts((prev) => {
-        if (editingId === null) {
-          return [savedWorkout, ...prev]
-        } else {
-          return prev.map((w) => (w.id === savedWorkout.id ? savedWorkout : w))
-        }
-      })
+      setWorkouts((prev) =>
+        editingId === null
+          ? [savedWorkout, ...prev]
+          : prev.map((w) => (w.id === savedWorkout.id ? savedWorkout : w))
+      )
       resetEditing()
     } catch (err) {
       console.error("Chyba při ukládání:", err)
@@ -204,7 +188,7 @@ function App() {
     }
   }
 
-  // === Login obrazovka ===
+  // LOGIN VIEW
   if (!user) {
     return (
       <div className="app">
@@ -214,7 +198,7 @@ function App() {
     )
   }
 
-  // === Dashboard ===
+  // DASHBOARD VIEW
   return (
     <div className="app">
       <h1 className="app-title">
@@ -234,7 +218,13 @@ function App() {
 
       {loading && <p>Načítám tréninky ze serveru…</p>}
 
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-start" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "flex-start",
+        }}
+      >
         <button
           type="button"
           className="btn btn-primary"
@@ -252,7 +242,34 @@ function App() {
         </button>
       </div>
 
-      {/* OVERLAY – jediný formulář */}
+      {/* Souhrn + Uložené tréninky vedle sebe */}
+      <div className="grid" style={{ marginBottom: 24 }}>
+        <StatsPanel workouts={statsWorkouts} />
+
+        <WorkoutList
+          workouts={filteredWorkouts}
+          onEdit={handleEditWorkout}
+          onDelete={handleDeleteWorkout}
+        />
+      </div>
+
+      {/* Týdenní plán + filtry pod tím */}
+      <WeeklyPlan
+        plan={weeklyPlan}
+        onChange={setWeeklyPlan}
+        onDayClick={(_index, dayPlan) => {
+          if (dayPlan.type === "off") {
+            setFilters((prev) => ({ ...prev, type: "all" }))
+          } else {
+            setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+          }
+          setStatsSource("filtered")
+        }}
+      />
+
+      <WorkoutFilters filters={filters} onChange={setFilters} />
+
+      {/* OVERLAY – formulář */}
       {view !== "dashboard" && (
         <div className="overlay">
           <button
@@ -283,32 +300,6 @@ function App() {
           />
         </div>
       )}
-
-      <StatsPanel workouts={statsWorkouts} />
-
-      <WeeklyPlan
-        plan={weeklyPlan}
-        onChange={setWeeklyPlan}
-        onDayClick={(_index, dayPlan) => {
-          if (dayPlan.type === "off") {
-            setFilters((prev) => ({ ...prev, type: "all" }))
-          } else {
-            setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-          }
-          setStatsSource("filtered")
-        }}
-      />
-
-      <WorkoutFilters filters={filters} onChange={setFilters} />
-
-      <div className="grid">
-        {console.log("DEBUG filteredWorkouts:", filteredWorkouts)}
-        <WorkoutList
-          workouts={filteredWorkouts}
-          onEdit={handleEditWorkout}
-          onDelete={handleDeleteWorkout}
-        />
-      </div>
     </div>
   )
 }
