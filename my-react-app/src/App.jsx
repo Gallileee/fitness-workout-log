@@ -242,10 +242,8 @@ function App() {
         </button>
       </div>
 
-      {/* Souhrn + Uložené tréninky vedle sebe */}
       <div className="grid" style={{ marginBottom: 24 }}>
         <StatsPanel workouts={statsWorkouts} />
-
         <WorkoutList
           workouts={filteredWorkouts}
           onEdit={handleEditWorkout}
@@ -253,7 +251,6 @@ function App() {
         />
       </div>
 
-      {/* Týdenní plán + filtry pod tím */}
       <WeeklyPlan
         plan={weeklyPlan}
         onChange={setWeeklyPlan}
