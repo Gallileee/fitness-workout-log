@@ -9,7 +9,7 @@ function WorkoutList({ workouts, onEdit, onDelete }) {
       {list.length === 0 ? (
         <p>Zatím žádné tréninky.</p>
       ) : (
-        <ul className="workout-list">
+        <ul className="workout-list" style={{ marginTop: 8 }}>
           {list.map((w) => (
             <li key={w.id} className="workout-item">
               <div className="workout-header">

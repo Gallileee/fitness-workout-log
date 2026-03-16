@@ -37,7 +37,7 @@ function StatsPanel({ workouts }) {
     totalWorkouts > 0 ? Math.round(totalVolume / totalWorkouts) : 0
 
 return (
-  <div className="card" style={{ marginBottom: 24 }}>
+  <div className="card" style={{ marginBottom: 0, display: "flex", flexDirection: "column" }}>
     <h2>Souhrn</h2>
 
     {totalWorkouts === 0 ? (
