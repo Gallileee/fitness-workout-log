@@ -3,15 +3,16 @@ function WorkoutList({ workouts, onEdit, onDelete }) {
   const list = Array.isArray(workouts) ? workouts : []
 
   return (
-    <div className="card">
+    <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column", paddingBottom: "20px", marginTop: "0px" }}>
       <h2>Uložené tréninky</h2>
 
       {list.length === 0 ? (
         <p>Zatím žádné tréninky.</p>
-      ) : (
-        <ul className="workout-list" style={{ paddingLeft: 0, marginTop: 0 }}>
-          {list.map((w) => (
-            <li key={w.id} className="workout-card">
+      ) : ( 
+        <div className="workout-list-scroll">
+          <ul className="workout-list">
+            {list.map((w) => (
+              <li key={w.id} className="workout-card">
               <div className="workout-header">
                 <span>
                   {w.date || "Bez data"} • {w.type || "Bez typu"}
@@ -57,9 +58,11 @@ function WorkoutList({ workouts, onEdit, onDelete }) {
             </li>
           ))}
         </ul>
+      </div>
       )}
     </div>
+    
   )
-}
+} 
 
 export default WorkoutList

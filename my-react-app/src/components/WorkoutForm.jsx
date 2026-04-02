@@ -1,6 +1,11 @@
 // src/components/WorkoutForm.jsx
 import { useState, useEffect } from "react"
 import { exercises as exercisesDb } from "../data/exercises.js"
+import DateWFo from "./DateWFo.jsx"
+
+
+
+
 
 function WorkoutForm({
   initialDate,
@@ -96,18 +101,17 @@ function WorkoutForm({
     <div className="card">
       <h2>{isEditing ? "Upravit trénink" : "Nový trénink"}</h2>
 
-      <form onSubmit={handleSubmit}>
-        <div className="field">
-          <label className="label">
-            Datum
-          </label>
-          <input
-            className="input"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </div>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 550 }}>
+        
+
+            <div className="field" style={{ maxWidth: 505 }}>
+              <DateChip
+                label="Datum"
+                value={date}
+                onChange={setDate}
+                placeholder="dd. mm. rr"
+              />
+            </div>
 
         <div className="field">
           <label className="label">
@@ -218,7 +222,7 @@ function WorkoutForm({
           </ul>
         )}
 
-        <div className="field" style={{ marginTop: 16 }}>
+        <div className="field" style={{ marginTop: 16, marginRight: 20 }}>
           <label className="label">
             Poznámka k tréninku
           </label>

@@ -1,16 +1,17 @@
+import DateWFi from "./DateWFi.jsx"
+
+
+
 function WorkoutFilters({ filters, onChange }) {
   const handleTypeChange = (e) => {
     onChange({ ...filters, type: e.target.value })
   }
-
   const handleFromChange = (e) => {
     onChange({ ...filters, from: e.target.value })
   }
-
   const handleToChange = (e) => {
     onChange({ ...filters, to: e.target.value })
   }
-
   const handleReset = () => {
     onChange({ type: "all", from: "", to: "" })
   }
@@ -44,27 +45,27 @@ function WorkoutFilters({ filters, onChange }) {
           </select>
         </div>
 
-        <div className="field">
-          <label className="label">Od data</label>
-          <input
-            type="date"
-            className="input"
-            value={filters.from}
-            onChange={handleFromChange}
-          />
-        </div>
+<div className="input-row">
+  <DateChip
+    label="Od data"
+    value={filters.from}
+    onChange={(v) =>
+      onChange((prev) => ({ ...prev, from: v }))
+    }
+    placeholder="dd. mm. rr"
+  />
+  <DateChip
+    label="Do data"
+    value={filters.to}
+    onChange={(v) =>
+      onChange((prev) => ({ ...prev, to: v }))
+    }
+    placeholder="dd. mm. rr"
+  />
+</div>
 
-        <div className="field">
-          <label className="label">Do data</label>
-          <input
-            type="date"
-            className="input"
-            value={filters.to}
-            onChange={handleToChange}
-          />
-        </div>
 
-        <div className="field" style={{ marginLeft: "auto" }}>
+  <div className="field" style={{ marginLeft: "auto" }}>
           <button
             className="btn btn-primary"
             type="button"
@@ -79,3 +80,42 @@ function WorkoutFilters({ filters, onChange }) {
 }
 
 export default WorkoutFilters
+
+
+
+
+
+function FakeDateInput({ label, value, onChange }) {
+  const handleClick = (e) => {
+    const native = e.currentTarget.querySelector("input[type='date']")
+    if (native) {
+      native.showPicker?.() // podporuje většina moderních prohlížečů
+      native.focus()
+    }
+  }
+
+  return (
+    <div className="field">
+      <label className="label">{label}</label>
+      <div className="fake-date-wrapper" onClick={handleClick}>
+        <input
+          type="text"
+          className="fake-date-input"
+          readOnly
+          value={value || "dd. mm. yyyy"}
+        />
+        <input
+          type="date"
+          className="hidden-native-date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <img
+          className="fake-date-icon"
+          src="https://www.svgrepo.com/show/533381/calendar-alt.svg"
+          alt=""
+        />
+      </div>
+    </div>
+  )
+}

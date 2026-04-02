@@ -25,6 +25,11 @@ function App() {
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
 
+  // nový stav pro layout
+  const [layout, setLayout] = useState(
+    window.innerWidth < 768 ? "mobile" : "desktop"
+  )
+
   const filteredWorkouts = workouts.filter((w) => {
     if (filters.type !== "all" && w.type !== filters.type) return false
     if (filters.from) {
@@ -71,6 +76,15 @@ function App() {
     )
 
     return () => listener.subscription.unsubscribe()
+  }, [])
+
+  // automatická změna layoutu podle šířky okna
+  useEffect(() => {
+    const onResize = () => {
+      setLayout(window.innerWidth < 768 ? "mobile" : "desktop")
+    }
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
   }, [])
 
   const handleLogin = (userInfo) => {
@@ -208,10 +222,20 @@ function App() {
           <button
             type="button"
             className="btn btn-outline"
-            style={{ fontSize: 12, padding: "2px 8px" }}
+            style={{ fontSize: 12, padding: "2px 8px", marginLeft: 4 }}
             onClick={handleLogout}
           >
             Logout
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ fontSize: 12, padding: "2px 8px", marginLeft: 8 }}
+            onClick={() =>
+              setLayout((prev) => (prev === "desktop" ? "mobile" : "desktop"))
+            }
+          >
+            {layout === "desktop" ? "Mobilní UI" : "Desktop UI"}
           </button>
         </span>
       </h1>
@@ -242,33 +266,63 @@ function App() {
         </button>
       </div>
 
-      <div className="grid" style={{ marginBottom: 24 }}>
-        <StatsPanel workouts={statsWorkouts} />
-        <WorkoutList
-          workouts={filteredWorkouts}
-          onEdit={handleEditWorkout}
-          onDelete={handleDeleteWorkout}
-        />
-      </div>
+      {layout === "desktop" ? (
+        <>
+          {/* desktop – souhrn + seznam vedle sebe */}
+          <div className="grid" style={{ marginBottom: 24 }}>
+            <StatsPanel workouts={statsWorkouts} />
+            <WorkoutList
+              workouts={filteredWorkouts}
+              onEdit={handleEditWorkout}
+              onDelete={handleDeleteWorkout}
+            />
+          </div>
 
-      <WeeklyPlan
-        plan={weeklyPlan}
-        onChange={setWeeklyPlan}
-        onDayClick={(_index, dayPlan) => {
-          if (dayPlan.type === "off") {
-            setFilters((prev) => ({ ...prev, type: "all" }))
-          } else {
-            setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-          }
-          setStatsSource("filtered")
-        }}
-      />
+          <WeeklyPlan
+            plan={weeklyPlan}
+            onChange={setWeeklyPlan}
+            onDayClick={(_index, dayPlan) => {
+              if (dayPlan.type === "off") {
+                setFilters((prev) => ({ ...prev, type: "all" }))
+              } else {
+                setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+              }
+              setStatsSource("filtered")
+            }}
+          />
 
-      <WorkoutFilters filters={filters} onChange={setFilters} />
+          <WorkoutFilters filters={filters} onChange={setFilters} />
+        </>
+      ) : (
+        <>
+          {/* mobile – vše pod sebou v jiném pořadí */}
+          <StatsPanel workouts={statsWorkouts} />
 
-      {/* OVERLAY – formulář */}
+          <WorkoutFilters filters={filters} onChange={setFilters} />
+
+          <WorkoutList
+            workouts={filteredWorkouts}
+            onEdit={handleEditWorkout}
+            onDelete={handleDeleteWorkout}
+          />
+
+          <WeeklyPlan
+            plan={weeklyPlan}
+            onChange={setWeeklyPlan}
+            onDayClick={(_index, dayPlan) => {
+              if (dayPlan.type === "off") {
+                setFilters((prev) => ({ ...prev, type: "all" }))
+              } else {
+                setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+              }
+              setStatsSource("filtered")
+            }}
+          />
+        </>
+      )}
+
       {view !== "dashboard" && (
-        <div className="overlay">
+        <div className="overlay" style={{ zIndex: 200 }}>
           <button
             type="button"
             className="btn btn-outline"

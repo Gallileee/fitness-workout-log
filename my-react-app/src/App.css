@@ -6,16 +6,16 @@ body {
 }
 
 .app {
-  max-width: 900px;
+  max-width: 1150px;
   margin: 0 auto;
   padding: 24px 16px;
 }
 
 .app-title {
-  align-self: center;
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 700;
   margin-bottom: 16px;
+  padding-left: 430px;
 }
 
 .grid {
@@ -23,6 +23,7 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   align-items: stretch;
+  padding-bottom: 40px;
 }
 
 @media (max-width: 800px) {
@@ -129,18 +130,18 @@ body {
 }
 
 .exercise-list li {
-  font-size: 14px;
+  font-size: 20px;
   margin-bottom: 4px;
 }
 
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 200;
 }
 
 .overlay-card {
@@ -156,16 +157,17 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
+  padding-bottom: 0px;
 }
 
 .stat-label {
-  font-size: 13px;
+  font-size: 26px;
   color: #9ca3af;
   margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 38px;
   font-weight: 600;
 }
 
@@ -178,6 +180,7 @@ body {
 .btn-primary {
   background: #2563eb;
   color: #e5e7eb;
+
 }
 
 
@@ -191,7 +194,24 @@ body {
   border-radius: 16px;
   padding: 20px 20px;        /* stejné zleva i zprava */
   border: 1px solid #1f2937;
+  display: flex;
+  flex-direction: column;
 }
+
+
+
+
+/* .custom-date-wrapper input[type="date"] {
+  position: relative;
+}
+
+/* schovat nativní ikonku (WebKit) 
+.custom-date-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+} */
+
+
 
 /* karta jednoho workoutu uvnitř seznamu */
 .workout-card {
@@ -206,4 +226,140 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.workout-list-scroll {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* schovat nativní ikonu kalendáře (Chrome, Safari, Edge) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* naše vlastní ikona kalendáře – platí pro všechny date inputy */
+input[type="date"] {
+  position: relative;
+  padding-right: 32px; /* místo pro ikonku vpravo */
+  background-image: url("calendar.svg");
+  /* url("https://www.svgrepo.com/show/533381/calendar-alt.svg"); */
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.2rem 1.2rem;
+}
+
+.fake-date-wrapper {
+  position: relative;
+}
+
+.fake-date-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #1f2933;
+  background: #020617;
+  color: #e5e7eb;
+  padding: 8px 38px 8px 10px; /* místo pro ikonu vpravo */
+  font-size: 14px;
+}
+
+/* skrytý skutečný date input */
+.hidden-native-date {
+  position: relative;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* naše ikona kalendáře */
+.fake-date-icon {
+  position: relative;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  background-image: url("calendar.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.date-field {
+  position: relative;
+  cursor: pointer;
+}
+
+/* .date-input-clickable {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #1f2933;
+  background: #020617;
+  color: #e5e7eb;
+  padding: 8px 38px 8px 10px; /* místo pro ikonu vpravo 
+  font-size: 14px;
+} */
+
+/* schovat nativní ikonku (Chrome, Safari, Edge) */
+.date-input-clickable::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* naše ikona z public/calendar.svg */
+.date-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* tmavý widget */
+.date-input-clickable {
+  color-scheme: dark;
+}
+
+.date-chip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #1f2933;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.date-chip-placeholder {
+  color: #6b7280; /* světlejší text pro placeholder */
+}
+
+.date-chip-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* skrytý nativní input */
+.hidden-date-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
 }
