@@ -46,15 +46,15 @@ function WorkoutFilters({ filters, onChange }) {
         </div>
 
 <div className="input-row">
-  <DateChip
+  <DateWFi
     label="Od data"
     value={filters.from}
     onChange={(v) =>
       onChange((prev) => ({ ...prev, from: v }))
     }
-    placeholder="dd. mm. rr"
   />
-  <DateChip
+  
+  <DateWFi
     label="Do data"
     value={filters.to}
     onChange={(v) =>

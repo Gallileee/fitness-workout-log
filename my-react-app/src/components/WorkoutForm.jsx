@@ -105,12 +105,12 @@ function WorkoutForm({
         
 
             <div className="field" style={{ maxWidth: 505 }}>
-              <DateChip
-                label="Datum"
-                value={date}
-                onChange={setDate}
-                placeholder="dd. mm. rr"
-              />
+              <DateWFo
+              label="Datum"
+              value={date}
+              onChange={setDate}
+              placeholder="dd. mm. rr"
+            />
             </div>
 
         <div className="field">
