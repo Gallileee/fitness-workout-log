@@ -1,5 +1,15 @@
 // src/components/StatsPanel.jsx
-function StatsPanel({ workouts }) {
+import WeeklyPlan from "./WeeklyPlan"
+import WorkoutFilters from "./WorkoutFilters"
+
+function StatsPanel({
+  workouts,
+  weeklyPlan,
+  onWeeklyPlanChange,
+  onWeeklyPlanDayClick,
+  filters,
+  onFiltersChange,
+}) {
   const list = Array.isArray(workouts) ? workouts : []
 
   const totalWorkouts = list.length
@@ -62,6 +72,22 @@ function StatsPanel({ workouts }) {
           </div>
         </div>
       )}
+
+      {/* Weekly Plan embedded in Stats Panel */}
+      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "8px", minHeight: 0 }}>
+        <h3 style={{ fontSize: "16px", margin: "0 0 6px 0", fontWeight: 600, color: "#9ca3af" }}>Týdenní plán PPL</h3>
+        <WeeklyPlan
+          plan={weeklyPlan}
+          onChange={onWeeklyPlanChange}
+          onDayClick={onWeeklyPlanDayClick}
+          isEmbedded={true}
+        />
+      </div>
+
+      {/* Filters embedded in Stats Panel */}
+      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "8px", minHeight: 0 }}>
+        <WorkoutFilters filters={filters} onChange={onFiltersChange} />
+      </div>
     </div>
   )
 }

@@ -4,8 +4,7 @@ import "./App.css"
 import WorkoutForm from "./components/WorkoutForm"
 import WorkoutList from "./components/WorkoutList"
 import StatsPanel from "./components/StatsPanel"
-import WorkoutFilters from "./components/WorkoutFilters"
-import WeeklyPlan, { createDefaultWeeklyPlan } from "./components/WeeklyPlan"
+import { createDefaultWeeklyPlan } from "./components/WeeklyPlan"
 import Login from "./components/Login"
 import { supabase } from "./supabaseClient"
 
@@ -231,31 +230,29 @@ function App() {
       </div>
 
       <div className="dashboard-container">
-        {/* Stats and List side-by-side on desktop, stacked on mobile */}
+        {/* List (left) and Stats (with Weekly Plan and Filters embedded) (right) side-by-side on desktop, stacked on mobile */}
         <div className="main-grid">
-          <StatsPanel workouts={statsWorkouts} />
           <WorkoutList
             workouts={filteredWorkouts}
             onEdit={handleEditWorkout}
             onDelete={handleDeleteWorkout}
           />
+          <StatsPanel
+            workouts={statsWorkouts}
+            weeklyPlan={weeklyPlan}
+            onWeeklyPlanChange={setWeeklyPlan}
+            onWeeklyPlanDayClick={(_index, dayPlan) => {
+              if (dayPlan.type === "off") {
+                setFilters((prev) => ({ ...prev, type: "all" }))
+              } else {
+                setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+              }
+              setStatsSource("filtered")
+            }}
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
         </div>
-
-        {/* Filters and Weekly Plan stack below */}
-        <WorkoutFilters filters={filters} onChange={setFilters} />
-
-        <WeeklyPlan
-          plan={weeklyPlan}
-          onChange={setWeeklyPlan}
-          onDayClick={(_index, dayPlan) => {
-            if (dayPlan.type === "off") {
-              setFilters((prev) => ({ ...prev, type: "all" }))
-            } else {
-              setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-            }
-            setStatsSource("filtered")
-          }}
-        />
       </div>
 
       {view !== "dashboard" && (

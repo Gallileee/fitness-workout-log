@@ -10,7 +10,7 @@ const OPTIONS = [
   { value: "other",    label: "Other" },
 ]
 
-function WeeklyPlan({ plan, onChange, onDayClick }) {
+function WeeklyPlan({ plan, onChange, onDayClick, isEmbedded = false }) {
   // Pokud plan náhodou přijde jako objekt, převedeme ho na pole:
   const list = Array.isArray(plan) ? plan : Object.values(plan || {})
 
@@ -21,44 +21,55 @@ function WeeklyPlan({ plan, onChange, onDayClick }) {
     onChange(next)
   }
 
+  const content = (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {list.map((day, index) => (
+        <div
+          key={day.day}
+          style={{
+            minWidth: 110,
+            padding: 6,
+            borderRadius: 8,
+            border: "1px solid #1f2937",
+            background: day.type === "off" ? "transparent" : "#020617",
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+          onClick={() => onDayClick(index, day)}
+        >
+          <div style={{ fontSize: "14px", marginBottom: 3 }}>{day.day}</div>
+          <select
+            className="select"
+            value={day.type}
+            onChange={(e) => {
+              e.stopPropagation()
+              handleTypeChange(index, e.target.value)
+            }}
+            style={{ fontSize: "14px", padding: "4px 6px" }}
+          >
+            {OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ))}
+    </div>
+  )
+
+  if (isEmbedded) {
+    return content
+  }
+
   return (
     <div className="card" style={{ marginBottom: 24 }}>
       <h2>Týdenní plán PPL</h2>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        {list.map((day, index) => (
-          <div
-            key={day.day}
-            style={{
-              minWidth: 130,
-              padding: 8,
-              borderRadius: 8,
-              border: "1px solid #1f2937",
-              background: day.type === "off" ? "transparent" : "#020617",
-              cursor: "pointer",
-            }}
-            onClick={() => onDayClick(index, day)}
-          >
-            <div style={{ fontSize: 14, marginBottom: 4 }}>{day.day}</div>
-            <select
-              className="select"
-              value={day.type}
-              onChange={(e) => {
-                e.stopPropagation()
-                handleTypeChange(index, e.target.value)
-              }}
-            >
-              {OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
-      </div>
+      {content}
     </div>
   )
 }
+
 // helper na výchozí týdenní plán
 export function createDefaultWeeklyPlan() {
   return [
