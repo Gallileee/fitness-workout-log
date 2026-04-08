@@ -25,11 +25,6 @@ function App() {
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
 
-  // nový stav pro layout
-  const [layout, setLayout] = useState(
-    window.innerWidth < 768 ? "mobile" : "desktop"
-  )
-
   const filteredWorkouts = workouts.filter((w) => {
     if (filters.type !== "all" && w.type !== filters.type) return false
     if (filters.from) {
@@ -76,15 +71,6 @@ function App() {
     )
 
     return () => listener.subscription.unsubscribe()
-  }, [])
-
-  // automatická změna layoutu podle šířky okna
-  useEffect(() => {
-    const onResize = () => {
-      setLayout(window.innerWidth < 768 ? "mobile" : "desktop")
-    }
-    window.addEventListener("resize", onResize)
-    return () => window.removeEventListener("resize", onResize)
   }, [])
 
   const handleLogin = (userInfo) => {
@@ -215,48 +201,26 @@ function App() {
   // DASHBOARD VIEW
   return (
     <div className="app">
-      <h1 className="app-title">
-        Fitness tracker{" "}
-        <span style={{ fontSize: 14, marginLeft: 8 }}>
-          ({user.email}){" "}
+      <header className="app-header">
+        <h1 className="app-title">Fitness tracker</h1>
+        <div className="app-header-controls">
+          <span className="user-email">{user.email}</span>
           <button
             type="button"
-            className="btn btn-outline"
-            style={{ fontSize: 12, padding: "2px 8px", marginLeft: 4 }}
+            className="btn btn-outline btn-small"
             onClick={handleLogout}
           >
             Logout
           </button>
-          <button
-            type="button"
-            className="btn btn-outline"
-            style={{ fontSize: 12, padding: "2px 8px", marginLeft: 8 }}
-            onClick={() =>
-              setLayout((prev) => (prev === "desktop" ? "mobile" : "desktop"))
-            }
-          >
-            {layout === "desktop" ? "Mobilní UI" : "Desktop UI"}
-          </button>
-        </span>
-      </h1>
+        </div>
+      </header>
 
-      {loading && <p>Načítám tréninky ze serveru…</p>}
+      {loading && <p className="loading-text">Načítám tréninky ze serveru…</p>}
 
-      <div
-        style={{
-          marginBottom: 16,
-          display: "flex",
-          justifyContent: "flex-start",
-        }}
-      >
+      <div className="action-bar">
         <button
           type="button"
-          className="btn btn-primary"
-          style={{
-            padding: "12px 24px",
-            fontSize: 16,
-            borderRadius: 9999,
-          }}
+          className="btn btn-primary btn-lg"
           onClick={() => {
             resetEditing()
             setView("newWorkout")
@@ -266,60 +230,33 @@ function App() {
         </button>
       </div>
 
-      {layout === "desktop" ? (
-        <>
-          {/* desktop – souhrn + seznam vedle sebe */}
-          <div className="grid" style={{ marginBottom: 24 }}>
-            <StatsPanel workouts={statsWorkouts} />
-            <WorkoutList
-              workouts={filteredWorkouts}
-              onEdit={handleEditWorkout}
-              onDelete={handleDeleteWorkout}
-            />
-          </div>
-
-          <WeeklyPlan
-            plan={weeklyPlan}
-            onChange={setWeeklyPlan}
-            onDayClick={(_index, dayPlan) => {
-              if (dayPlan.type === "off") {
-                setFilters((prev) => ({ ...prev, type: "all" }))
-              } else {
-                setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-              }
-              setStatsSource("filtered")
-            }}
-          />
-
-          <WorkoutFilters filters={filters} onChange={setFilters} />
-        </>
-      ) : (
-        <>
-          {/* mobile – vše pod sebou v jiném pořadí */}
+      <div className="dashboard-container">
+        {/* Stats and List side-by-side on desktop, stacked on mobile */}
+        <div className="main-grid">
           <StatsPanel workouts={statsWorkouts} />
-
-          <WorkoutFilters filters={filters} onChange={setFilters} />
-
           <WorkoutList
             workouts={filteredWorkouts}
             onEdit={handleEditWorkout}
             onDelete={handleDeleteWorkout}
           />
+        </div>
 
-          <WeeklyPlan
-            plan={weeklyPlan}
-            onChange={setWeeklyPlan}
-            onDayClick={(_index, dayPlan) => {
-              if (dayPlan.type === "off") {
-                setFilters((prev) => ({ ...prev, type: "all" }))
-              } else {
-                setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-              }
-              setStatsSource("filtered")
-            }}
-          />
-        </>
-      )}
+        {/* Filters and Weekly Plan stack below */}
+        <WorkoutFilters filters={filters} onChange={setFilters} />
+
+        <WeeklyPlan
+          plan={weeklyPlan}
+          onChange={setWeeklyPlan}
+          onDayClick={(_index, dayPlan) => {
+            if (dayPlan.type === "off") {
+              setFilters((prev) => ({ ...prev, type: "all" }))
+            } else {
+              setFilters((prev) => ({ ...prev, type: dayPlan.type }))
+            }
+            setStatsSource("filtered")
+          }}
+        />
+      </div>
 
       {view !== "dashboard" && (
         <div className="overlay" style={{ zIndex: 200 }}>

@@ -1,7 +1,7 @@
 // src/components/WorkoutForm.jsx
 import { useState, useEffect } from "react"
 import { exercises as exercisesDb } from "../data/exercises.js"
-import DateWFo from "./DateWFo.jsx"
+import DatePicker from "./DatePicker.jsx"
 
 
 
@@ -104,14 +104,14 @@ function WorkoutForm({
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 550 }}>
         
 
-            <div className="field" style={{ maxWidth: 505 }}>
-              <DateWFo
-              label="Datum"
-              value={date}
-              onChange={setDate}
-              placeholder="dd. mm. rr"
-            />
-            </div>
+        <div className="field" style={{ maxWidth: 505 }}>
+          <DatePicker
+            label="Datum"
+            value={date}
+            onChange={setDate}
+            placeholder="dd. mm. rr"
+          />
+        </div>
 
         <div className="field">
           <label className="label">

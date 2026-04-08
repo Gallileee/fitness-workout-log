@@ -1,4 +1,4 @@
-import DateWFi from "./DateWFi.jsx"
+import DatePicker from "./DatePicker.jsx"
 
 
 
@@ -46,7 +46,7 @@ function WorkoutFilters({ filters, onChange }) {
         </div>
 
 <div className="input-row">
-  <DateWFi
+  <DatePicker
     label="Od data"
     value={filters.from}
     onChange={(v) =>
@@ -54,7 +54,7 @@ function WorkoutFilters({ filters, onChange }) {
     }
   />
   
-  <DateWFi
+  <DatePicker
     label="Do data"
     value={filters.to}
     onChange={(v) =>
