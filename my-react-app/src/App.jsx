@@ -257,17 +257,6 @@ function App() {
 
       {view !== "dashboard" && (
         <div className="overlay" style={{ zIndex: 200 }}>
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => {
-              setView("dashboard")
-              resetEditing()
-            }}
-          >
-            Back to dashboard
-          </button>
-
           <WorkoutForm
             initialDate={currentDate}
             initialType={currentType}

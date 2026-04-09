@@ -346,7 +346,7 @@ body {
   background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   z-index: 200;
   padding: var(--spacing-lg);
 }
@@ -355,11 +355,20 @@ body {
   background: #111827;
   border-radius: 16px;
   padding: var(--spacing-lg);
-  width: 100%;
-  max-width: 520px;
+  width: calc(50% - 6px);
+  max-width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  margin-left: 6px;
+}
+
+/* Mobile: overlay card full width */
+@media (max-width: 767px) {
+  .overlay-card {
+    width: calc(100% - 12px);
+    margin-left: 6px;
+  }
 }
 
 /* Tablet (480px+) */

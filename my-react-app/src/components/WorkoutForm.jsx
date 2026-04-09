@@ -99,128 +99,157 @@ function WorkoutForm({
 
   return (
     <div className="card">
-      <h2>{isEditing ? "Upravit trénink" : "Nový trénink"}</h2>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: 12, position: "relative" }}>
+        <h2 style={{ margin: 0 }}>{isEditing ? "Upravit trénink" : "Nový trénink"}</h2>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 550 }}>
+        <button
+          type="button"
+          className="btn btn-outline btn-small"
+          onClick={onCancel}
+          style={{ position: "absolute", right: 0 }}
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 550, paddingLeft: 0 }}>
         
+        {/* Title for Date & Type section */}
+        <label style={{ fontSize: "14px", fontWeight: 500, color: "#9ca3af", marginBottom: "-8px" }}>
+          Info
+        </label>
 
-        <div className="field" style={{ maxWidth: 505 }}>
-          <DatePicker
-            label="Datum"
-            value={date}
-            onChange={setDate}
-            placeholder="dd. mm. rr"
-          />
-        </div>
-
-        <div className="field">
-          <label className="label">
-            Typ tréninku
-          </label>
-          <select
-            className="select"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
-            <option value="fullbody">Full body</option>
-            <option value="push">Push</option>
-            <option value="pull">Pull</option>
-            <option value="legs">Legs</option>
-            <option value="core">Core</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <h2 style={{ marginTop: 20, marginBottom: 8 }}>Cviky v tréninku</h2>
-
-        <div className="field" style={{ marginBottom: 8 }}>
-          <label className="label">
-            Způsob zadání cviku
-          </label>
-          <label style={{ fontSize: 14 }}>
-            <input
-              type="checkbox"
-              checked={useCustomExercise}
-              onChange={(e) => setUseCustomExercise(e.target.checked)}
-              style={{ marginRight: 6 }}
+        {/* Date and Type side by side */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div className="field" style={{ flex: 1, minWidth: 200 }}>
+            <DatePicker
+              label="Datum"
+              value={date}
+              onChange={setDate}
+              placeholder="dd. mm. rr"
             />
-            Použít vlastní název cviku
-          </label>
-        </div>
+          </div>
 
-        <div className="input-row">
-          {useCustomExercise ? (
-            <input
-              className="input"
-              type="text"
-              placeholder="Vlastní název cviku"
-              value={customExerciseName}
-              onChange={(e) => setCustomExerciseName(e.target.value)}
-            />
-          ) : (
+          <div className="field" style={{ flex: 1, minWidth: 200 }}>
+            <label className="label">
+              Typ tréninku
+            </label>
             <select
-              className="input"
-              value={exerciseName}
-              onChange={(e) => setExerciseName(e.target.value)}
+              className="select"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
             >
-              <option value="">Vyber cvik...</option>
-              {filteredExercises.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+              <option value="fullbody">Full body</option>
+              <option value="push">Push</option>
+              <option value="pull">Pull</option>
+              <option value="legs">Legs</option>
+              <option value="core">Core</option>
+              <option value="other">Other</option>
             </select>
-          )}
-
-          <input
-            className="input input-small"
-            type="number"
-            min="1"
-            placeholder="Série"
-            value={sets}
-            onChange={(e) => setSets(e.target.value)}
-          />
-          <input
-            className="input input-small"
-            type="number"
-            min="1"
-            placeholder="Opakování"
-            value={reps}
-            onChange={(e) => setReps(e.target.value)}
-          />
-          <input
-            className="input input-small"
-            type="number"
-            min="0"
-            placeholder="Váha (kg)"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-          />
-          <button className="btn btn-outline" onClick={handleAddExercise}>
-            Přidat cvik
-          </button>
+          </div>
         </div>
 
-        {exercises.length === 0 ? (
-          <p>Zatím žádný cvik.</p>
-        ) : (
-          <ul className="exercise-list">
-            {exercises.map((ex) => (
-              <li key={ex.id}>
-                <strong>{ex.name}</strong>{" "}
-                — {ex.sets}×{ex.reps} @ {ex.weight} kg{" "}
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ padding: "2px 8px", fontSize: 12 }}
-                  onClick={() => handleRemoveExercise(ex.id)}
+        <h2 style={{ marginTop: 0, marginBottom: 12 }}>Cviky v tréninku</h2>
+
+        {/* Left: Exercise input options, Right: Exercise list */}
+        <div style={{ display: "flex", gap: 12, minHeight: 220 }}>
+          {/* LEFT SIDE: Input Options */}
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div className="field" style={{ marginBottom: 8 }}>
+              <label className="label">
+                Způsob zadání cviku
+              </label>
+              <label style={{ fontSize: 14 }}>
+                <input
+                  type="checkbox"
+                  checked={useCustomExercise}
+                  onChange={(e) => setUseCustomExercise(e.target.checked)}
+                  style={{ marginRight: 6 }}
+                />
+                Použít vlastní název cviku
+              </label>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {useCustomExercise ? (
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Vlastní název cviku"
+                  value={customExerciseName}
+                  onChange={(e) => setCustomExerciseName(e.target.value)}
+                />
+              ) : (
+                <select
+                  className="input"
+                  value={exerciseName}
+                  onChange={(e) => setExerciseName(e.target.value)}
                 >
-                  Smazat
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <option value="">Vyber cvik...</option>
+                  {filteredExercises.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <input
+                className="input"
+                type="number"
+                min="1"
+                placeholder="Série"
+                value={sets}
+                onChange={(e) => setSets(e.target.value)}
+              />
+              <input
+                className="input"
+                type="number"
+                min="1"
+                placeholder="Opakování"
+                value={reps}
+                onChange={(e) => setReps(e.target.value)}
+              />
+              <input
+                className="input"
+                type="number"
+                min="0"
+                placeholder="Váha (kg)"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+              />
+              <button className="btn btn-outline" onClick={handleAddExercise}>
+                Přidat cvik
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Exercise List */}
+          <div style={{ flex: 1, minWidth: 400, borderLeft: "1px solid #1f2937", paddingLeft: 12, maxHeight: 400, overflowY: "auto", paddingRight: 6 }}>
+            {exercises.length === 0 ? (
+              <p style={{ fontSize: 14, color: "#9ca3af" }}>Zatím žádný cvik.</p>
+            ) : (
+              <ul className="exercise-list" style={{ margin: 0, padding: 0 }}>
+                {exercises.map((ex) => (
+                  <li key={ex.id} style={{ fontSize: 13, marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #1f2937" }}>
+                    <div>
+                      <strong>{ex.name}</strong> — {ex.sets}×{ex.reps} @ {ex.weight} kg
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      style={{ marginTop: 6, fontSize: 11 }}
+                      onClick={() => handleRemoveExercise(ex.id)}
+                    >
+                      Smazat
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
 
         <div className="field" style={{ marginTop: 16, marginRight: 20 }}>
           <label className="label">

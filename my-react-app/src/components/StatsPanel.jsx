@@ -74,7 +74,7 @@ function StatsPanel({
       )}
 
       {/* Weekly Plan embedded in Stats Panel */}
-      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "8px", minHeight: 0 }}>
+      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "40px", minHeight: 0, paddingBottom: 40 }}>
         <h3 style={{ fontSize: "16px", margin: "0 0 6px 0", fontWeight: 600, color: "#9ca3af" }}>Týdenní plán PPL</h3>
         <WeeklyPlan
           plan={weeklyPlan}
@@ -85,7 +85,7 @@ function StatsPanel({
       </div>
 
       {/* Filters embedded in Stats Panel */}
-      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "8px", minHeight: 0 }}>
+      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "40px", minHeight: 0, paddingBottom: 40 }}>
         <WorkoutFilters filters={filters} onChange={onFiltersChange} />
       </div>
     </div>
