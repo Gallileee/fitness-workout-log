@@ -47,13 +47,13 @@ function StatsPanel({
     totalWorkouts > 0 ? Math.round(totalVolume / totalWorkouts) : 0
 
   return (
-    <div className="card">
+    <div className="card" style={{ maxHeight: screen.height - 400, overflowY: "auto" }}>
       <h2>Souhrn</h2>
 
       {totalWorkouts === 0 ? (
         <p>Zatím žádná data pro statistiky.</p>
       ) : (
-        <div className="stats-grid">
+        <div className="stats-grid" style={{   }}>
           <div className="stat">
             <div className="stat-label">Počet tréninků</div>
             <div className="stat-value">{totalWorkouts}</div>
@@ -74,7 +74,7 @@ function StatsPanel({
       )}
 
       {/* Weekly Plan embedded in Stats Panel */}
-      <div style={{ marginTop: "8px", borderTop: "1px solid #1f2937", paddingTop: "40px", minHeight: 0, paddingBottom: 40 }}>
+      <div style={{ marginTop: "0px", borderTop: "1px solid #1f2937", paddingTop: "20px", minHeight: 0, paddingBottom: 40 }}>
         <h3 style={{ fontSize: "16px", margin: "0 0 6px 0", fontWeight: 600, color: "#9ca3af" }}>Týdenní plán PPL</h3>
         <WeeklyPlan
           plan={weeklyPlan}

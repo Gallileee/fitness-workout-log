@@ -22,30 +22,21 @@ function WeeklyPlan({ plan, onChange, onDayClick, isEmbedded = false }) {
   }
 
   const content = (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div className="weekly-plan-grid">
       {list.map((day, index) => (
         <div
           key={day.day}
-          style={{
-            minWidth: 110,
-            padding: 6,
-            borderRadius: 8,
-            border: "1px solid #1f2937",
-            background: day.type === "off" ? "transparent" : "#020617",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
+          className={`weekly-plan-day ${day.type === "off" ? "off-day" : "active-day"}`}
           onClick={() => onDayClick(index, day)}
         >
-          <div style={{ fontSize: "14px", marginBottom: 3 }}>{day.day}</div>
+          <div className="weekly-plan-day-label">{day.day}</div>
           <select
-            className="select"
+            className="weekly-plan-select"
             value={day.type}
             onChange={(e) => {
               e.stopPropagation()
               handleTypeChange(index, e.target.value)
             }}
-            style={{ fontSize: "14px", padding: "4px 6px" }}
           >
             {OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

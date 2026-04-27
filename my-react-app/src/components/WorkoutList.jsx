@@ -3,7 +3,7 @@ function WorkoutList({ workouts, onEdit, onDelete }) {
   const list = Array.isArray(workouts) ? workouts : []
 
   return (
-    <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column", paddingBottom: "20px", marginTop: "0px" }}>
+    <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column", paddingBottom: "20px", marginTop: "0px", maxHeight: screen.height - 400, overflowY: "auto" }}>
       <h2>Uložené tréninky</h2>
 
       {list.length === 0 ? (
