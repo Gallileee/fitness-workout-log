@@ -4,7 +4,7 @@ import "./App.css"
 import WorkoutForm from "./components/WorkoutForm"
 import WorkoutList from "./components/WorkoutList"
 import StatsPanel from "./components/StatsPanel"
-import { createDefaultWeeklyPlan } from "./components/WeeklyPlan"
+import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import Login from "./components/Login"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts } from "./lib/stats"
@@ -246,6 +246,7 @@ function App() {
       {view !== "dashboard" && (
         <div className="overlay" style={{ zIndex: 200 }}>
           <WorkoutForm
+            key={editingId ?? "new"}
             initialDate={currentDate}
             initialType={currentType}
             initialExercises={currentExercises}

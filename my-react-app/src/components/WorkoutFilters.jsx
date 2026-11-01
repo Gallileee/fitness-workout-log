@@ -1,16 +1,8 @@
 import DatePicker from "./DatePicker.jsx"
 
-
-
 function WorkoutFilters({ filters, onChange }) {
   const handleTypeChange = (e) => {
     onChange({ ...filters, type: e.target.value })
-  }
-  const handleFromChange = (e) => {
-    onChange({ ...filters, from: e.target.value })
-  }
-  const handleToChange = (e) => {
-    onChange({ ...filters, to: e.target.value })
   }
   const handleReset = () => {
     onChange({ type: "all", from: "", to: "" })
@@ -49,17 +41,13 @@ function WorkoutFilters({ filters, onChange }) {
   <DatePicker
     label="Od data"
     value={filters.from}
-    onChange={(v) =>
-      onChange((prev) => ({ ...prev, from: v }))
-    }
+    onChange={(v) => onChange({ ...filters, from: v })}
   />
   
   <DatePicker
     label="Do data"
     value={filters.to}
-    onChange={(v) =>
-      onChange((prev) => ({ ...prev, to: v }))
-    }
+    onChange={(v) => onChange({ ...filters, to: v })}
     placeholder="dd. mm. rr"
   />
 </div>
@@ -80,42 +68,3 @@ function WorkoutFilters({ filters, onChange }) {
 }
 
 export default WorkoutFilters
-
-
-
-
-
-function FakeDateInput({ label, value, onChange }) {
-  const handleClick = (e) => {
-    const native = e.currentTarget.querySelector("input[type='date']")
-    if (native) {
-      native.showPicker?.() // podporuje většina moderních prohlížečů
-      native.focus()
-    }
-  }
-
-  return (
-    <div className="field">
-      <label className="label">{label}</label>
-      <div className="fake-date-wrapper" onClick={handleClick}>
-        <input
-          type="text"
-          className="fake-date-input"
-          readOnly
-          value={value || "dd. mm. yyyy"}
-        />
-        <input
-          type="date"
-          className="hidden-native-date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <img
-          className="fake-date-icon"
-          src="https://www.svgrepo.com/show/533381/calendar-alt.svg"
-          alt=""
-        />
-      </div>
-    </div>
-  )
-}

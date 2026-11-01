@@ -11,6 +11,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Filter the history by workout type and date range (both dates inclusive)
 - Summary: number of workouts, total volume (sets × reps × kg), volume over the last 7 days, average volume per workout
 - **Personal records**: the heaviest weight and the best estimated one-rep max for each exercise
+- **1RM progress chart**: pick an exercise and see its best estimated one-rep max per training day, with the change since the first logged day
 - Weekly PPL plan; clicking a day filters the history by that day's workout type
 
 ## Tech stack
@@ -20,6 +21,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Frontend | React 19 + Vite 7 (`my-react-app/`) |
 | Auth + database | Supabase (Postgres table `workouts`, called directly from the browser) |
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
+| Charts | Hand-written inline SVG (`src/lib/chart.js` does the scaling), no chart library |
 | Tests | Built-in `node:test` runner, no extra dependencies |
 | Static server | Express (`server.js`), serves `my-react-app/dist` |
 | CI | GitHub Actions: install, test, lint, build |
@@ -61,8 +63,8 @@ cd .. && node server.js            # serves the build on http://localhost:3000
 
 ```bash
 cd my-react-app
-npm test        # unit tests for src/lib/stats.js
-npm run lint
+npm test        # unit tests for src/lib (stats and chart scaling)
+npm run lint    # must pass; CI fails on lint errors
 ```
 
 ## How the statistics work
@@ -71,11 +73,12 @@ npm run lint
 - **Last 7 days** = today and the 6 calendar days before it. Workout dates (`YYYY-MM-DD`) are read as local calendar days, not UTC timestamps, so the result doesn't depend on your timezone or the time of day.
 - **Estimated 1RM** uses the Epley formula `weight × (1 + reps / 30)`. Only sets with 1–10 reps count, because the estimate gets unreliable at higher rep counts. A single rep counts as its own weight.
 - **Personal records** merge exercise names case-insensitively and skip bodyweight entries (weight 0).
+- **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
 
 ## Limitations
 
-- `npm run lint` still reports 4 errors in older components: `setState` inside an effect in `WorkoutForm`, two unused handlers in `WorkoutFilters`, and a non-component export in `WeeklyPlan`. CI shows them but doesn't fail on them yet.
 - The weekly plan is not saved; it resets on reload.
+- The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
 - The root `package.json` `start` script points to a `server/` folder that doesn't exist. Use `node server.js` instead.
 - `server.js` still has an unused in-memory user/workout API from before the switch to Supabase (plaintext passwords, `x-user-id` header auth). It should be removed or rewritten.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.
