@@ -6,7 +6,7 @@ Done:
 - Moved filtering and statistics out of `App.jsx` / `StatsPanel.jsx` into pure functions in `my-react-app/src/lib/stats.js`.
 - Fixed date handling: `new Date("YYYY-MM-DD")` is UTC midnight, so "last 7 days" could drop today's workout just after midnight (or shift by a day west of UTC). Dates are now parsed as local calendar days.
 - New: a personal records panel showing the heaviest weight and the best estimated 1RM (Epley, sets of 1–10 reps) per exercise.
-- 25 unit tests (`npm test`, built-in `node:test`).
+- 19 unit tests in 6 groups (`npm test`, built-in `node:test`).
 - GitHub Actions workflow (Node 22): `npm ci`, test, lint (non-blocking), build.
 - Stopped tracking `node_modules/` (root and frontend), `.DS_Store` files and `my-react-app/.env`. Added `my-react-app/.env.example`. The files are still in git history.
 - Wrote the README.
