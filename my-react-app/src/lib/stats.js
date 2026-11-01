@@ -21,6 +21,8 @@ function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+export const EMPTY_FILTERS = { type: "all", from: "", to: "" }
+
 // filters = { type: "all" | "push" | ..., from: "YYYY-MM-DD" | "", to: "YYYY-MM-DD" | "" }
 // Both date bounds are inclusive. Workouts without a valid date are dropped
 // only when a date bound is set.

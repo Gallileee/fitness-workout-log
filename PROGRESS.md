@@ -1,5 +1,29 @@
 # Progress log
 
+## 2026-11-01 (4th run): UI redesign, settings, demo mode
+
+Done:
+- New design system in plain CSS: near-black surfaces, a deep purple accent (or blue / green / amber), soft gradients only on highlighted cards (the "last 7 days" tile, the chart, the login card), and one consistent style for buttons, inputs, segmented controls, cards and navigation. Inline styles and the old `screen.height` card sizing are gone.
+- Responsive layout chosen by viewport width (`useMediaQuery`), with a manual override:
+  - Desktop: a top bar plus one dashboard. On windows at least 900×700 it fits one screen and only the lists scroll; smaller or zoomed windows scroll the page. Records and the weekly plan share a tabbed card.
+  - Mobile: an app bar, tabs (Přehled / Tréninky / Plán / Nastavení), a bottom tab bar with a central + button, 44 px touch targets, and the form as a full-screen sheet.
+- Settings page: accent colour, spacing (comfortable / compact), layout (auto / desktop / mobile), units (kg / lb). Stored in `localStorage` (like the logged-in user) and validated on load (`src/lib/preferences.js`).
+- Imperial units everywhere: summary, list, records, chart and form input. Storage stays in kg.
+- A visible toggle for "stats from all workouts / filtered workouts". Before, it could only be switched by clicking a plan day, and never switched back.
+- Native `<input type="date">` instead of the custom date chip (it also had a UTC parsing issue), labels on every form field, inline login errors, Escape and backdrop click close the dialog.
+- `npm run demo`: an in-memory Supabase stand-in with sample data (`src/demo/`), swapped in by a Vite alias only in demo mode.
+- 13 new unit tests for preferences and unit conversion (38 in total).
+
+Verified in a browser on the demo (Node 22, Vite dev server):
+- 1366×768, 1280×720 and 1920×1080: the dashboard fits the viewport with no page scroll.
+- 1024×600: falls back to page scrolling.
+- 768×1024 tablet, 390×844 and 360×640 phones, and 200% zoom (683×384): no horizontal overflow; all mobile controls are at least 44 px.
+- Desktop forced on a phone and mobile forced on a monitor: all navigation reachable.
+- Accent, density and units persisted across a reload; saving a workout in lb shows the same lb value again; edit, Escape, plan-day filtering and logout work.
+- `npm run lint` clean, `npm test` 38/38, `vite build` passes, and the production bundle contains no demo code.
+
+Not verified: real devices (only emulated viewports in a Chromium-based browser), Safari/Firefox, and the app against the real Supabase project.
+
 ## 2026-11-01 (3rd run): server.js is static-only
 
 Done:
@@ -38,8 +62,8 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user).
-2. **Demo mode / seed data** so the UI (and the chart) can be tried without a Supabase account.
+1. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user, with RLS).
+2. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
 3. Component tests (Vitest + Testing Library), e.g. that `ProgressChart` falls back to the first exercise and renders one point per day.
 4. Chart polish: date labels on the x axis, optional time-proportional spacing.
 5. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.

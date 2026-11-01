@@ -13,6 +13,15 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **Personal records**: the heaviest weight and the best estimated one-rep max for each exercise
 - **1RM progress chart**: pick an exercise and see its best estimated one-rep max per training day, with the change since the first logged day
 - Weekly PPL plan; clicking a day filters the history by that day's workout type
+- Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
+- **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units
+- **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
+
+## Layout
+
+- **Desktop** (wide windows): one dashboard with summary tiles, the filterable workout list, the 1RM chart, and tabs for records and the weekly plan. On windows at least 900×700 px it fits exactly one screen and only the lists scroll inside their cards. On shorter or zoomed-in windows the page scrolls normally instead of squeezing the content.
+- **Mobile** (≤ 760 px, or chosen in Settings): an app bar, one section per tab (Overview, Workouts, Plan, Settings) and a bottom tab bar with a central + button. Touch targets are at least 44 px, and the workout form opens as a full-screen sheet.
+- *Auto* picks the layout from the viewport width. A manual choice always keeps the navigation reachable: the desktop layout wraps on a phone, and the mobile layout is a centred column on a monitor.
 
 ## Tech stack
 
@@ -22,6 +31,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Auth + database | Supabase (Postgres table `workouts`, called directly from the browser) |
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
 | Charts | Hand-written inline SVG (`src/lib/chart.js` does the scaling), no chart library |
+| Styling | Plain CSS with design tokens (custom properties) for colours, spacing and accent themes; media and container queries for layout. No UI or icon library |
 | Tests | Built-in `node:test` runner, no extra dependencies |
 | Static server | Express (`server.js`): serves `my-react-app/dist` only, no API |
 | CI | GitHub Actions: install, test, lint, build |
@@ -36,6 +46,8 @@ npm install
 cp .env.example .env    # then fill in your Supabase URL and anon key
 npm run dev             # http://localhost:5173
 ```
+
+To try the app without Supabase, run `npm run demo` instead. It swaps the Supabase client for an in-memory one with eight weeks of sample workouts (`src/demo/`). Changes are lost on reload, and the demo client is never included in `npm run build`.
 
 ### Supabase table
 
@@ -63,7 +75,7 @@ cd .. && npm install && npm start  # serves the build on http://localhost:3000 (
 
 ```bash
 cd my-react-app
-npm test        # unit tests for src/lib (stats and chart scaling)
+npm test        # unit tests for src/lib (stats, chart scaling, preferences and units)
 npm run lint    # must pass; CI fails on lint errors
 
 cd ..
@@ -76,11 +88,14 @@ npm test        # server tests: static files, SPA fallback, removed API returns 
 - **Last 7 days** = today and the 6 calendar days before it. Workout dates (`YYYY-MM-DD`) are read as local calendar days, not UTC timestamps, so the result doesn't depend on your timezone or the time of day.
 - **Estimated 1RM** uses the Epley formula `weight × (1 + reps / 30)`. Only sets with 1–10 reps count, because the estimate gets unreliable at higher rep counts. A single rep counts as its own weight.
 - **Personal records** merge exercise names case-insensitively and skip bodyweight entries (weight 0).
+- **Units**: weights are always stored in kg. In imperial mode they are shown and typed in lb (1 lb = 0.45359237 kg); typed pounds are saved to 0.01 kg, so they show the same value again.
 - **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
 
 ## Limitations
 
 - The weekly plan is not saved; it resets on reload.
+- Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
+- The UI text is Czech only.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.
 

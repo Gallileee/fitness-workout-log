@@ -3,11 +3,34 @@ import { useState, useEffect } from "react"
 import "./App.css"
 import WorkoutForm from "./components/WorkoutForm"
 import WorkoutList from "./components/WorkoutList"
-import StatsPanel from "./components/StatsPanel"
-import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
+import WorkoutFilters from "./components/WorkoutFilters"
+import StatsSummary from "./components/StatsSummary"
+import PersonalRecords from "./components/PersonalRecords"
+import ProgressChart from "./components/ProgressChart"
+import WeeklyPlan from "./components/WeeklyPlan"
+import Settings from "./components/Settings"
 import Login from "./components/Login"
+import Icon from "./components/Icon"
+import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import { supabase } from "./supabaseClient"
-import { filterWorkouts } from "./lib/stats"
+import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
+import { browserStorage, loadPreferences, savePreferences, resolveLayout } from "./lib/preferences"
+import { useMediaQuery } from "./lib/useMediaQuery"
+
+// Below this width "auto" layout switches to the mobile layout.
+const NARROW_VIEWPORT = "(max-width: 760px)"
+
+const MOBILE_NAV = [
+  { page: "overview", label: "Přehled", icon: "home" },
+  { page: "workouts", label: "Tréninky", icon: "list" },
+  { page: "plan", label: "Plán", icon: "calendar" },
+  { page: "settings", label: "Nastavení", icon: "settings" },
+]
+
+const DESKTOP_NAV = [
+  { page: "overview", label: "Přehled", icon: "home" },
+  { page: "settings", label: "Nastavení", icon: "settings" },
+]
 
 function App() {
   const [workouts, setWorkouts] = useState([])
@@ -21,13 +44,25 @@ function App() {
   const [currentNote, setCurrentNote] = useState("")
 
   const [view, setView] = useState("dashboard")
-  const [filters, setFilters] = useState({ type: "all", from: "", to: "" })
+  const [page, setPage] = useState("overview")
+  const [sideTab, setSideTab] = useState("records")
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
 
+  const [preferences, setPreferences] = useState(() => loadPreferences(browserStorage()))
+  const isNarrow = useMediaQuery(NARROW_VIEWPORT)
+  const layout = resolveLayout(preferences.layout, isNarrow)
+  const units = preferences.units
+
   const filteredWorkouts = filterWorkouts(workouts, filters)
+  const filtersActive = filters.type !== "all" || Boolean(filters.from || filters.to)
 
   const statsWorkouts = statsSource === "all" ? workouts : filteredWorkouts
+
+  useEffect(() => {
+    savePreferences(browserStorage(), preferences)
+  }, [preferences])
 
   // AUTH
   useEffect(() => {
@@ -69,6 +104,7 @@ function App() {
     await supabase.auth.signOut()
     setUser(null)
     setWorkouts([])
+    setPage("overview")
     localStorage.removeItem("user")
   }
 
@@ -105,6 +141,25 @@ function App() {
     setCurrentExercises([])
     setCurrentNote("")
   }
+
+  const closeForm = () => {
+    resetEditing()
+    setView("dashboard")
+  }
+
+  // Escape closes the workout dialog.
+  const dialogOpen = view !== "dashboard"
+  useEffect(() => {
+    if (!dialogOpen) return
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setEditingId(null)
+        setView("dashboard")
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [dialogOpen])
 
   const handleSave = async ({ date, type, exercises, note }) => {
     const payload = {
@@ -144,6 +199,11 @@ function App() {
     }
   }
 
+  const handleNewWorkout = () => {
+    resetEditing()
+    setView("newWorkout")
+  }
+
   const handleEditWorkout = (id) => {
     const workout = workouts.find((w) => w.id === id)
     if (!workout) return
@@ -175,95 +235,281 @@ function App() {
     }
   }
 
+  const handlePlanDayClick = (_index, dayPlan) => {
+    setFilters((prev) => ({ ...prev, type: dayPlan.type === "off" ? "all" : dayPlan.type }))
+    setStatsSource("filtered")
+    // On mobile the list is on its own tab, so show it.
+    if (layout === "mobile") setPage("workouts")
+  }
+
   // LOGIN VIEW
   if (!user) {
     return (
-      <div className="app">
-        <h1 className="app-title">Fitness tracker</h1>
+      <div className="app-shell" data-accent={preferences.accent} data-density={preferences.density}>
         <Login onLogin={handleLogin} />
       </div>
     )
   }
 
-  // DASHBOARD VIEW
+  // --- building blocks shared by both layouts ---
+
+  const listCount = filtersActive ? `${filteredWorkouts.length} z ${workouts.length}` : `${workouts.length}`
+
+  const statsSummary = (
+    <StatsSummary
+      workouts={statsWorkouts}
+      units={units}
+      source={statsSource}
+      onSourceChange={setStatsSource}
+      filtersActive={filtersActive}
+    />
+  )
+
+  const workoutList = (
+    <WorkoutList
+      workouts={filteredWorkouts}
+      units={units}
+      onEdit={handleEditWorkout}
+      onDelete={handleDeleteWorkout}
+      emptyText={filtersActive ? "Filtru neodpovídá žádný trénink." : "Zatím žádné tréninky. Přidej první!"}
+    />
+  )
+
+  const chart = <ProgressChart workouts={statsWorkouts} units={units} />
+  const records = <PersonalRecords workouts={statsWorkouts} units={units} />
+  const plan = (
+    <WeeklyPlan
+      plan={weeklyPlan}
+      onChange={setWeeklyPlan}
+      onDayClick={handlePlanDayClick}
+      activeType={filters.type}
+    />
+  )
+
+  const settings = (
+    <Settings preferences={preferences} onChange={setPreferences} user={user} onLogout={handleLogout} />
+  )
+
+  const dialog = dialogOpen && (
+    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && closeForm()}>
+      <WorkoutForm
+        key={editingId ?? "new"}
+        initialDate={currentDate}
+        initialType={currentType}
+        initialExercises={currentExercises}
+        initialNote={currentNote}
+        units={units}
+        onSave={async (values) => {
+          await handleSave(values)
+          setView("dashboard")
+        }}
+        onCancel={closeForm}
+        isEditing={view === "editWorkout" && editingId !== null}
+      />
+    </div>
+  )
+
+  // --- MOBILE LAYOUT: one section per tab, bottom navigation ---
+  if (layout === "mobile") {
+    const current = MOBILE_NAV.find((n) => n.page === page) ?? MOBILE_NAV[0]
+    return (
+      <div className="app-shell" data-layout="mobile" data-accent={preferences.accent} data-density={preferences.density}>
+        <header className="m-appbar">
+          <span className="brand-mark" aria-hidden="true">
+            <Icon name="brand" size={18} />
+          </span>
+          <h1 className="m-title">{current.label}</h1>
+          {loading && <span className="loading-dot" role="status" aria-label="Načítám tréninky" />}
+        </header>
+
+        <main className="m-main">
+          {current.page === "overview" && (
+            <>
+              {statsSummary}
+              <section className="card card-featured">
+                <h2 className="card-title">Vývoj odhadu 1RM</h2>
+                {chart}
+              </section>
+              <section className="card">
+                <div className="card-head">
+                  <h2 className="card-title">Poslední tréninky</h2>
+                  <button type="button" className="btn btn-ghost btn-small" onClick={() => setPage("workouts")}>
+                    Vše ({workouts.length})
+                  </button>
+                </div>
+                <WorkoutList
+                  workouts={workouts.slice(0, 3)}
+                  units={units}
+                  onEdit={handleEditWorkout}
+                  onDelete={handleDeleteWorkout}
+                />
+              </section>
+              <section className="card">
+                <h2 className="card-title">Osobní rekordy</h2>
+                {records}
+              </section>
+            </>
+          )}
+
+          {current.page === "workouts" && (
+            <>
+              <details className="card filters-card" open={filtersActive}>
+                <summary className="card-title">
+                  <Icon name="filter" size={18} /> Filtry
+                  {filtersActive && <span className="badge">aktivní</span>}
+                </summary>
+                <WorkoutFilters filters={filters} onChange={setFilters} />
+              </details>
+              <p className="muted small list-count">Tréninků: {listCount}</p>
+              {workoutList}
+            </>
+          )}
+
+          {current.page === "plan" && (
+            <section className="card">
+              <h2 className="card-title">Týdenní plán</h2>
+              <p className="muted small">Klepnutím na den zobrazíš tréninky daného typu.</p>
+              {plan}
+            </section>
+          )}
+
+          {current.page === "settings" && settings}
+        </main>
+
+        <nav className="m-tabbar" aria-label="Hlavní navigace">
+          {MOBILE_NAV.slice(0, 2).map((n) => (
+            <TabButton key={n.page} item={n} active={page === n.page} onSelect={setPage} />
+          ))}
+          <button type="button" className="m-fab" onClick={handleNewWorkout} aria-label="Nový trénink">
+            <Icon name="plus" size={26} />
+          </button>
+          {MOBILE_NAV.slice(2).map((n) => (
+            <TabButton key={n.page} item={n} active={page === n.page} onSelect={setPage} />
+          ))}
+        </nav>
+
+        {dialog}
+      </div>
+    )
+  }
+
+  // --- DESKTOP LAYOUT: everything important on one dashboard ---
+  const desktopPage = page === "settings" ? "settings" : "overview"
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1 className="app-title">Fitness tracker</h1>
-        <div className="app-header-controls">
-          <span className="user-email">{user.email}</span>
-          <button
-            type="button"
-            className="btn btn-outline btn-small"
-            onClick={handleLogout}
-          >
-            Logout
+    <div className="app-shell" data-layout="desktop" data-accent={preferences.accent} data-density={preferences.density}>
+      <header className="topbar">
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true">
+            <Icon name="brand" size={18} />
+          </span>
+          <span className="brand-name">Fitness tracker</span>
+        </div>
+
+        <nav className="topnav" aria-label="Hlavní navigace">
+          {DESKTOP_NAV.map((n) => (
+            <button
+              key={n.page}
+              type="button"
+              className={`topnav-item ${desktopPage === n.page ? "is-active" : ""}`}
+              aria-current={desktopPage === n.page ? "page" : undefined}
+              onClick={() => setPage(n.page)}
+            >
+              <Icon name={n.icon} size={18} />
+              {n.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="topbar-end">
+          <span className="user-email" title={user.email}>
+            {user.email}
+          </span>
+          <button type="button" className="icon-btn" onClick={handleLogout} aria-label="Odhlásit se" title="Odhlásit se">
+            <Icon name="logout" />
+          </button>
+          <button type="button" className="btn btn-primary" onClick={handleNewWorkout}>
+            <Icon name="plus" size={18} />
+            Nový trénink
           </button>
         </div>
       </header>
 
-      {loading && <p className="loading-text">Načítám tréninky ze serveru…</p>}
+      {desktopPage === "settings" ? (
+        <main className="page page-scroll">{settings}</main>
+      ) : (
+        <main className="page dashboard">
+          {statsSummary}
 
-      <div className="action-bar">
-        <button
-          type="button"
-          className="btn btn-primary btn-lg"
-          onClick={() => {
-            resetEditing()
-            setView("newWorkout")
-          }}
-        >
-          Nový trénink
-        </button>
-      </div>
+          <div className="dashboard-grid">
+            <section className="card panel" aria-labelledby="workouts-title">
+              <div className="card-head">
+                <h2 id="workouts-title" className="card-title">
+                  Tréninky <span className="count">{listCount}</span>
+                </h2>
+                {loading && <span className="muted small">Načítám…</span>}
+              </div>
+              <WorkoutFilters filters={filters} onChange={setFilters} />
+              <div className="panel-scroll">{workoutList}</div>
+            </section>
 
-      <div className="dashboard-container">
-        {/* List (left) and Stats (with Weekly Plan and Filters embedded) (right) side-by-side on desktop, stacked on mobile */}
-        <div className="main-grid">
-          <WorkoutList
-            workouts={filteredWorkouts}
-            onEdit={handleEditWorkout}
-            onDelete={handleDeleteWorkout}
-          />
-          <StatsPanel
-            workouts={statsWorkouts}
-            weeklyPlan={weeklyPlan}
-            onWeeklyPlanChange={setWeeklyPlan}
-            onWeeklyPlanDayClick={(_index, dayPlan) => {
-              if (dayPlan.type === "off") {
-                setFilters((prev) => ({ ...prev, type: "all" }))
-              } else {
-                setFilters((prev) => ({ ...prev, type: dayPlan.type }))
-              }
-              setStatsSource("filtered")
-            }}
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
-        </div>
-      </div>
+            <div className="dashboard-side">
+              <section className="card card-featured" aria-labelledby="chart-title">
+                <h2 id="chart-title" className="card-title">
+                  Vývoj odhadu 1RM
+                </h2>
+                {chart}
+              </section>
 
-      {view !== "dashboard" && (
-        <div className="overlay" style={{ zIndex: 200 }}>
-          <WorkoutForm
-            key={editingId ?? "new"}
-            initialDate={currentDate}
-            initialType={currentType}
-            initialExercises={currentExercises}
-            initialNote={currentNote}
-            onSave={async (values) => {
-              await handleSave(values)
-              setView("dashboard")
-            }}
-            onCancel={() => {
-              resetEditing()
-              setView("dashboard")
-            }}
-            isEditing={view === "editWorkout" && editingId !== null}
-          />
-        </div>
+              <section className="card panel">
+                <div className="tabs" role="tablist" aria-label="Rekordy a plán">
+                  {[
+                    { id: "records", label: "Osobní rekordy" },
+                    { id: "plan", label: "Týdenní plán" },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      id={`tab-${t.id}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={sideTab === t.id}
+                      aria-controls={`tabpanel-${t.id}`}
+                      className="tab"
+                      onClick={() => setSideTab(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div
+                  className="panel-scroll"
+                  role="tabpanel"
+                  id={`tabpanel-${sideTab}`}
+                  aria-labelledby={`tab-${sideTab}`}
+                >
+                  {sideTab === "records" ? records : plan}
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
       )}
+
+      {dialog}
     </div>
+  )
+}
+
+function TabButton({ item, active, onSelect }) {
+  return (
+    <button
+      type="button"
+      className={`m-tab ${active ? "is-active" : ""}`}
+      aria-current={active ? "page" : undefined}
+      onClick={() => onSelect(item.page)}
+    >
+      <Icon name={item.icon} size={22} />
+      <span>{item.label}</span>
+    </button>
   )
 }
 

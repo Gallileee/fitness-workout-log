@@ -1,68 +1,43 @@
+// src/components/WorkoutFilters.jsx
+import { useId } from "react"
 import DatePicker from "./DatePicker.jsx"
+import { WORKOUT_TYPES } from "../lib/workoutTypes"
+import { EMPTY_FILTERS } from "../lib/stats"
 
 function WorkoutFilters({ filters, onChange }) {
-  const handleTypeChange = (e) => {
-    onChange({ ...filters, type: e.target.value })
-  }
-  const handleReset = () => {
-    onChange({ type: "all", from: "", to: "" })
-  }
+  const typeId = useId()
+  const active = filters.type !== "all" || filters.from || filters.to
 
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <h2>Filtry</h2>
-
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 16,
-          alignItems: "flex-end",
-        }}
-      >
-        <div className="field" style={{ minWidth: 160 }}>
-          <label className="label">Typ tréninku</label>
-          <select
-            className="select"
-            value={filters.type}
-            onChange={handleTypeChange}
-          >
-            <option value="all">Vše</option>
-            <option value="fullbody">Full body</option>
-            <option value="push">Push</option>
-            <option value="pull">Pull</option>
-            <option value="legs">Legs</option>
-            <option value="core">Core</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-<div className="input-row">
-  <DatePicker
-    label="Od data"
-    value={filters.from}
-    onChange={(v) => onChange({ ...filters, from: v })}
-  />
-  
-  <DatePicker
-    label="Do data"
-    value={filters.to}
-    onChange={(v) => onChange({ ...filters, to: v })}
-    placeholder="dd. mm. rr"
-  />
-</div>
-
-
-  <div className="field" style={{ marginLeft: "auto" }}>
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={handleReset}
-          >
-            Vyčistit filtr
-          </button>
-        </div>
+    <div className="filters">
+      <div className="field">
+        <label className="label" htmlFor={typeId}>
+          Typ
+        </label>
+        <select
+          id={typeId}
+          className="input input-select"
+          value={filters.type}
+          onChange={(e) => onChange({ ...filters, type: e.target.value })}
+        >
+          <option value="all">Vše</option>
+          {WORKOUT_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
       </div>
+      <DatePicker label="Od" value={filters.from} onChange={(v) => onChange({ ...filters, from: v })} />
+      <DatePicker label="Do" value={filters.to} onChange={(v) => onChange({ ...filters, to: v })} />
+      <button
+        className="btn btn-ghost filters-reset"
+        type="button"
+        onClick={() => onChange(EMPTY_FILTERS)}
+        disabled={!active}
+      >
+        Zrušit filtr
+      </button>
     </div>
   )
 }
