@@ -1,61 +1,47 @@
-// WeeklyPlan.jsx
-const OPTIONS = [
-  { value: "off",      label: "Off" },
-  { value: "push",     label: "Push" },
-  { value: "pull",     label: "Pull" },
-  { value: "legs",     label: "Legs" },
-  { value: "fullbody", label: "Full body" },
-  { value: "other",    label: "Other" },
-]
+// src/components/WeeklyPlan.jsx
+import { WORKOUT_TYPES } from "../lib/workoutTypes"
 
-function WeeklyPlan({ plan, onChange, onDayClick, isEmbedded = false }) {
-  // Pokud plan náhodou přijde jako objekt, převedeme ho na pole:
+const OPTIONS = [{ value: "off", label: "Volno" }, ...WORKOUT_TYPES]
+
+// Each day: a button that filters the history by that day's type, and a select to change the plan.
+function WeeklyPlan({ plan, onChange, onDayClick, activeType }) {
   const list = Array.isArray(plan) ? plan : Object.values(plan || {})
 
   const handleTypeChange = (index, newType) => {
-    const next = list.map((day, i) =>
-      i === index ? { ...day, type: newType } : day
-    )
-    onChange(next)
-  }
-
-  const content = (
-    <div className="weekly-plan-grid">
-      {list.map((day, index) => (
-        <div
-          key={day.day}
-          className={`weekly-plan-day ${day.type === "off" ? "off-day" : "active-day"}`}
-          onClick={() => onDayClick(index, day)}
-        >
-          <div className="weekly-plan-day-label">{day.day}</div>
-          <select
-            className="weekly-plan-select"
-            value={day.type}
-            onChange={(e) => {
-              e.stopPropagation()
-              handleTypeChange(index, e.target.value)
-            }}
-          >
-            {OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      ))}
-    </div>
-  )
-
-  if (isEmbedded) {
-    return content
+    onChange(list.map((day, i) => (i === index ? { ...day, type: newType } : day)))
   }
 
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <h2>Týdenní plán PPL</h2>
-      {content}
-    </div>
+    <ul className="plan-list">
+      {list.map((day, index) => {
+        const isOff = day.type === "off"
+        const isActive = !isOff && day.type === activeType
+        return (
+          <li key={day.day} className={`plan-day ${isOff ? "plan-day-off" : ""} ${isActive ? "plan-day-active" : ""}`}>
+            <button
+              type="button"
+              className="plan-day-button"
+              onClick={() => onDayClick(index, day)}
+              title={isOff ? "Zrušit filtr typu" : `Zobrazit tréninky typu ${day.type}`}
+            >
+              {day.day}
+            </button>
+            <select
+              className="input input-select plan-select"
+              value={day.type}
+              aria-label={`Plán na ${day.day}`}
+              onChange={(e) => handleTypeChange(index, e.target.value)}
+            >
+              {OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

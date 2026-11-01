@@ -1,19 +1,29 @@
 // src/components/WorkoutForm.jsx
-import { useState } from "react"
+import { useId, useState } from "react"
 import { exercises as exercisesDb } from "../data/exercises.js"
 import DatePicker from "./DatePicker.jsx"
+import Icon from "./Icon"
+import { WORKOUT_TYPES } from "../lib/workoutTypes"
+import { formatWeight, fromDisplayWeight, weightUnit } from "../lib/preferences"
+
+const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
 
 // The initial* props are only read on mount. To load a different workout,
 // the parent remounts the form with a new `key` instead of syncing state in an effect.
+// Weights are typed in the chosen unit but always stored in kg.
 function WorkoutForm({
   initialDate,
   initialType,
   initialExercises,
   initialNote,
+  units = "metric",
   onSave,
   onCancel,
   isEditing,
 }) {
+  const id = useId()
+  const unit = weightUnit(units)
+
   const [date, setDate] = useState(initialDate || "")
   const [type, setType] = useState(initialType || "push")
   const [exercises, setExercises] = useState(initialExercises || [])
@@ -21,7 +31,7 @@ function WorkoutForm({
   const [exerciseName, setExerciseName] = useState("")
   const [sets, setSets] = useState(3)
   const [reps, setReps] = useState(10)
-  const [weight, setWeight] = useState(60)
+  const [weight, setWeight] = useState(DEFAULT_WEIGHT[units] ?? 60)
 
   const [useCustomExercise, setUseCustomExercise] = useState(false)
   const [customExerciseName, setCustomExerciseName] = useState("")
@@ -34,15 +44,13 @@ function WorkoutForm({
     setUseCustomExercise(false)
     setSets(3)
     setReps(10)
-    setWeight(60)
+    setWeight(DEFAULT_WEIGHT[units] ?? 60)
   }
 
   const handleAddExercise = (e) => {
     e.preventDefault()
 
-    const finalName = useCustomExercise
-      ? customExerciseName.trim()
-      : exerciseName
+    const finalName = useCustomExercise ? customExerciseName.trim() : exerciseName
 
     if (!finalName) {
       alert("Vyber nebo zadej název cviku")
@@ -54,15 +62,15 @@ function WorkoutForm({
       name: finalName,
       sets: Number(sets),
       reps: Number(reps),
-      weight: Number(weight),
+      weight: fromDisplayWeight(weight, units),
     }
 
     setExercises((prev) => [...prev, newExercise])
     resetExerciseForm()
   }
 
-  const handleRemoveExercise = (id) => {
-    setExercises((prev) => prev.filter((ex) => ex.id !== id))
+  const handleRemoveExercise = (exerciseId) => {
+    setExercises((prev) => prev.filter((ex) => ex.id !== exerciseId))
   }
 
   const handleSubmit = (e) => {
@@ -87,166 +95,170 @@ function WorkoutForm({
   }
 
   const filteredExercises = exercisesDb[type] || []
+  const title = isEditing ? "Upravit trénink" : "Nový trénink"
 
   return (
-    <div className="card">
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: 12, position: "relative" }}>
-        <h2 style={{ margin: 0 }}>{isEditing ? "Upravit trénink" : "Nový trénink"}</h2>
-
-        <button
-          type="button"
-          className="btn btn-outline btn-small"
-          onClick={onCancel}
-          style={{ position: "absolute", right: 0 }}
-          aria-label="Close"
-        >
-          ✕
+    <div className="dialog" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
+      <header className="dialog-header">
+        <h2 id={`${id}-title`} className="dialog-title">
+          {title}
+        </h2>
+        <button type="button" className="icon-btn" onClick={onCancel} aria-label="Zavřít">
+          <Icon name="close" />
         </button>
-      </div>
+      </header>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 550, paddingLeft: 0 }}>
-        
-        {/* Title for Date & Type section */}
-        <label style={{ fontSize: "14px", fontWeight: 500, color: "#9ca3af", marginBottom: "-8px" }}>
-          Info
-        </label>
-
-        {/* Date and Type side by side */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <div className="field" style={{ flex: 1, minWidth: 200 }}>
-            <DatePicker
-              label="Datum"
-              value={date}
-              onChange={setDate}
-              placeholder="dd. mm. rr"
-            />
-          </div>
-
-          <div className="field" style={{ flex: 1, minWidth: 200 }}>
-            <label className="label">
+      <form id={`${id}-form`} className="dialog-body form" onSubmit={handleSubmit}>
+        <div className="form-row">
+          <DatePicker label="Datum" value={date} onChange={setDate} required />
+          <div className="field">
+            <label className="label" htmlFor={`${id}-type`}>
               Typ tréninku
             </label>
             <select
-              className="select"
+              id={`${id}-type`}
+              className="input input-select"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
-              <option value="fullbody">Full body</option>
-              <option value="push">Push</option>
-              <option value="pull">Pull</option>
-              <option value="legs">Legs</option>
-              <option value="core">Core</option>
-              <option value="other">Other</option>
+              {WORKOUT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
-        <h2 style={{ marginTop: 0, marginBottom: 12 }}>Cviky v tréninku</h2>
+        <fieldset className="subcard">
+          <legend className="subcard-title">Přidat cvik</legend>
 
-        {/* Left: Exercise input options, Right: Exercise list */}
-        <div style={{ display: "flex", gap: 12, minHeight: 220 }}>
-          {/* LEFT SIDE: Input Options */}
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <div className="field" style={{ marginBottom: 8 }}>
-              <label className="label">
-                Způsob zadání cviku
-              </label>
-              <label style={{ fontSize: 14 }}>
-                <input
-                  type="checkbox"
-                  checked={useCustomExercise}
-                  onChange={(e) => setUseCustomExercise(e.target.checked)}
-                  style={{ marginRight: 6 }}
-                />
-                Použít vlastní název cviku
-              </label>
-            </div>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={useCustomExercise}
+              onChange={(e) => setUseCustomExercise(e.target.checked)}
+            />
+            Vlastní název cviku
+          </label>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {useCustomExercise ? (
-                <input
-                  className="input"
-                  type="text"
-                  placeholder="Vlastní název cviku"
-                  value={customExerciseName}
-                  onChange={(e) => setCustomExerciseName(e.target.value)}
-                />
-              ) : (
-                <select
-                  className="input"
-                  value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
-                >
-                  <option value="">Vyber cvik...</option>
-                  {filteredExercises.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              )}
-
+          <div className="field">
+            <label className="label" htmlFor={`${id}-exercise`}>
+              Cvik
+            </label>
+            {useCustomExercise ? (
               <input
+                id={`${id}-exercise`}
+                className="input"
+                type="text"
+                placeholder="Např. Bulgarian split squat"
+                value={customExerciseName}
+                onChange={(e) => setCustomExerciseName(e.target.value)}
+              />
+            ) : (
+              <select
+                id={`${id}-exercise`}
+                className="input input-select"
+                value={exerciseName}
+                onChange={(e) => setExerciseName(e.target.value)}
+              >
+                <option value="">Vyber cvik…</option>
+                {filteredExercises.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="form-row form-row-3">
+            <div className="field">
+              <label className="label" htmlFor={`${id}-sets`}>
+                Série
+              </label>
+              <input
+                id={`${id}-sets`}
                 className="input"
                 type="number"
+                inputMode="numeric"
                 min="1"
-                placeholder="Série"
                 value={sets}
                 onChange={(e) => setSets(e.target.value)}
               />
+            </div>
+            <div className="field">
+              <label className="label" htmlFor={`${id}-reps`}>
+                Opakování
+              </label>
               <input
+                id={`${id}-reps`}
                 className="input"
                 type="number"
+                inputMode="numeric"
                 min="1"
-                placeholder="Opakování"
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
               />
+            </div>
+            <div className="field">
+              <label className="label" htmlFor={`${id}-weight`}>
+                Váha ({unit})
+              </label>
               <input
+                id={`${id}-weight`}
                 className="input"
                 type="number"
+                inputMode="decimal"
                 min="0"
-                placeholder="Váha (kg)"
+                step="0.5"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
               />
-              <button className="btn btn-outline" onClick={handleAddExercise}>
-                Přidat cvik
-              </button>
             </div>
           </div>
 
-          {/* RIGHT SIDE: Exercise List */}
-          <div style={{ flex: 1, minWidth: 400, borderLeft: "1px solid #1f2937", paddingLeft: 12, maxHeight: 400, overflowY: "auto", paddingRight: 6 }}>
-            {exercises.length === 0 ? (
-              <p style={{ fontSize: 14, color: "#9ca3af" }}>Zatím žádný cvik.</p>
-            ) : (
-              <ul className="exercise-list" style={{ margin: 0, padding: 0 }}>
-                {exercises.map((ex) => (
-                  <li key={ex.id} style={{ fontSize: 13, marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #1f2937" }}>
-                    <div>
-                      <strong>{ex.name}</strong> — {ex.sets}×{ex.reps} @ {ex.weight} kg
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-small"
-                      style={{ marginTop: 6, fontSize: 11 }}
-                      onClick={() => handleRemoveExercise(ex.id)}
-                    >
-                      Smazat
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+          <button type="button" className="btn btn-secondary btn-block" onClick={handleAddExercise}>
+            <Icon name="plus" size={18} />
+            Přidat cvik
+          </button>
+        </fieldset>
 
-        <div className="field" style={{ marginTop: 16, marginRight: 20 }}>
-          <label className="label">
-            Poznámka k tréninku
+        <section aria-label="Cviky v tréninku">
+          <h3 className="subcard-title">Cviky v tréninku ({exercises.length})</h3>
+          {exercises.length === 0 ? (
+            <p className="empty">Zatím žádný cvik.</p>
+          ) : (
+            <ul className="form-exercises">
+              {exercises.map((ex) => (
+                <li key={ex.id}>
+                  <div>
+                    <div className="exercise-name">{ex.name}</div>
+                    <div className="muted small">
+                      {ex.sets}×{ex.reps}
+                      {Number(ex.weight) > 0 && ` · ${formatWeight(ex.weight, units, { locale: "cs-CZ" })}`}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="icon-btn icon-btn-danger"
+                    onClick={() => handleRemoveExercise(ex.id)}
+                    aria-label={`Odebrat ${ex.name}`}
+                  >
+                    <Icon name="trash" size={18} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <div className="field">
+          <label className="label" htmlFor={`${id}-note`}>
+            Poznámka
           </label>
           <textarea
+            id={`${id}-note`}
             className="input"
             rows={3}
             placeholder="Jak ses cítil, RPE, poznámky k výkonu…"
@@ -254,22 +266,16 @@ function WorkoutForm({
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
-
-        <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
-          <button type="submit" className="btn btn-primary">
-            {isEditing ? "Uložit změny" : "Uložit trénink"}
-          </button>
-          {isEditing && (
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={onCancel}
-            >
-              Zrušit úpravu
-            </button>
-          )}
-        </div>
       </form>
+
+      <footer className="dialog-footer">
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          Zrušit
+        </button>
+        <button type="submit" form={`${id}-form`} className="btn btn-primary">
+          {isEditing ? "Uložit změny" : "Uložit trénink"}
+        </button>
+      </footer>
     </div>
   )
 }
