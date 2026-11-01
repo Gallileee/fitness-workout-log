@@ -1,6 +1,4 @@
 // WeeklyPlan.jsx
-const DAYS = ["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"]
-
 const OPTIONS = [
   { value: "off",      label: "Off" },
   { value: "push",     label: "Push" },
@@ -59,19 +57,6 @@ function WeeklyPlan({ plan, onChange, onDayClick, isEmbedded = false }) {
       {content}
     </div>
   )
-}
-
-// helper na výchozí týdenní plán
-export function createDefaultWeeklyPlan() {
-  return [
-    { day: "Pondělí",  type: "push" },
-    { day: "Úterý",    type: "pull" },
-    { day: "Středa",   type: "legs" },
-    { day: "Čtvrtek",  type: "off" },
-    { day: "Pátek",    type: "push" },
-    { day: "Sobota",   type: "pull" },
-    { day: "Neděle",   type: "off" },
-  ]
 }
 
 export default WeeklyPlan

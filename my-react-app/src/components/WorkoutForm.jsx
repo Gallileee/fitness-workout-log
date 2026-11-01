@@ -1,12 +1,10 @@
 // src/components/WorkoutForm.jsx
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { exercises as exercisesDb } from "../data/exercises.js"
 import DatePicker from "./DatePicker.jsx"
 
-
-
-
-
+// The initial* props are only read on mount. To load a different workout,
+// the parent remounts the form with a new `key` instead of syncing state in an effect.
 function WorkoutForm({
   initialDate,
   initialType,
@@ -29,13 +27,6 @@ function WorkoutForm({
   const [customExerciseName, setCustomExerciseName] = useState("")
 
   const [note, setNote] = useState(initialNote || "")
-
-  useEffect(() => {
-    setDate(initialDate || "")
-    setType(initialType || "push")
-    setExercises(initialExercises || [])
-    setNote(initialNote || "")
-  }, [initialDate, initialType, initialExercises, initialNote])
 
   const resetExerciseForm = () => {
     setExerciseName("")
