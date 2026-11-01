@@ -7,6 +7,7 @@ import StatsPanel from "./components/StatsPanel"
 import { createDefaultWeeklyPlan } from "./components/WeeklyPlan"
 import Login from "./components/Login"
 import { supabase } from "./supabaseClient"
+import { filterWorkouts } from "./lib/stats"
 
 function App() {
   const [workouts, setWorkouts] = useState([])
@@ -24,20 +25,7 @@ function App() {
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
 
-  const filteredWorkouts = workouts.filter((w) => {
-    if (filters.type !== "all" && w.type !== filters.type) return false
-    if (filters.from) {
-      const fromDate = new Date(filters.from)
-      const workoutDate = new Date(w.date)
-      if (workoutDate < fromDate) return false
-    }
-    if (filters.to) {
-      const toDate = new Date(filters.to)
-      const workoutDate = new Date(w.date)
-      if (workoutDate > toDate) return false
-    }
-    return true
-  })
+  const filteredWorkouts = filterWorkouts(workouts, filters)
 
   const statsWorkouts = statsSource === "all" ? workouts : filteredWorkouts
 
