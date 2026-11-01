@@ -23,7 +23,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
 | Charts | Hand-written inline SVG (`src/lib/chart.js` does the scaling), no chart library |
 | Tests | Built-in `node:test` runner, no extra dependencies |
-| Static server | Express (`server.js`), serves `my-react-app/dist` |
+| Static server | Express (`server.js`): serves `my-react-app/dist` only, no API |
 | CI | GitHub Actions: install, test, lint, build |
 
 ## Setup
@@ -56,7 +56,7 @@ Enable Row Level Security with a policy like `user_id = auth.uid()`. The anon ke
 
 ```bash
 cd my-react-app && npm run build   # outputs my-react-app/dist
-cd .. && node server.js            # serves the build on http://localhost:3000
+cd .. && npm install && npm start  # serves the build on http://localhost:3000 (PORT to change)
 ```
 
 ## Tests
@@ -65,6 +65,9 @@ cd .. && node server.js            # serves the build on http://localhost:3000
 cd my-react-app
 npm test        # unit tests for src/lib (stats and chart scaling)
 npm run lint    # must pass; CI fails on lint errors
+
+cd ..
+npm test        # server tests: static files, SPA fallback, removed API returns 404
 ```
 
 ## How the statistics work
@@ -79,8 +82,6 @@ npm run lint    # must pass; CI fails on lint errors
 
 - The weekly plan is not saved; it resets on reload.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
-- The root `package.json` `start` script points to a `server/` folder that doesn't exist. Use `node server.js` instead.
-- `server.js` still has an unused in-memory user/workout API from before the switch to Supabase (plaintext passwords, `x-user-id` header auth). It should be removed or rewritten.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.
 
 ## Next steps

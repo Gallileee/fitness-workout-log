@@ -1,5 +1,16 @@
 # Progress log
 
+## 2026-11-01 (3rd run): server.js is static-only
+
+Done:
+- Removed the old in-memory API from `server.js` (register/login with plaintext passwords, `x-user-id` header "auth", `/api/debug-users` listing every email). The app has used Supabase for auth and data since then, so nothing called it.
+- `server.js` now only serves `my-react-app/dist`: long cache headers for hashed `/assets`, SPA fallback to `index.html`, JSON 404 for `/api/*`, no `X-Powered-By`. It exits with a clear message if the frontend isn't built. `createApp()` is exported for tests.
+- Fixed the root `start` script (it pointed to a non-existent `server/` folder) and added `npm test`.
+- Removed unused dependencies `pg`, `better-sqlite3` and `cors` (49 packages fewer in the lockfile).
+- 12 server tests (`node:test` + `fetch` against a fake build folder) and a new `Server` CI workflow.
+
+Verified: `npm test` at the root (12/12 on Node 18.12); manual run of `npm start` against the committed `dist/` (`/`, `/dashboard`, `/vite.svg` 200; `/api/login` JSON 404); missing build exits with code 1.
+
 ## 2026-11-01 (2nd run): Lint clean, 1RM progress chart
 
 Done:
@@ -27,8 +38,8 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Remove or rewrite `server.js`'s unused API** (plaintext passwords, `x-user-id` auth). Keep only the static file serving, and fix the root `start` script.
-2. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user).
-3. **Demo mode / seed data** so the UI (and the chart) can be tried without a Supabase account.
-4. Component tests (Vitest + Testing Library), e.g. that `ProgressChart` falls back to the first exercise and renders one point per day.
-5. Chart polish: date labels on the x axis, optional time-proportional spacing.
+1. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user).
+2. **Demo mode / seed data** so the UI (and the chart) can be tried without a Supabase account.
+3. Component tests (Vitest + Testing Library), e.g. that `ProgressChart` falls back to the first exercise and renders one point per day.
+4. Chart polish: date labels on the x axis, optional time-proportional spacing.
+5. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.
