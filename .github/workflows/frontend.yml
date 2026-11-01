@@ -1,0 +1,26 @@
+name: Frontend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: my-react-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: my-react-app/package-lock.json
+      - run: npm ci
+      - run: npm test
+      # Existing code still has lint errors (see PROGRESS.md); reported but not blocking yet.
+      - run: npm run lint
+        continue-on-error: true
+      - run: npm run build

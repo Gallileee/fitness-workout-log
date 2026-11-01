@@ -1,6 +1,8 @@
 // src/components/StatsPanel.jsx
 import WeeklyPlan from "./WeeklyPlan"
 import WorkoutFilters from "./WorkoutFilters"
+import PersonalRecords from "./PersonalRecords"
+import { summarize } from "../lib/stats"
 
 function StatsPanel({
   workouts,
@@ -12,39 +14,8 @@ function StatsPanel({
 }) {
   const list = Array.isArray(workouts) ? workouts : []
 
-  const totalWorkouts = list.length
-
-  const getWorkoutVolume = (workout) => {
-    return (workout.exercises || []).reduce((acc, ex) => {
-      const sets = Number(ex.sets || 0)
-      const reps = Number(ex.reps || 0)
-      const weight = Number(ex.weight || 0)
-      return acc + sets * reps * weight
-    }, 0)
-  }
-
-  const totalVolume = list.reduce(
-    (sum, w) => sum + getWorkoutVolume(w),
-    0
-  )
-
-  const now = new Date()
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(now.getDate() - 7)
-
-  const workoutsLast7Days = list.filter((w) => {
-    if (!w.date) return false
-    const d = new Date(w.date)
-    return d >= sevenDaysAgo && d <= now
-  })
-
-  const volumeLast7Days = workoutsLast7Days.reduce(
-    (sum, w) => sum + getWorkoutVolume(w),
-    0
-  )
-
-  const avgVolumePerWorkout =
-    totalWorkouts > 0 ? Math.round(totalVolume / totalWorkouts) : 0
+  const { totalWorkouts, totalVolume, volumeLast7Days, avgVolumePerWorkout } =
+    summarize(list)
 
   return (
     <div className="card" style={{ maxHeight: screen.height - 400, overflowY: "auto" }}>
@@ -72,6 +43,8 @@ function StatsPanel({
           </div>
         </div>
       )}
+
+      <PersonalRecords workouts={list} />
 
       {/* Weekly Plan embedded in Stats Panel */}
       <div style={{ marginTop: "0px", borderTop: "1px solid #1f2937", paddingTop: "20px", minHeight: 0, paddingBottom: 40 }}>

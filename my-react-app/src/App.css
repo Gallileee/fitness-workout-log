@@ -368,6 +368,32 @@ body {
   background-clip: text;
 }
 
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.records-table th,
+.records-table td {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.records-table th {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.records-table td:not(:first-child),
+.records-table th:not(:first-child) {
+  text-align: right;
+  white-space: nowrap;
+}
+
 .workout-list {
   list-style: none;
   margin: 0;
