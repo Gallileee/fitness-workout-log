@@ -124,3 +124,28 @@ export function personalRecords(workouts) {
 
   return [...records.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
+
+// Best estimated 1RM per day for one exercise, oldest first: [{ date, e1rm }].
+// The name is matched case-insensitively, like in personalRecords. Workouts
+// without a valid date are skipped because they can't be placed on a timeline.
+export function oneRepMaxHistory(workouts, exerciseName) {
+  const key = String(exerciseName || "").trim().toLowerCase()
+  if (!key) return []
+
+  const bestByDate = new Map()
+  for (const w of workouts || []) {
+    if (!parseLocalDate(w.date)) continue
+    for (const ex of w.exercises || []) {
+      if (String(ex.name || "").trim().toLowerCase() !== key) continue
+      const e1rm = estimateOneRepMax(ex.weight, ex.reps)
+      if (e1rm === null) continue
+      const prev = bestByDate.get(w.date)
+      if (prev === undefined || e1rm > prev) bestByDate.set(w.date, e1rm)
+    }
+  }
+
+  // ISO dates sort correctly as strings.
+  return [...bestByDate.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([date, e1rm]) => ({ date, e1rm }))
+}

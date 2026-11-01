@@ -394,6 +394,21 @@ body {
   white-space: nowrap;
 }
 
+.progress-chart {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin-top: var(--spacing-sm);
+  color: var(--accent-primary-light);
+}
+
+.progress-chart-caption {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
 .workout-list {
   list-style: none;
   margin: 0;

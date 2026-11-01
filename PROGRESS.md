@@ -1,5 +1,17 @@
 # Progress log
 
+## 2026-11-01 (2nd run): Lint clean, 1RM progress chart
+
+Done:
+- Fixed all 4 lint errors and made lint blocking in CI.
+  - `WorkoutForm` no longer copies its `initial*` props into state inside an effect; `App` remounts it with `key={editingId ?? "new"}` instead.
+  - `WorkoutFilters`: removed the unused handlers and the dead `FakeDateInput` component (it also loaded an icon from a third-party site). The date pickers now call `onChange` with a plain object, like the type select, instead of an updater function that only worked because the parent passed `setFilters` directly.
+  - `createDefaultWeeklyPlan` moved to `src/lib/weeklyPlan.js`; removed the unused `DAYS` constant.
+- New: 1RM progress chart below the personal records. `oneRepMaxHistory()` in `stats.js` and `scaleSeries()` in the new `chart.js`, drawn as inline SVG without a chart library.
+- 25 unit tests in 8 groups (6 new).
+
+Verified: `npm test` (25/25 on Node 22.23, also passes on 18.12), `npm run lint` (0 problems), `vite build` on Node 22 in a fresh copy with a clean `npm ci`. Not verified: the chart in a browser (the app needs a Supabase login).
+
 ## 2026-11-01: Stats module, personal records, repo cleanup
 
 Done:
@@ -15,8 +27,8 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Fix the 4 existing lint errors**, then make lint blocking in CI: `setState` inside an effect (`WorkoutForm.jsx:34`; remount the form with a `key` instead), unused `handleFromChange` / `handleToChange` (`WorkoutFilters.jsx`), and `createDefaultWeeklyPlan` exported from a component file (`WeeklyPlan.jsx`; move it to `src/lib/`).
-2. **Remove or rewrite `server.js`'s unused API** (plaintext passwords, `x-user-id` auth). Keep only the static file serving, and fix the root `start` script.
-3. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user).
-4. **Progress chart**: estimated 1RM over time for a chosen exercise, reusing `estimateOneRepMax`.
-5. Component tests (Vitest + Testing Library) once the frontend runs on Node 20+.
+1. **Remove or rewrite `server.js`'s unused API** (plaintext passwords, `x-user-id` auth). Keep only the static file serving, and fix the root `start` script.
+2. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user).
+3. **Demo mode / seed data** so the UI (and the chart) can be tried without a Supabase account.
+4. Component tests (Vitest + Testing Library), e.g. that `ProgressChart` falls back to the first exercise and renders one point per day.
+5. Chart polish: date labels on the x axis, optional time-proportional spacing.

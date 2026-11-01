@@ -2,6 +2,7 @@
 import WeeklyPlan from "./WeeklyPlan"
 import WorkoutFilters from "./WorkoutFilters"
 import PersonalRecords from "./PersonalRecords"
+import ProgressChart from "./ProgressChart"
 import { summarize } from "../lib/stats"
 
 function StatsPanel({
@@ -45,6 +46,8 @@ function StatsPanel({
       )}
 
       <PersonalRecords workouts={list} />
+
+      <ProgressChart workouts={list} />
 
       {/* Weekly Plan embedded in Stats Panel */}
       <div style={{ marginTop: "0px", borderTop: "1px solid #1f2937", paddingTop: "20px", minHeight: 0, paddingBottom: 40 }}>

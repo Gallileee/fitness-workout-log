@@ -8,7 +8,9 @@ import {
   summarize,
   estimateOneRepMax,
   personalRecords,
+  oneRepMaxHistory,
 } from "./stats.js"
+import { scaleSeries } from "./chart.js"
 
 const bench = (sets, reps, weight) => ({ name: "Bench Press (Barbell)", sets, reps, weight })
 
@@ -148,5 +150,61 @@ describe("personalRecords", () => {
   test("returns an empty list when there is nothing to report", () => {
     assert.deepEqual(personalRecords([]), [])
     assert.deepEqual(personalRecords(undefined), [])
+  })
+})
+
+describe("oneRepMaxHistory", () => {
+  test("returns the best estimate per day, oldest first", () => {
+    // Workouts arrive newest first from Supabase; the 95 kg single beats 80×5 (93.3).
+    assert.deepEqual(oneRepMaxHistory([...workouts].reverse(), "Bench Press (Barbell)"), [
+      { date: "2026-10-20", e1rm: 80 },
+      { date: "2026-10-31", e1rm: 95 },
+    ])
+  })
+
+  test("merges two workouts on the same day and matches names case-insensitively", () => {
+    const sameDay = [
+      { date: "2026-11-01", exercises: [{ name: "squat", sets: 3, reps: 5, weight: 100 }] },
+      { date: "2026-11-01", exercises: [{ name: " Squat ", sets: 1, reps: 3, weight: 110 }] },
+    ]
+    assert.deepEqual(oneRepMaxHistory(sameDay, "SQUAT"), [{ date: "2026-11-01", e1rm: 121 }])
+  })
+
+  test("skips undated workouts, unknown exercises and sets that give no estimate", () => {
+    const list = [
+      { date: null, exercises: [bench(1, 1, 100)] },
+      { date: "2026-10-01", exercises: [bench(3, 15, 50), bench(3, 8, 0)] },
+    ]
+    assert.deepEqual(oneRepMaxHistory(list, "Bench Press (Barbell)"), [])
+    assert.deepEqual(oneRepMaxHistory(workouts, "Deadlift"), [])
+    assert.deepEqual(oneRepMaxHistory(workouts, ""), [])
+  })
+})
+
+describe("scaleSeries", () => {
+  const box = { width: 100, height: 50, padding: 10 }
+
+  test("spreads points across the width and puts the maximum at the top", () => {
+    const { points, min, max } = scaleSeries([80, 90, 100], box)
+    assert.equal(min, 80)
+    assert.equal(max, 100)
+    assert.deepEqual(points, [
+      { x: 10, y: 40 },
+      { x: 50, y: 25 },
+      { x: 90, y: 10 },
+    ])
+  })
+
+  test("draws a flat series and a single point through the middle", () => {
+    assert.deepEqual(scaleSeries([70, 70], box).points, [
+      { x: 10, y: 25 },
+      { x: 90, y: 25 },
+    ])
+    assert.deepEqual(scaleSeries([70], box).points, [{ x: 50, y: 25 }])
+  })
+
+  test("returns no points for empty or non-numeric input", () => {
+    assert.deepEqual(scaleSeries([], box), { points: [], min: null, max: null })
+    assert.deepEqual(scaleSeries([NaN, undefined], box), { points: [], min: null, max: null })
   })
 })
