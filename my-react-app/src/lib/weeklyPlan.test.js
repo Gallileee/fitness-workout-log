@@ -1,4 +1,4 @@
-import { test, describe } from "node:test"
+import { test, describe } from "vitest"
 import assert from "node:assert/strict"
 import { DAY_NAMES, createDefaultWeeklyPlan, normalizeWeeklyPlan, planToDays } from "./weeklyPlan.js"
 import { TABLE, loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./weeklyPlanStore.js"

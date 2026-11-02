@@ -44,6 +44,7 @@ function App() {
   const [currentType, setCurrentType] = useState("push")
   const [currentExercises, setCurrentExercises] = useState([])
   const [currentNote, setCurrentNote] = useState("")
+  const [saveError, setSaveError] = useState("")
 
   const [view, setView] = useState("dashboard")
   const [page, setPage] = useState("overview")
@@ -181,6 +182,7 @@ function App() {
   }
 
   const resetEditing = () => {
+    setSaveError("")
     setEditingId(null)
     setCurrentDate("")
     setCurrentType("push")
@@ -199,6 +201,7 @@ function App() {
     if (!dialogOpen) return
     const onKey = (e) => {
       if (e.key === "Escape") {
+        setSaveError("")
         setEditingId(null)
         setView("dashboard")
       }
@@ -207,7 +210,10 @@ function App() {
     return () => window.removeEventListener("keydown", onKey)
   }, [dialogOpen])
 
+  // Returns true when saved. On failure the dialog stays open with the error,
+  // so the user doesn't lose the workout they just typed in.
   const handleSave = async ({ date, type, exercises, note }) => {
+    setSaveError("")
     const payload = {
       user_id: user.userId,
       date,
@@ -239,9 +245,11 @@ function App() {
           : prev.map((w) => (w.id === savedWorkout.id ? savedWorkout : w))
       )
       resetEditing()
+      return true
     } catch (err) {
       console.error("Chyba při ukládání:", err)
-      alert("Nepovedlo se uložit trénink: " + err.message)
+      setSaveError("Nepovedlo se uložit trénink: " + err.message)
+      return false
     }
   }
 
@@ -349,9 +357,9 @@ function App() {
         initialExercises={currentExercises}
         initialNote={currentNote}
         units={units}
+        saveError={saveError}
         onSave={async (values) => {
-          await handleSave(values)
-          setView("dashboard")
+          if (await handleSave(values)) setView("dashboard")
         }}
         onCancel={closeForm}
         isEditing={view === "editWorkout" && editingId !== null}

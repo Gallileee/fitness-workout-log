@@ -1,5 +1,19 @@
 # Progress log
 
+## 2026-11-02 (3rd run): Component and whole-app tests, two bugs fixed
+
+Done:
+- Moved the frontend tests from `node:test` to **Vitest** (jsdom) and added **React Testing Library** + `user-event`. Vitest reuses the Vite config, so JSX and imports work the same as in the app. The 68 existing lib tests only changed their import line. The root server tests stay on `node:test`.
+- Wrote tests that failed first and then fixed what they found:
+  - **Bug: a failed workout save lost the data.** The dialog closed even when Supabase returned an error (shown only in an `alert()`). Now `handleSave` returns whether it succeeded; on failure the dialog stays open, keeps everything typed in and shows the error inside the dialog.
+  - **Validation in the workout form**: the form accepted 0 sets, empty or fractional reps and negative weights (the `min`/`step` attributes aren't enforced, because "Přidat cvik" isn't a submit button). Now sets and reps must be whole numbers from 1 to 100, and weight a number from 0 to 1000 in the chosen unit. Errors appear inline (`role="alert"`) instead of `alert()`.
+- New tests: `WorkoutForm` (11), `WeeklyPlan` + `PlanAdherence` (7), and `App` (4) on the demo client, including server failures, simulated by swapping `supabase.from` for a failing query.
+- 90 tests in total.
+
+Verified (Node 22.23): `npm test` 90/90, `npm run lint` clean, `vite build` passes. The new tests failed before the fixes (8 form tests and the failed-save app test). In the browser (`npm run demo`): the inline error shows above the dialog buttons; no console errors.
+
+Noticed, not changed: `npm audit` reports 24 advisories in existing dependencies (vite, ws, eslint tooling, express deps…), 1 of them critical. They were there before this change; the new test packages don't add any.
+
 ## 2026-11-02 (2nd run): Plan adherence, workouts schema in the repo
 
 Done:
@@ -93,9 +107,10 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Decide on the `workouts` schema gaps: a foreign key `user_id → auth.users on delete cascade` (check for orphaned rows first) and `created_at default now()`.
-2. Store plan history (e.g. a `valid_from` date per plan) so adherence for past weeks uses the plan that applied then.
-3. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
-4. Component tests (Vitest + Testing Library), e.g. the plan status line and the adherence card.
-5. Chart polish: date labels on the x axis, optional time-proportional spacing.
-6. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.
+1. Review `npm audit` (24 advisories in existing dependencies, 1 critical): update what has a compatible fix, and check which ones affect the production bundle rather than only dev tooling.
+2. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+3. Decide on the `workouts` schema gaps: a foreign key `user_id → auth.users on delete cascade` (check for orphaned rows first) and `created_at default now()`.
+4. Store plan history (e.g. a `valid_from` date per plan) so adherence for past weeks uses the plan that applied then.
+5. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
+6. Chart polish: date labels on the x axis, optional time-proportional spacing.
+7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.

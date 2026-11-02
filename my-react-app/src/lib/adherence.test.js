@@ -1,4 +1,4 @@
-import { test, describe } from "node:test"
+import { test, describe } from "vitest"
 import assert from "node:assert/strict"
 import process from "node:process"
 import { startOfWeek, toIsoDate, currentWeekStatus, weeklyAdherence, completedWeekStreak } from "./adherence.js"
