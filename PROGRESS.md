@@ -1,5 +1,19 @@
 # Progress log
 
+## 2026-11-02: Weekly plan saved in Supabase
+
+Done:
+- New table `weekly_plans` (`supabase/migrations/20261102000000_weekly_plans.sql`): one row per user, `days` stores only the 7 workout types (day names are UI labels), a check constraint on the array length, and RLS policies for select / insert / update with `(select auth.uid()) = user_id`. No delete policy; deleting the user cascades.
+- `src/lib/weeklyPlan.js`: `normalizeWeeklyPlan()` turns a stored row (or a UI plan) into exactly 7 valid days and falls back to the default day by day, so a malformed row can't break the UI. `planToDays()` is the reverse.
+- `src/lib/weeklyPlanStore.js`: `loadWeeklyPlan()` (`maybeSingle`, default plan when there is no row), `saveWeeklyPlan()` (upsert on `user_id`) and `createLatestSaver()`, which runs one save at a time and sends only the newest plan, so quick edits can't be saved out of order.
+- App: the plan loads after login and resets on logout; every change is saved; the plan selects are disabled while loading; an inline status line shows saving / saved / errors instead of an `alert`.
+- Demo client: per-table storage, `upsert` with `onConflict`, `maybeSingle`, and `.single()` now errors on 0 or 2+ rows like PostgREST.
+- 16 new tests (54 in total): normalization, the store against a fake client, the save queue's ordering and status reporting, and the demo client round trip.
+
+Verified (Node 22.23): `npm test` 54/54, `npm run lint` clean, `vite build` passes and the bundle contains no demo code. In the browser on `npm run demo`: changed two days → "Plán uložen.", logged out and in again → the changed plan was loaded back; on the 375×812 mobile layout a change saved too; no console errors.
+
+Not verified: the migration and the RLS policies against a real Supabase project (no project credentials here); the error states in the browser (covered only by unit tests).
+
 ## 2026-11-01 (4th run): UI redesign, settings, demo mode
 
 Done:
@@ -62,8 +76,9 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Persist the weekly plan** in Supabase (table `weekly_plans`, one row per user, with RLS).
-2. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
-3. Component tests (Vitest + Testing Library), e.g. that `ProgressChart` falls back to the first exercise and renders one point per day.
-4. Chart polish: date labels on the x axis, optional time-proportional spacing.
-5. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.
+1. Run the `weekly_plans` migration in the real Supabase project and check the plan saves across devices; also check that another user's row can't be read (RLS).
+2. Add a migration file for the existing `workouts` table (schema + RLS), so the whole database can be recreated from the repo.
+3. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
+4. Component tests (Vitest + Testing Library), e.g. the plan status line and that `ProgressChart` falls back to the first exercise.
+5. Chart polish: date labels on the x axis, optional time-proportional spacing.
+6. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.

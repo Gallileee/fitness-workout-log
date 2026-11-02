@@ -936,6 +936,15 @@ textarea.input {
   color: var(--accent);
 }
 
+.plan-status {
+  min-height: 1.4em;
+  margin: var(--space-2) 0 0;
+}
+
+.plan-status-error {
+  color: var(--danger);
+}
+
 .tabs {
   display: flex;
   gap: var(--space-1);

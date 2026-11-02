@@ -12,7 +12,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Summary: number of workouts, total volume (sets × reps × kg), volume over the last 7 days, average volume per workout
 - **Personal records**: the heaviest weight and the best estimated one-rep max for each exercise
 - **1RM progress chart**: pick an exercise and see its best estimated one-rep max per training day, with the change since the first logged day
-- Weekly PPL plan; clicking a day filters the history by that day's workout type
+- Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
 - **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
@@ -28,8 +28,9 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Part | Choice |
 | --- | --- |
 | Frontend | React 19 + Vite 7 (`my-react-app/`) |
-| Auth + database | Supabase (Postgres table `workouts`, called directly from the browser) |
+| Auth + database | Supabase (Postgres tables `workouts` and `weekly_plans`, called directly from the browser) |
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
+| Weekly plan | Model in `src/lib/weeklyPlan.js`, loading/saving in `src/lib/weeklyPlanStore.js` |
 | Charts | Hand-written inline SVG (`src/lib/chart.js` does the scaling), no chart library |
 | Styling | Plain CSS with design tokens (custom properties) for colours, spacing and accent themes; media and container queries for layout. No UI or icon library |
 | Tests | Built-in `node:test` runner, no extra dependencies |
@@ -64,6 +65,12 @@ The app expects a `workouts` table roughly like this (inferred from the frontend
 
 Enable Row Level Security with a policy like `user_id = auth.uid()`. The anon key ships to the browser, so RLS is what keeps users' data separate.
 
+### Weekly plan table
+
+Run [`supabase/migrations/20261102000000_weekly_plans.sql`](supabase/migrations/20261102000000_weekly_plans.sql) in the Supabase SQL editor. It creates `weekly_plans` (one row per user: `user_id` primary key, `days` = a JSON array of 7 workout types, Monday first, `updated_at`) with RLS policies that let users read, create and update only their own row.
+
+Without the table the app still works: the plan shows the default, edits stay in the page until reload, and the plan card says it couldn't be loaded or saved.
+
 ### Production build
 
 ```bash
@@ -75,7 +82,7 @@ cd .. && npm install && npm start  # serves the build on http://localhost:3000 (
 
 ```bash
 cd my-react-app
-npm test        # unit tests for src/lib (stats, chart scaling, preferences and units)
+npm test        # unit tests for src/lib (stats, chart scaling, preferences and units, weekly plan)
 npm run lint    # must pass; CI fails on lint errors
 
 cd ..
@@ -89,11 +96,11 @@ npm test        # server tests: static files, SPA fallback, removed API returns 
 - **Estimated 1RM** uses the Epley formula `weight × (1 + reps / 30)`. Only sets with 1–10 reps count, because the estimate gets unreliable at higher rep counts. A single rep counts as its own weight.
 - **Personal records** merge exercise names case-insensitively and skip bodyweight entries (weight 0).
 - **Units**: weights are always stored in kg. In imperial mode they are shown and typed in lb (1 lb = 0.45359237 kg); typed pounds are saved to 0.01 kg, so they show the same value again.
+- **Weekly plan saving**: each change is saved with an upsert on `user_id`. At most one save runs at a time; changes made meanwhile are merged and only the newest plan is sent next, so a slow request can't overwrite a newer plan. The card shows *Ukládám… / Plán uložen.* or the error.
 - **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
 
 ## Limitations
 
-- The weekly plan is not saved; it resets on reload.
 - Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
 - The UI text is Czech only.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
