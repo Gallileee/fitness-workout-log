@@ -1,0 +1,55 @@
+# Dependabot version updates: one batch of PRs per week instead of letting
+# outdated dependencies (and npm audit advisories) pile up.
+# Docs: https://docs.github.com/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+
+updates:
+  # Frontend (React + Vite) in my-react-app/
+  - package-ecosystem: npm
+    directory: /my-react-app
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Prague
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(frontend)"
+    groups:
+      # Minor and patch updates of build/test/lint tools in one PR.
+      frontend-dev-tools:
+        dependency-type: development
+        update-types: [minor, patch]
+      # React, Supabase etc.: one PR, separate from tooling, because these ship to users.
+      frontend-runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+    # Major versions still come as separate PRs, one per package, so each
+    # breaking change can be reviewed on its own.
+
+  # Static server (Express) at the repo root
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Prague
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(server)"
+    groups:
+      server:
+        update-types: [minor, patch]
+
+  # actions/checkout, actions/setup-node in .github/workflows/
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: Europe/Prague
+    commit-message:
+      prefix: "deps(ci)"
+    groups:
+      github-actions:
+        patterns: ["*"]

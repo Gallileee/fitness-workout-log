@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-11-02 (9th run): Dependabot
+
+Done:
+- `.github/dependabot.yml`, version updates for three ecosystems:
+  - **Frontend npm** (`/my-react-app`): weekly on Monday 06:00 Europe/Prague. Minor and patch updates are grouped into `frontend-dev-tools` and `frontend-runtime`; at most 5 open PRs; commit prefix `deps(frontend)`.
+  - **Server npm** (`/`): weekly; minor and patch updates in one `server` group; at most 3 open PRs; prefix `deps(server)`.
+  - **GitHub Actions** (`/`): monthly; all in one group; prefix `deps(ci)`.
+  - Major versions are not grouped, so each comes as its own PR.
+  - No custom labels: the repo doesn't have them, and Dependabot reports an error on every PR for a missing label. It adds its default `dependencies` label itself.
+- README: a Dependabot paragraph in *Dependency audit*.
+
+Verified:
+- The file validates against the SchemaStore Dependabot schema (`dependabot-2.0.json`), checked with ajv + js-yaml from the repo's own `node_modules`.
+- A deliberately invalid `interval` was rejected by the same check, so the validation really runs.
+
+Not verified: Dependabot actually running. It starts only after this is merged to `main`; the first PRs should appear the following Monday.
+
+Repository settings, not changed (they need the owner's go-ahead):
+- **Dependabot alerts** are off (`GET /repos/…/vulnerability-alerts` → 404).
+- **Dependabot security updates** are off (`automated-security-fixes` → `enabled: false`).
+
+With these on, GitHub would also flag new vulnerabilities and open fix PRs immediately, not just on the weekly schedule.
+
 ## 2026-11-02 (8th run): Dependency audit
 
 Before: frontend 24 advisories (1 critical, 12 high), server 7 (2 critical, 3 high).
@@ -220,8 +243,7 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 1. **CSV export** of all workouts (later: import from Strong / Hevy).
 2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
 3. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-4. Dependabot (or a monthly `npm audit` reminder) so advisories don't pile up again.
-5. Per-exercise rep ranges for the overload suggestion.
-6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-7. Store plan history so adherence for past weeks uses the plan that applied then.
-8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`, which only `app.js` uses. Check with the owner first.
+4. Per-exercise rep ranges for the overload suggestion.
+5. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+6. Store plan history so adherence for past weeks uses the plan that applied then.
+7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`, which only `app.js` uses. Check with the owner first.

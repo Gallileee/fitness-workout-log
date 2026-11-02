@@ -116,6 +116,12 @@ cd my-react-app && npm audit && npm audit --omit=dev
 cd .. && npm audit
 ```
 
+**Dependabot** ([`.github/dependabot.yml`](.github/dependabot.yml)) opens update PRs every Monday morning (Prague time). CI runs on them like on any PR.
+- Frontend: minor and patch updates come grouped into one PR for dev tools and one for runtime packages (React, Supabase), at most 5 open at a time.
+- Server: minor and patch updates in one PR.
+- GitHub Actions: checked monthly, in one PR.
+- Major versions come as separate PRs, one per package, so each breaking change can be reviewed on its own.
+
 ## How the statistics work
 
 - **Volume** = Σ sets × reps × weight. Missing, negative or non-numeric values count as 0.
