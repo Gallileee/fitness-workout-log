@@ -13,6 +13,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **Personal records**: the heaviest weight and the best estimated one-rep max for each exercise
 - **1RM progress chart**: pick an exercise and see its best estimated one-rep max per training day, with the change since the first logged day
 - Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
+- **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
 - **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
@@ -50,20 +51,19 @@ npm run dev             # http://localhost:5173
 
 To try the app without Supabase, run `npm run demo` instead. It swaps the Supabase client for an in-memory one with eight weeks of sample workouts (`src/demo/`). Changes are lost on reload, and the demo client is never included in `npm run build`.
 
-### Supabase table
+### Supabase tables
 
-The app expects a `workouts` table roughly like this (inferred from the frontend code):
+The SQL for both tables is in [`supabase/migrations/`](supabase/migrations/). Run the files in name order in the Supabase SQL editor (or with `supabase db push`) to set up a new project:
 
-| Column | Type |
+| File | What it does |
 | --- | --- |
-| `id` | bigint / identity, primary key |
-| `user_id` | uuid, references `auth.users` |
-| `date` | date |
-| `type` | text (`push`, `pull`, `legs`, `fullbody`, `core`, `other`) |
-| `exercises` | jsonb: `[{ id, name, sets, reps, weight }]` |
-| `note` | text |
+| `20261101000000_workouts.sql` | The `workouts` table as it exists in the live project, with RLS. Don't run it on the live project; it already has the table. |
+| `20261102000000_weekly_plans.sql` | The `weekly_plans` table (see below). Already applied to the live project. |
+| `20261103000000_workouts_user_date_index.sql` | An index on `workouts (user_id, date desc)` for the app's main query. Safe to run on the live project; **not applied yet**. |
 
-Enable Row Level Security with a policy like `user_id = auth.uid()`. The anon key ships to the browser, so RLS is what keeps users' data separate.
+`workouts` columns: `id` (uuid, primary key), `user_id` (uuid), `date` (date), `type` (text: `push`, `pull`, `legs`, `fullbody`, `core`, `other`), `exercises` (jsonb: `[{ id, name, sets, reps, weight }]`, weight in kg), `note` (text), `created_at` (timestamptz).
+
+Row Level Security is on for both tables, and users can only reach their own rows. The anon key ships to the browser, so RLS is what keeps users' data separate.
 
 ### Weekly plan table
 
@@ -97,11 +97,13 @@ npm test        # server tests: static files, SPA fallback, removed API returns 
 - **Personal records** merge exercise names case-insensitively and skip bodyweight entries (weight 0).
 - **Units**: weights are always stored in kg. In imperial mode they are shown and typed in lb (1 lb = 0.45359237 kg); typed pounds are saved to 0.01 kg, so they show the same value again.
 - **Weekly plan saving**: each change is saved with an upsert on `user_id`. At most one save runs at a time; changes made meanwhile are merged and only the newest plan is sent next, so a slow request can't overwrite a newer plan. The card shows *Ukládám… / Plán uložen.* or the error.
+- **Plan adherence**: weeks run Monday to Sunday. This week, a planned day is *done* when a workout of the planned type was logged that date. For the 8-week bars, days may move within the week: for each type, completed = min(planned sessions, logged workouts of that type), so three legs days don't make up for a missed push day. The streak counts fully completed weeks back from last week; the current week joins it once it's complete, so the streak doesn't reset every Monday.
 - **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
 
 ## Limitations
 
 - Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
+- Plan adherence measures past weeks against the *current* plan, because older versions of the plan aren't stored.
 - The UI text is Czech only.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.
