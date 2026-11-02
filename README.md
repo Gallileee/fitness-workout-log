@@ -59,7 +59,7 @@ The SQL for both tables is in [`supabase/migrations/`](supabase/migrations/). Ru
 | --- | --- |
 | `20261101000000_workouts.sql` | The `workouts` table as it exists in the live project, with RLS. Don't run it on the live project; it already has the table. |
 | `20261102000000_weekly_plans.sql` | The `weekly_plans` table (see below). Already applied to the live project. |
-| `20261103000000_workouts_user_date_index.sql` | An index on `workouts (user_id, date desc)` for the app's main query. Safe to run on the live project; **not applied yet**. |
+| `20261103000000_workouts_user_date_index.sql` | An index on `workouts (user_id, date desc)` for the app's main query. Already applied to the live project. |
 
 `workouts` columns: `id` (uuid, primary key), `user_id` (uuid), `date` (date), `type` (text: `push`, `pull`, `legs`, `fullbody`, `core`, `other`), `exercises` (jsonb: `[{ id, name, sets, reps, weight }]`, weight in kg), `note` (text), `created_at` (timestamptz).
 

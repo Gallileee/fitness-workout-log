@@ -6,7 +6,7 @@ Done:
 - Ran the `weekly_plans` migration on the live Supabase project (owner approved) and merged PR #5. Checked: the table exists, RLS is on, 3 policies (select / insert / update) for `authenticated`.
 - New `src/lib/adherence.js`: `currentWeekStatus()` (per day: done / other / missed / today / upcoming / rest / extra), `weeklyAdherence()` (last 8 weeks, sessions matched by type, so moved days still count), `completedWeekStreak()`. Weeks start on Monday and are computed through the calendar, not by adding milliseconds, so daylight saving changes don't shift them.
 - New `PlanAdherence` card above the weekly plan (desktop: plan tab; mobile: Plan page): this week as 7 cells, 8 bars, streak. Each day and bar has a text description for screen readers and a tooltip.
-- `supabase/migrations/20261101000000_workouts.sql`: the live `workouts` schema, read from the database with a read-only query (`id` is a uuid, not a bigint as the README used to say). Plus `20261103000000_workouts_user_date_index.sql`, an index for the main query. **Not applied**; it needs the owner's go-ahead.
+- `supabase/migrations/20261101000000_workouts.sql`: the live `workouts` schema, read from the database with a read-only query (`id` is a uuid, not a bigint as the README used to say). Plus `20261103000000_workouts_user_date_index.sql`, an index for the main query, applied to the live project with the owner's go-ahead (checked: index valid).
 - 14 new tests (68 in total).
 
 Verified (Node 22.23): `npm test` 68/68, `npm run lint` clean, `vite build` passes. In the browser on `npm run demo`: the card shows 0/5 this week and 3/5 bars (the demo logs 3 sessions a week); switching Friday and Saturday to rest updated it to 0/3 with 7 full bars and a 7-week streak. Mobile 375×812: no horizontal overflow; no console errors.
@@ -93,10 +93,9 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Apply `20261103000000_workouts_user_date_index.sql` on the live project (owner's go-ahead needed).
-2. Decide on the `workouts` schema gaps: a foreign key `user_id → auth.users on delete cascade` (check for orphaned rows first) and `created_at default now()`.
-3. Store plan history (e.g. a `valid_from` date per plan) so adherence for past weeks uses the plan that applied then.
-4. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
-5. Component tests (Vitest + Testing Library), e.g. the plan status line and the adherence card.
-6. Chart polish: date labels on the x axis, optional time-proportional spacing.
-7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.
+1. Decide on the `workouts` schema gaps: a foreign key `user_id → auth.users on delete cascade` (check for orphaned rows first) and `created_at default now()`.
+2. Store plan history (e.g. a `valid_from` date per plan) so adherence for past weeks uses the plan that applied then.
+3. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
+4. Component tests (Vitest + Testing Library), e.g. the plan status line and the adherence card.
+5. Chart polish: date labels on the x axis, optional time-proportional spacing.
+6. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.
