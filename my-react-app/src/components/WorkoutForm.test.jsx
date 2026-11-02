@@ -216,3 +216,58 @@ describe("WorkoutForm: last time", () => {
     expect(screen.getByLabelText("Série").value).toBe("3")
   })
 })
+
+describe("WorkoutForm: today's planned exercises", () => {
+  const history = [
+    {
+      id: 1,
+      date: "2026-10-30",
+      type: "push",
+      exercises: [
+        { name: "Bench Press (Barbell)", sets: 4, reps: 6, weight: 85 },
+        { name: "Dips", sets: 3, reps: 10, weight: 0 },
+      ],
+    },
+  ]
+  const planned = ["Bench Press (Barbell)", "Dips"]
+
+  test("shows the planned exercises as buttons", () => {
+    setup({ plannedExercises: planned })
+    const group = screen.getByRole("group", { name: "Dnešní cviky" })
+    expect(group.textContent).toContain("Bench Press (Barbell)")
+    expect(group.textContent).toContain("Dips")
+  })
+
+  test("no planned section for a normal new workout", () => {
+    setup()
+    expect(screen.queryByRole("group", { name: "Dnešní cviky" })).toBeNull()
+  })
+
+  test("tapping an exercise from the list selects it and fills in last time", async () => {
+    const { user } = setup({ plannedExercises: planned, history, initialDate: "2026-11-06" })
+    await user.click(screen.getByRole("button", { name: "Bench Press (Barbell)" }))
+
+    expect(screen.getByLabelText("Cvik").value).toBe("Bench Press (Barbell)")
+    expect(screen.getByRole("button", { name: "Bench Press (Barbell)" }).getAttribute("aria-pressed")).toBe("true")
+    expect(screen.getByLabelText("Opakování").value).toBe("6")
+    expect(screen.getByLabelText("Váha (kg)").value).toBe("85")
+  })
+
+  test("an exercise that isn't in the list is used as a custom name", async () => {
+    const { user } = setup({ plannedExercises: planned, history, initialDate: "2026-11-06" })
+    await user.click(screen.getByRole("button", { name: "Dips" }))
+
+    expect(screen.getByLabelText("Vlastní název cviku").checked).toBe(true)
+    expect(screen.getByLabelText("Cvik").value).toBe("Dips")
+    expect(screen.getByLabelText("Opakování").value).toBe("10")
+  })
+
+  test("an added exercise is marked as done", async () => {
+    const { user } = setup({ plannedExercises: planned, history, initialDate: "2026-11-06" })
+    await user.click(screen.getByRole("button", { name: "Bench Press (Barbell)" }))
+    await user.click(screen.getByRole("button", { name: "Přidat cvik" }))
+
+    expect(screen.getByRole("button", { name: "Bench Press (Barbell) (přidáno)" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Dips" })).toBeTruthy()
+  })
+})

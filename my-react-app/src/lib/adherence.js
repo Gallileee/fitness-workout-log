@@ -1,6 +1,6 @@
 // src/lib/adherence.js
 // How well the logged workouts follow the weekly plan. Pure functions, so they
-// can be tested with `node --test`. Weeks run Monday to Sunday, in local time.
+// are tested with Vitest. Weeks run Monday to Sunday, in local time.
 import { parseLocalDate } from "./stats.js"
 import { normalizeWeeklyPlan } from "./weeklyPlan.js"
 

@@ -1259,6 +1259,65 @@ textarea.input {
   background: var(--accent-soft);
 }
 
+/* Today's planned workout (mobile overview) */
+.today-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.today-body {
+  min-width: 0;
+}
+
+.today-text {
+  margin: 0;
+}
+
+.today-check {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* "Dnešní cviky": planned exercises as one-tap chips (WorkoutForm) */
+.planned {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planned-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+
+.chip:hover {
+  background: var(--surface-3);
+}
+
+.chip.is-selected {
+  border-color: var(--accent-border);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.chip.is-done {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 /* "Minule" (last time) hint above the set/rep/weight fields */
 .last-time {
   display: flex;

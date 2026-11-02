@@ -38,6 +38,7 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // saveError: message from the parent when saving failed; the form stays filled in.
 // history: the user's other workouts, for the "Minule" (last time) hint and prefill.
 // repRange: "6-10" etc., for the progressive overload suggestion.
+// plannedExercises: names to offer as one-tap choices ("Dnešní cviky"), e.g. from today's plan.
 function WorkoutForm({
   initialDate,
   initialType,
@@ -50,6 +51,7 @@ function WorkoutForm({
   saveError = "",
   history = [],
   repRange = "6-10",
+  plannedExercises = [],
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -83,7 +85,8 @@ function WorkoutForm({
 
   // Last time's numbers for the chosen exercise; workouts after this one's date don't count.
   const findLast = (name) => lastPerformance(history, name, { onOrBefore: date })
-  const last = findLast(useCustomExercise ? customExerciseName.trim() : exerciseName)
+  const currentName = useCustomExercise ? customExerciseName.trim() : exerciseName
+  const last = findLast(currentName)
 
   // Next step from the first entry of last time (usually the working sets).
   const suggestion = last ? suggestProgression(last.entries[0], { repRange, units }) : null
@@ -148,6 +151,22 @@ function WorkoutForm({
   }
 
   const filteredExercises = exercisesDb[type] || []
+  const isLogged = (name) => exercises.some((ex) => ex.name.toLowerCase() === name.toLowerCase())
+
+  // Picks a planned exercise: from the list when it's there, otherwise as a
+  // custom name. Either way last time's numbers are filled in.
+  const handlePlannedPick = (name) => {
+    setError("")
+    if (filteredExercises.includes(name)) {
+      setUseCustomExercise(false)
+      handleExerciseSelect(name)
+      return
+    }
+    setUseCustomExercise(true)
+    setCustomExerciseName(name)
+    const performance = findLast(name)
+    if (performance) applyLast(performance)
+  }
   const title = isEditing ? "Upravit trénink" : "Nový trénink"
 
   return (
@@ -185,6 +204,33 @@ function WorkoutForm({
 
         <fieldset className="subcard">
           <legend className="subcard-title">Přidat cvik</legend>
+
+          {plannedExercises.length > 0 && (
+            <div className="planned" role="group" aria-labelledby={`${id}-planned`}>
+              <span id={`${id}-planned`} className="label">
+                Dnešní cviky
+              </span>
+              <div className="planned-list">
+                {plannedExercises.map((name) => {
+                  const done = isLogged(name)
+                  const selected = currentName.toLowerCase() === name.toLowerCase()
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      className={`chip ${done ? "is-done" : ""} ${selected ? "is-selected" : ""}`}
+                      aria-pressed={selected}
+                      aria-label={done ? `${name} (přidáno)` : name}
+                      onClick={() => handlePlannedPick(name)}
+                    >
+                      {done && <span aria-hidden="true">✓ </span>}
+                      {name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <label className="check">
             <input

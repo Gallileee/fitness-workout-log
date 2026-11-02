@@ -1,5 +1,28 @@
 # Progress log
 
+## 2026-11-02 (6th run): Start today's workout from the plan
+
+Done:
+- `src/lib/todaysWorkout.js`:
+  - `plannedTypeFor(plan, date)`.
+  - `todaysWorkout(plan, workouts, today)`: today's planned type, whether it's already logged, and the exercise names from the newest earlier workout of that type, de-duplicated.
+  - `exercisesLabel()`: Czech plurals.
+- Desktop: a *Dnes: Push* button in the top bar (hidden on rest days and once today's planned workout is logged; the tooltip shows "3 cviky jako út 27. 10.").
+- Mobile: a *Dnes* card at the top of the overview, with three states: *Začít*, rest day, or ✓ already logged.
+- Workout form: a new `plannedExercises` prop shows *Dnešní cviky* as chips.
+  - Tapping one selects it (or fills it in as a custom name if it isn't in the type's list), which fills in last time's numbers and shows the overload suggestion.
+  - Added exercises get a ✓.
+- 15 new tests (138 in total): 9 for the lib, 5 for the form, and 1 whole-app test that pins the date to a Friday with `vi.useFakeTimers({ toFake: ["Date"] })`.
+- Fixed a stale comment in `adherence.js` (it still mentioned `node --test`).
+
+Verified (Node 22.23): `npm test` 138/138, `npm run lint` clean, `vite build` passes. In the browser (`npm run demo`, Monday 2 Nov):
+- *Dnes: Push* opened the form with 02.11.2026, Push and Bench / OHP / Triceps Pushdown from 27 Oct.
+- Tapping Bench showed Minule + Návrh, and after adding it the chip got a ✓.
+- After saving, the button disappeared.
+- Mobile card showed "3 cviky jako út 27. 10.", or "✓ … je zapsaný" after logging.
+- The top bar stays one row at 1024 and 1366 px, and the dashboard still fits one screen.
+- No console errors.
+
 ## 2026-11-02 (5th run): Progressive overload suggestion
 
 Done:
@@ -143,12 +166,11 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Start today's workout from the plan**: prefill the form with the exercises from the last workout of today's planned type.
-2. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
-3. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-4. Rest timer after adding an exercise (vibration / notification).
-5. CSV export (later: import from Strong / Hevy).
+1. **Rest timer** after adding an exercise (configurable, e.g. 90 s; vibration / sound when done).
+2. **CSV export** of all workouts (later: import from Strong / Hevy).
+3. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
+4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+5. Per-exercise rep ranges for the overload suggestion.
 6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
 7. Store plan history so adherence for past weeks uses the plan that applied then.
 8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`). Check with the owner first.
-9. Per-exercise rep ranges (e.g. 4–6 for squats, 10–15 for curls) for the overload suggestion.

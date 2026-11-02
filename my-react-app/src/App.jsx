@@ -9,11 +9,15 @@ import PersonalRecords from "./components/PersonalRecords"
 import ProgressChart from "./components/ProgressChart"
 import WeeklyPlan from "./components/WeeklyPlan"
 import PlanAdherence from "./components/PlanAdherence"
+import TodayCard from "./components/TodayCard"
 import Settings from "./components/Settings"
 import Login from "./components/Login"
 import Icon from "./components/Icon"
 import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
+import { todaysWorkout, exercisesLabel } from "./lib/todaysWorkout"
+import { workoutTypeLabel } from "./lib/workoutTypes"
+import { formatWorkoutDate } from "./lib/format"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
 import { browserStorage, loadPreferences, savePreferences, resolveLayout } from "./lib/preferences"
@@ -45,6 +49,7 @@ function App() {
   const [currentExercises, setCurrentExercises] = useState([])
   const [currentNote, setCurrentNote] = useState("")
   const [saveError, setSaveError] = useState("")
+  const [plannedExercises, setPlannedExercises] = useState([])
 
   const [view, setView] = useState("dashboard")
   const [page, setPage] = useState("overview")
@@ -65,6 +70,8 @@ function App() {
   const filtersActive = filters.type !== "all" || Boolean(filters.from || filters.to)
 
   const statsWorkouts = statsSource === "all" ? workouts : filteredWorkouts
+  const today = todaysWorkout(weeklyPlan, workouts)
+  const canStartToday = today.type !== "off" && !today.done
 
   useEffect(() => {
     savePreferences(browserStorage(), preferences)
@@ -183,6 +190,7 @@ function App() {
 
   const resetEditing = () => {
     setSaveError("")
+    setPlannedExercises([])
     setEditingId(null)
     setCurrentDate("")
     setCurrentType("push")
@@ -255,6 +263,15 @@ function App() {
 
   const handleNewWorkout = () => {
     resetEditing()
+    setView("newWorkout")
+  }
+
+  // Opens the form for today's planned type, with last time's exercises as one-tap choices.
+  const handleStartToday = () => {
+    resetEditing()
+    setCurrentDate(today.date)
+    setCurrentType(today.type)
+    setPlannedExercises(today.exerciseNames)
     setView("newWorkout")
   }
 
@@ -360,6 +377,7 @@ function App() {
         saveError={saveError}
         history={workouts.filter((w) => w.id !== editingId)}
         repRange={preferences.repRange}
+        plannedExercises={plannedExercises}
         onSave={async (values) => {
           if (await handleSave(values)) setView("dashboard")
         }}
@@ -385,6 +403,7 @@ function App() {
         <main className="m-main">
           {current.page === "overview" && (
             <>
+              <TodayCard today={today} onStart={handleStartToday} />
               {statsSummary}
               <section className="card card-featured">
                 <h2 className="card-title">Vývoj odhadu 1RM</h2>
@@ -487,6 +506,21 @@ function App() {
           <button type="button" className="icon-btn" onClick={handleLogout} aria-label="Odhlásit se" title="Odhlásit se">
             <Icon name="logout" />
           </button>
+          {canStartToday && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleStartToday}
+              title={
+                today.sourceDate
+                  ? `${exercisesLabel(today.exerciseNames.length)} jako ${formatWorkoutDate(today.sourceDate)}`
+                  : undefined
+              }
+            >
+              <Icon name="calendar" size={18} />
+              Dnes: {workoutTypeLabel(today.type)}
+            </button>
+          )}
           <button type="button" className="btn btn-primary" onClick={handleNewWorkout}>
             <Icon name="plus" size={18} />
             Nový trénink
