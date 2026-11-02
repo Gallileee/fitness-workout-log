@@ -509,6 +509,21 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+input[type="date"].input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  height: var(--control-h);
+  line-height: calc(var(--control-h) - 2px);
+  text-align: left;
+}
+
+input[type="date"].input::-webkit-date-and-time-value {
+  margin: 0;
+  text-align: left;
+}
+
 textarea.input {
   padding: var(--space-3);
   min-height: 84px;
@@ -2267,25 +2282,18 @@ textarea.input {
   flex: 1;
 }
 
-/* On a phone the timer gets its own row above Zrušit / Uložit. */
-.app-shell[data-layout="mobile"] .dialog-footer {
-  flex-wrap: wrap;
+/* Workout form on a phone: everything fits the width, with less vertical
+   padding so the add-exercise part fits on one screen. */
+.app-shell[data-layout="mobile"] .form-row-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.app-shell[data-layout="mobile"] .dialog-footer-start {
-  flex-basis: 100%;
-  margin-right: 0;
+.app-shell[data-layout="mobile"] .form-row-3 .field:last-child {
+  grid-column: 1 / -1;
 }
 
-.app-shell[data-layout="mobile"] .dialog-footer .dialog-footer-start .btn {
-  flex: none;
-}
-
-.app-shell[data-layout="mobile"] .dialog-footer .rest-timer-start {
-  width: 100%;
-}
-
-@media (max-width: 380px) {
+/* Same for the desktop layout forced on a narrow screen. */
+@media (max-width: 560px) {
   .form-row-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2293,7 +2301,65 @@ textarea.input {
   .form-row-3 .field:last-child {
     grid-column: 1 / -1;
   }
+}
 
+.app-shell[data-layout="mobile"] .dialog-body {
+  padding: var(--space-3);
+}
+
+.app-shell[data-layout="mobile"] .dialog-body.form {
+  gap: var(--space-3);
+}
+
+.app-shell[data-layout="mobile"] .subcard {
+  padding: var(--space-3);
+  gap: var(--space-3);
+}
+
+.app-shell[data-layout="mobile"] .form .field {
+  gap: 4px;
+}
+
+.app-shell[data-layout="mobile"] .dialog-body textarea.input {
+  min-height: 64px;
+}
+
+/* On a phone the footer is one row: the rest timer and Uložit, half each.
+   Zrušit is hidden there; the × in the header closes the form. */
+.app-shell[data-layout="mobile"] .dialog-cancel {
+  display: none;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer-start {
+  flex: 1 1 0;
+  margin-right: 0;
+  min-width: 0;
+  display: flex;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer .dialog-footer-start .btn {
+  flex: none;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer .rest-timer-start {
+  flex: 1;
+  width: 100%;
+  min-height: 46px;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer .rest-timer {
+  flex: 1;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 46px;
+}
+
+/* Half a row has room for the clock and stop; +30 s is on the overview's big timer. */
+.app-shell[data-layout="mobile"] .dialog-footer .rest-timer-extend {
+  display: none;
+}
+
+@media (max-width: 380px) {
   .plan-day {
     grid-template-columns: minmax(0, 1fr) 132px;
   }
