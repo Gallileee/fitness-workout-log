@@ -381,7 +381,13 @@ function App() {
   )
 
   const settings = (
-    <Settings preferences={preferences} onChange={setPreferences} user={user} onLogout={handleLogout} />
+    <Settings
+      preferences={preferences}
+      onChange={setPreferences}
+      user={user}
+      onLogout={handleLogout}
+      workouts={workouts}
+    />
   )
 
   const dialog = dialogOpen && (
