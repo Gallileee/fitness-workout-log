@@ -5,6 +5,7 @@ import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { supabase } from "./supabaseClient"
 import App from "./App"
+import { toIsoDate } from "./lib/adherence"
 
 vi.mock("./supabaseClient", () => import("./demo/demoSupabaseClient.js"))
 
@@ -47,6 +48,37 @@ describe("App", () => {
     vi.spyOn(window, "alert").mockImplementation(() => {
       throw new Error("alert() should not be used")
     })
+  })
+
+  test("'Dnes' starts today's planned workout with last time's exercises", async () => {
+    // A Friday at least a week ahead: the default plan has push on Fridays,
+    // and no other test changes Friday or logs a workout on that date.
+    const friday = new Date()
+    friday.setDate(friday.getDate() + 7)
+    while (friday.getDay() !== 5) friday.setDate(friday.getDate() + 1)
+    friday.setHours(10, 0, 0, 0)
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(friday)
+    try {
+      const user = await renderApp()
+      await user.click(screen.getByRole("button", { name: "Dnes: Push" }))
+
+      const form = within(screen.getByRole("dialog"))
+      expect(form.getByLabelText("Datum").value).toBe(toIsoDate(friday))
+      expect(form.getByLabelText("Typ tréninku").value).toBe("push")
+
+      // The demo account's push days include bench press.
+      await user.click(form.getByRole("button", { name: "Bench Press (Barbell)" }))
+      expect(form.getByText(/Minule/)).toBeTruthy()
+      await user.click(form.getByRole("button", { name: "Přidat cvik" }))
+      await user.click(form.getByRole("button", { name: "Uložit trénink" }))
+
+      // Today's push is logged, so the shortcut disappears.
+      expect(screen.queryByRole("dialog")).toBeNull()
+      expect(screen.queryByRole("button", { name: "Dnes: Push" })).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   test("a new workout appears in the list", async () => {

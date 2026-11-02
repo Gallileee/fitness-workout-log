@@ -8,6 +8,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 - Sign up / log in (Supabase Auth); every user sees only their own workouts
 - Create, edit and delete workouts (date, type, exercises, note), choosing exercises from a built-in list or entering custom ones
+- **Start today's workout**: the plan knows today is, say, push day. *Dnes: Push* (top bar) or *Začít* (mobile overview) opens the form with today's date, the planned type and the exercises from your last push workout as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
 - **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings
 - **− / + buttons** for sets, reps and weight (steps of 1, and 2.5 kg or 5 lb), so common changes take one tap
@@ -107,6 +108,7 @@ What the frontend tests cover:
 - **Estimated 1RM** uses the Epley formula `weight × (1 + reps / 30)`. Only sets with 1–10 reps count, because the estimate gets unreliable at higher rep counts. A single rep counts as its own weight.
 - **Personal records** merge exercise names case-insensitively and skip bodyweight entries (weight 0).
 - **Units**: weights are always stored in kg. In imperial mode they are shown and typed in lb (1 lb = 0.45359237 kg); typed pounds are saved to 0.01 kg, so they show the same value again.
+- **Today's workout** = the planned type for today's weekday. Its exercises come from the newest *earlier* workout of that type, with duplicates (case-insensitive) removed. The shortcut is hidden on rest days and once a workout of the planned type is logged today. An exercise that isn't in the built-in list for that type is filled in as a custom name.
 - **Last time** = the newest workout, on or before the date of the workout being entered, that contains the exercise (names matched case-insensitively). An edited workout never shows itself. If the exercise appears several times in that workout, all entries are shown and the first one is filled in. For a custom name the hint appears while typing, and *Použít* fills it in.
 - **Overload suggestion** (double progression, `src/lib/progression.js`), built from the first entry of last time:
   - Below the top of the rep range (default 6–10): same weight, one more rep.
