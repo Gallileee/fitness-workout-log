@@ -11,7 +11,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **Start today's workout**: the plan knows today is, say, push day. *Dnes: Push* (top bar) or *Začít* (mobile overview) opens the form with today's date, the planned type and the exercises from your last push workout as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
 - **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings
-- **Rest timer**: adding an exercise starts a countdown (1:30 by default; 1:00–3:00 or off in Settings), and *Pauza 1:30* in the form starts one by hand, e.g. between sets. It has +30 s and stop, keeps running when the form is closed (shown in the top bar / app bar), and vibrates and beeps when it ends
+- **Rest timer**: adding an exercise starts a countdown (1:30 by default; 1:00–3:00 or off in Settings), and *Pauza 1:30* starts one by hand, e.g. between sets. It's in the form and, on desktop, always in the top bar (on mobile the app bar shows it while it runs). It has +30 s and stop, keeps running when the form is closed, and vibrates and beeps when it ends
 - **− / + buttons** for sets, reps and weight (steps of 1, and 2.5 kg or 5 lb), so common changes take one tap
 - Filter the history by workout type and date range (both dates inclusive)
 - Summary: number of workouts, total volume (sets × reps × kg), volume over the last 7 days, average volume per workout
@@ -25,7 +25,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 ## Layout
 
-- **Desktop** (wide windows): one dashboard with summary tiles, the filterable workout list, the 1RM chart, and tabs for records and the weekly plan. On windows at least 900×700 px it fits exactly one screen and only the lists scroll inside their cards. On shorter or zoomed-in windows the page scrolls normally instead of squeezing the content.
+- **Desktop** (wide windows): a top bar with navigation, the rest timer, *Dnes* and *Nový trénink* (the account email and logout are in Settings), then one dashboard with summary tiles, the filterable workout list, the 1RM chart, and tabs for records and the weekly plan. On windows at least 900×700 px it fits exactly one screen and only the lists scroll inside their cards. On shorter or zoomed-in windows the page scrolls normally instead of squeezing the content.
 - **Mobile** (≤ 760 px, or chosen in Settings): an app bar, one section per tab (Overview, Workouts, Plan, Settings) and a bottom tab bar with a central + button. Touch targets are at least 44 px, and the workout form opens as a full-screen sheet.
 - *Auto* picks the layout from the viewport width. A manual choice always keeps the navigation reachable: the desktop layout wraps on a phone, and the mobile layout is a centred column on a monitor.
 
