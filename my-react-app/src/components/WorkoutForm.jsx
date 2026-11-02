@@ -378,7 +378,8 @@ function WorkoutForm({
             <RestTimer timer={restTimer} defaultSeconds={restSeconds ?? DEFAULT_REST_SECONDS} />
           </div>
         )}
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        {/* Hidden on phones, where the × in the header does the same and the row is needed for the timer. */}
+        <button type="button" className="btn btn-ghost dialog-cancel" onClick={onCancel}>
           Zrušit
         </button>
         <button type="submit" form={`${id}-form`} className="btn btn-primary">

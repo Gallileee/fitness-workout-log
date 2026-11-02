@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-11-02 (15th run): Workout form fits an iPhone
+
+Reported by the owner with a screenshot from an iPhone 15 Pro Max (430 px wide): in the workout form the sets / reps / weight numbers weren't visible, the date stuck out of its box, and the fields had different heights.
+
+Causes and fixes (CSS, plus one class in `WorkoutForm.jsx`):
+- **Steppers:** the 2 + 1 layout (Série + Opakování, then Váha full width) only started below 380 px, so a 430 px phone got three columns, leaving a few pixels for the number between − and +. It now applies to the whole mobile layout and to any screen up to 560 px. Number fields at 430 px: 92 / 92 / 288 px.
+- **Date:** iOS Safari's native date input ignores `width: 100%` and centres its text. It now has `appearance: none`, a fixed height and left-aligned text, so it's as wide and as tall (46 px) as the type select.
+- **Height:** smaller paddings and gaps in the phone form, and a shorter note field.
+- **Footer:** one row on phones (rest timer and *Uložit*, half each) instead of two. *Zrušit* is hidden there, because the × in the header does the same. +30 s is hidden in that half-width pill; it's on the overview's big timer. The footer went from 129 to 71 px.
+
+Verified in the browser (`npm run demo`, Chromium with emulated sizes):
+- 430×932: *Přidat cvik* is on screen with 80 px to spare.
+- 393×852: it just fits.
+- 375×667: number fields 65 / 65 / 233 px, no horizontal overflow.
+- Running timer: clock and × left, *Uložit* right, nothing overlapping.
+- `npm test` 171/171, `npm run lint` clean, `vite build` passes.
+
+Not verified: real iOS Safari. Its date control can only be checked on the phone itself.
+
 ## 2026-11-02 (14th run): Gym mode on the phone; no separate "Dnes" button
 
 Requested by the owner:
