@@ -1,23 +1,29 @@
 // src/components/Settings.jsx
+// Settings grouped into sections (Vzhled, Trénink, Účet). Every choice is one
+// row with the same structure: title and hint on the left, the control on the
+// right. Wide controls (colours, font styles) go full width under the title.
+import { useEffect } from "react"
 import Icon from "./Icon"
+import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
 
-const GROUPS = [
-  {
-    key: "accent",
-    title: "Barva zvýraznění",
-    hint: "Tlačítka, grafy a aktivní položky.",
-    options: [
-      { value: "purple", label: "Fialová" },
-      { value: "blue", label: "Modrá" },
-      { value: "emerald", label: "Zelená" },
-      { value: "amber", label: "Jantarová" },
-    ],
-    swatches: true,
-  },
+const ACCENTS = [
+  { value: "purple", label: "Fialová" },
+  { value: "blue", label: "Modrá" },
+  { value: "cyan", label: "Tyrkysová" },
+  { value: "emerald", label: "Smaragdová" },
+  { value: "lime", label: "Limetková" },
+  { value: "amber", label: "Jantarová" },
+  { value: "orange", label: "Oranžová" },
+  { value: "rose", label: "Růžová" },
+  { value: "fuchsia", label: "Purpurová" },
+  { value: "mono", label: "Monochromatická" },
+]
+
+const APPEARANCE_ROWS = [
   {
     key: "density",
     title: "Rozestupy",
-    hint: "Kompaktní zobrazí víc najednou. Ovládací prvky na mobilu zůstanou dost velké na dotyk.",
+    hint: "Kompaktní zobrazí víc najednou. Na mobilu zůstanou ovládací prvky dost velké na dotyk.",
     options: [
       { value: "comfortable", label: "Pohodlné" },
       { value: "compact", label: "Kompaktní" },
@@ -33,13 +39,16 @@ const GROUPS = [
       { value: "mobile", label: "Mobil" },
     ],
   },
+]
+
+const TRAINING_ROWS = [
   {
     key: "units",
     title: "Jednotky váhy",
     hint: "Data se ukládají v kg; mění se jen zobrazení a zadávání.",
     options: [
-      { value: "metric", label: "Metrické (kg)" },
-      { value: "imperial", label: "Imperiální (lb)" },
+      { value: "metric", label: "kg" },
+      { value: "imperial", label: "lb" },
     ],
   },
   {
@@ -56,9 +65,9 @@ const GROUPS = [
   {
     key: "restTimer",
     title: "Pauza po přidání cviku",
-    hint: "Odpočet se spustí sám po „Přidat cvik“. Ve formuláři ho jde spustit i ručně, třeba mezi sériemi.",
+    hint: "Odpočet se spustí sám po „Přidat cvik“. Ručně ho spustíš tlačítkem Pauza.",
     options: [
-      { value: "off", label: "Vypnuto" },
+      { value: "off", label: "Vyp." },
       { value: "60", label: "1:00" },
       { value: "90", label: "1:30" },
       { value: "120", label: "2:00" },
@@ -68,50 +77,135 @@ const GROUPS = [
 ]
 
 function Settings({ preferences, onChange, user, onLogout }) {
+  const set = (key, value) => onChange({ ...preferences, [key]: value })
+
+  // The font cards preview every style, so load them all while Settings is open.
+  useEffect(() => {
+    for (const theme of FONT_THEMES) loadFontTheme(theme.value)
+  }, [])
+
   return (
     <section className="settings" aria-labelledby="settings-title">
       <header className="page-header">
-        <h2 id="settings-title" className="page-title">Nastavení</h2>
-        <p className="page-subtitle">Ukládá se v tomto prohlížeči.</p>
+        <h2 id="settings-title" className="page-title">
+          Nastavení
+        </h2>
+        <p className="page-subtitle">Ukládá se v tomto prohlížeči a projeví se hned.</p>
       </header>
 
-      <div className="settings-grid">
-        {GROUPS.map((group) => (
-          <fieldset key={group.key} className="card settings-group">
-            <legend className="card-title">{group.title}</legend>
-            <p className="muted small">{group.hint}</p>
-            <div className={`segmented ${group.swatches ? "segmented-swatches" : ""}`} role="radiogroup">
-              {group.options.map((opt) => (
-                <label key={opt.value} className="segmented-option">
+      <div className="settings-layout">
+        <SettingsSection title="Vzhled" icon="brand">
+          <SettingRow title="Barva zvýraznění" hint="Tlačítka, grafy a aktivní položky." wide>
+            <div className="swatch-picker" role="radiogroup" aria-label="Barva zvýraznění">
+              {ACCENTS.map((a) => (
+                <label key={a.value} className="swatch-option" title={a.label}>
                   <input
                     type="radio"
-                    name={group.key}
-                    value={opt.value}
-                    checked={preferences[group.key] === opt.value}
-                    onChange={() => onChange({ ...preferences, [group.key]: opt.value })}
+                    name="accent"
+                    value={a.value}
+                    checked={preferences.accent === a.value}
+                    onChange={() => set("accent", a.value)}
+                    aria-label={a.label}
                   />
-                  <span>
-                    {group.swatches && <i className={`swatch swatch-${opt.value}`} aria-hidden="true" />}
-                    {opt.label}
+                  <span className={`swatch swatch-${a.value}`} aria-hidden="true" />
+                </label>
+              ))}
+            </div>
+          </SettingRow>
+
+          <SettingRow title="Styl písma" hint="Nadpisy a čísla dostanou náladu herního žánru. Běžný text zůstává čitelný." wide>
+            <div className="font-picker" role="radiogroup" aria-label="Styl písma">
+              {FONT_THEMES.map((f) => (
+                <label key={f.value} className="font-option" data-font={f.value}>
+                  <input
+                    type="radio"
+                    name="font"
+                    value={f.value}
+                    checked={preferences.font === f.value}
+                    onChange={() => set("font", f.value)}
+                    aria-label={`${f.label}: ${f.mood}`}
+                  />
+                  <span className="font-option-body" aria-hidden="true">
+                    <span className="font-sample">4×8 · 90</span>
+                    <span className="font-option-label">{f.label}</span>
+                    <span className="font-option-mood">{f.mood}</span>
                   </span>
                 </label>
               ))}
             </div>
-          </fieldset>
-        ))}
+          </SettingRow>
 
-        <section className="card settings-group">
-          <h3 className="card-title">Účet</h3>
-          <p className="muted small">
-            Přihlášen jako <strong className="text">{user.email}</strong>
-          </p>
-          <button type="button" className="btn btn-secondary" onClick={onLogout}>
-            <Icon name="logout" size={18} />
-            Odhlásit se
-          </button>
-        </section>
+          {APPEARANCE_ROWS.map((row) => (
+            <ChoiceRow key={row.key} row={row} value={preferences[row.key]} onSelect={set} />
+          ))}
+        </SettingsSection>
+
+        <div className="settings-column">
+          <SettingsSection title="Trénink" icon="timer">
+            {TRAINING_ROWS.map((row) => (
+              <ChoiceRow key={row.key} row={row} value={preferences[row.key]} onSelect={set} />
+            ))}
+          </SettingsSection>
+
+          <SettingsSection title="Účet" icon="settings">
+            <SettingRow title="Přihlášen jako" hint={<strong className="text">{user.email}</strong>}>
+              <button type="button" className="btn btn-secondary" onClick={onLogout}>
+                <Icon name="logout" size={18} />
+                Odhlásit se
+              </button>
+            </SettingRow>
+          </SettingsSection>
+        </div>
       </div>
     </section>
+  )
+}
+
+function SettingsSection({ title, icon, children }) {
+  return (
+    <section className="card settings-section">
+      <h3 className="settings-section-title">
+        <span className="settings-section-icon" aria-hidden="true">
+          <Icon name={icon} size={16} />
+        </span>
+        {title}
+      </h3>
+      <div className="settings-rows">{children}</div>
+    </section>
+  )
+}
+
+function SettingRow({ title, hint, wide = false, children }) {
+  return (
+    <div className={`setting-row ${wide ? "setting-row-wide" : ""}`}>
+      <div className="setting-text">
+        <div className="setting-title">{title}</div>
+        {hint && <div className="setting-hint">{hint}</div>}
+      </div>
+      <div className="setting-control">{children}</div>
+    </div>
+  )
+}
+
+// A setting with a few exclusive choices, shown as a segmented control.
+function ChoiceRow({ row, value, onSelect }) {
+  return (
+    <SettingRow title={row.title} hint={row.hint}>
+      <div className="segmented" role="radiogroup" aria-label={row.title}>
+        {row.options.map((opt) => (
+          <label key={opt.value} className="segmented-option">
+            <input
+              type="radio"
+              name={row.key}
+              value={opt.value}
+              checked={value === opt.value}
+              onChange={() => onSelect(row.key, opt.value)}
+            />
+            <span>{opt.label}</span>
+          </label>
+        ))}
+      </div>
+    </SettingRow>
   )
 }
 

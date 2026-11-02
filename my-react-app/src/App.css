@@ -82,6 +82,133 @@
   --accent-glow: rgba(245, 158, 11, 0.2);
 }
 
+.app-shell[data-accent="cyan"] {
+  --accent: #67e8f9;
+  --accent-solid: #06b6d4;
+  --accent-hover: #0891b2;
+  --on-accent: #031417;
+  --accent-soft: rgba(6, 182, 212, 0.14);
+  --accent-border: rgba(103, 232, 249, 0.3);
+  --accent-glow: rgba(6, 182, 212, 0.2);
+}
+
+.app-shell[data-accent="lime"] {
+  --accent: #bef264;
+  --accent-solid: #84cc16;
+  --accent-hover: #65a30d;
+  --on-accent: #0d1402;
+  --accent-soft: rgba(132, 204, 22, 0.14);
+  --accent-border: rgba(190, 242, 100, 0.3);
+  --accent-glow: rgba(132, 204, 22, 0.2);
+}
+
+.app-shell[data-accent="orange"] {
+  --accent: #fdba74;
+  --accent-solid: #f97316;
+  --accent-hover: #ea580c;
+  --on-accent: #1a0c02;
+  --accent-soft: rgba(249, 115, 22, 0.14);
+  --accent-border: rgba(253, 186, 116, 0.3);
+  --accent-glow: rgba(249, 115, 22, 0.22);
+}
+
+.app-shell[data-accent="rose"] {
+  --accent: #fda4af;
+  --accent-solid: #e11d48;
+  --accent-hover: #be123c;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(244, 63, 94, 0.14);
+  --accent-border: rgba(253, 164, 175, 0.3);
+  --accent-glow: rgba(225, 29, 72, 0.22);
+}
+
+.app-shell[data-accent="fuchsia"] {
+  --accent: #f0abfc;
+  --accent-solid: #c026d3;
+  --accent-hover: #a21caf;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(217, 70, 239, 0.14);
+  --accent-border: rgba(240, 171, 252, 0.3);
+  --accent-glow: rgba(192, 38, 211, 0.22);
+}
+
+/* Black and white: the accent is a light grey, buttons get dark text. */
+.app-shell[data-accent="mono"] {
+  --accent: #e4e4e7;
+  --accent-solid: #e4e4e7;
+  --accent-hover: #d4d4d8;
+  --on-accent: #09090b;
+  --accent-soft: rgba(228, 228, 231, 0.1);
+  --accent-border: rgba(228, 228, 231, 0.28);
+  --accent-glow: rgba(228, 228, 231, 0.12);
+}
+
+/* Font styles (Settings → Styl písma, src/lib/fonts.js) for headings and
+   numbers. font-size-adjust scales each font to a similar cap height (that of
+   capitals and digits), so a wide pixel font and a narrow comic font end up
+   about the same size. */
+/* Explicit values (not "inherit"): a preview card inside a page with another
+   style must still show its own font. */
+[data-font] {
+  --font-display: var(--font-ui);
+  --display-adjust: none;
+  --display-tracking: normal;
+}
+
+[data-font="arcade"] {
+  --font-display: "Press Start 2P", ui-monospace, monospace;
+  --display-adjust: cap-height 0.62;
+  --display-tracking: -0.02em;
+}
+
+[data-font="terminal"] {
+  --font-display: "VT323", ui-monospace, monospace;
+  --display-adjust: cap-height 0.78;
+  --display-tracking: 0.02em;
+}
+
+[data-font="scifi"] {
+  --font-display: "Audiowide", system-ui, sans-serif;
+  --display-adjust: cap-height 0.72;
+  --display-tracking: 0.02em;
+}
+
+[data-font="fantasy"] {
+  --font-display: "Cinzel", Georgia, serif;
+  --display-adjust: cap-height 0.72;
+  --display-tracking: 0.03em;
+}
+
+[data-font="comic"] {
+  --font-display: "Bangers", Impact, sans-serif;
+  --display-adjust: cap-height 0.8;
+  --display-tracking: 0.05em;
+}
+
+[data-font="tactical"] {
+  --font-display: "Black Ops One", Impact, sans-serif;
+  --display-adjust: cap-height 0.72;
+  --display-tracking: 0.02em;
+}
+
+/* Headings and numbers only; small uppercase labels stay in the UI font so
+   they remain readable in the pixel and stencil styles. */
+.brand-name,
+.page-title,
+.card-title,
+.dialog-title,
+.m-title,
+.kpi-value,
+.progress-value,
+.adherence-value,
+.rest-timer-clock,
+.workout-date,
+.font-sample {
+  font-family: var(--font-display);
+  font-size-adjust: var(--display-adjust);
+  letter-spacing: var(--display-tracking);
+}
+
 .app-shell[data-density="compact"] {
   --space-1: 3px;
   --space-2: 6px;
@@ -503,8 +630,14 @@ textarea.input {
 
 .swatch-purple { background: #7c3aed; }
 .swatch-blue { background: #2563eb; }
+.swatch-cyan { background: #06b6d4; }
 .swatch-emerald { background: #10b981; }
+.swatch-lime { background: #84cc16; }
 .swatch-amber { background: #f59e0b; }
+.swatch-orange { background: #f97316; }
+.swatch-rose { background: #e11d48; }
+.swatch-fuchsia { background: #c026d3; }
+.swatch-mono { background: linear-gradient(135deg, #fafafa 50%, #3f3f46 50%); }
 
 .alert {
   font-size: var(--fs-sm);
@@ -1120,32 +1253,227 @@ textarea.input {
    Settings
    ========================================================================== */
 
-.settings-grid {
+/* Settings: sections of uniform rows. On wide screens Vzhled is on the left,
+   Trénink and Účet on the right; on narrow screens everything stacks. */
+.settings-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   align-items: start;
 }
 
-.settings-group {
-  margin: 0;
+@media (min-width: 1100px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+}
+
+.settings-column {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  align-items: flex-start;
+  gap: var(--space-4);
 }
 
-.settings-group .card-title {
-  margin-bottom: 0;
+.settings-section {
+  padding: var(--space-2) var(--space-5) var(--space-3);
 }
 
-.settings-group legend.card-title {
-  float: left;
-  width: 100%;
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.settings-group .segmented {
-  width: 100%;
+.settings-section-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  /* Fits a title and a two-line hint, so every row is the same height. */
+  min-height: 96px;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--border);
+}
+
+.settings-rows > .setting-row:first-child {
+  border-top: none;
+}
+
+/* Colours and font styles need the whole width: control below the title. */
+.setting-row-wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.setting-title {
+  font-weight: 600;
+}
+
+.setting-hint {
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.45;
+  max-width: 46ch;
+}
+
+.setting-control {
+  min-width: 0;
+}
+
+.setting-row:not(.setting-row-wide) .setting-control {
+  justify-self: end;
+}
+
+/* Narrow screens: control under the text, full width. */
+@media (max-width: 640px) {
+  .setting-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .setting-row:not(.setting-row-wide) .setting-control {
+    justify-self: stretch;
+  }
+
+  .setting-control .segmented {
+    display: flex;
+    width: 100%;
+  }
+}
+
+/* Touch layout: every choice in Settings is at least 44 px tall. */
+.app-shell[data-layout="mobile"] .setting-control .segmented-option span {
+  min-height: 44px;
+}
+
+.swatch-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.swatch-option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.swatch-option .swatch {
+  width: 30px;
+  height: 30px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s;
+}
+
+.swatch-option:hover .swatch {
+  transform: scale(1.1);
+}
+
+.swatch-option:has(input:checked) {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text);
+}
+
+.swatch-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.font-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--space-2);
+}
+
+.font-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.font-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.font-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  min-height: 92px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.font-option:hover .font-option-body {
+  border-color: var(--border-strong);
+}
+
+.font-option input:checked + .font-option-body {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.font-option input:focus-visible + .font-option-body {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.font-sample {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.font-option input:checked + .font-option-body .font-sample {
+  color: var(--accent);
+}
+
+.font-option-label {
+  margin-top: auto;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.font-option-mood {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
 }
 
 /* ==========================================================================

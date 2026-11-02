@@ -1,11 +1,13 @@
 // src/lib/preferences.js
-// User preferences (accent colour, spacing, layout, units, rep range, rest timer), stored in localStorage
+// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
 export const STORAGE_KEY = "preferences"
 
 export const OPTIONS = {
-  accent: ["purple", "blue", "emerald", "amber"],
+  accent: ["purple", "blue", "cyan", "emerald", "lime", "amber", "orange", "rose", "fuchsia", "mono"],
+  // Font style for headings and numbers (src/lib/fonts.js).
+  font: ["default", "arcade", "terminal", "scifi", "fantasy", "comic", "tactical"],
   density: ["comfortable", "compact"],
   layout: ["auto", "desktop", "mobile"],
   units: ["metric", "imperial"],
@@ -17,6 +19,7 @@ export const OPTIONS = {
 
 export const DEFAULT_PREFERENCES = {
   accent: "purple",
+  font: "default",
   density: "comfortable",
   layout: "auto",
   units: "metric",

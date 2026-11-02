@@ -120,6 +120,18 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeTruthy()
   })
 
+  test("a font style and colour from Settings apply to the whole app", async () => {
+    const user = await renderApp()
+    await user.click(screen.getByRole("button", { name: "Nastavení" }))
+    await user.click(screen.getByRole("radio", { name: /^Fantasy/ }))
+    await user.click(screen.getByRole("radio", { name: "Oranžová" }))
+
+    const shell = document.querySelector(".app-shell")
+    expect(shell.dataset.font).toBe("fantasy")
+    expect(shell.dataset.accent).toBe("orange")
+    expect(JSON.parse(localStorage.getItem("preferences"))).toMatchObject({ font: "fantasy", accent: "orange" })
+  })
+
   test("a new workout appears in the list", async () => {
     const user = await renderApp()
     const form = await fillNewWorkout(user, "Added by the app test")
