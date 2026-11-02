@@ -77,6 +77,19 @@ describe("App", () => {
     expect(await screen.findByText("Must not get lost")).toBeTruthy()
   })
 
+  test("the workout form shows last time's numbers from the user's history", async () => {
+    const user = await renderApp()
+    await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+    const form = within(screen.getByRole("dialog"))
+    await user.selectOptions(form.getByLabelText("Typ tréninku"), "legs")
+    await user.selectOptions(form.getByLabelText("Cvik"), "Squat (Barbell Back)")
+
+    // The demo account squats 4×5 every week.
+    expect(form.getByText(/Minule/).parentElement.textContent).toMatch(/4×5 · \d/)
+    expect(form.getByLabelText("Série").value).toBe("4")
+    expect(form.getByLabelText("Opakování").value).toBe("5")
+  })
+
   test("changing the weekly plan saves it", async () => {
     const user = await renderApp()
     await user.click(screen.getByRole("tab", { name: "Týdenní plán" }))

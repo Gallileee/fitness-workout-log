@@ -1208,6 +1208,75 @@ textarea.input {
   border-top: 1px solid var(--border);
 }
 
+/* Number input with − / + buttons (WorkoutForm) */
+.stepper {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.stepper-input {
+  min-width: 0;
+  text-align: center;
+  border-radius: 0;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.stepper-input::-webkit-inner-spin-button,
+.stepper-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stepper-btn {
+  flex: none;
+  width: var(--control-h);
+  min-height: var(--control-h);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+
+.stepper-btn:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  border-right: none;
+}
+
+.stepper-btn:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-left: none;
+}
+
+.stepper-btn:hover {
+  background: var(--surface-3);
+}
+
+.stepper-btn:active {
+  background: var(--accent-soft);
+}
+
+/* "Minule" (last time) hint above the set/rep/weight fields */
+.last-time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.last-time-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* Sits between the scrolling form and the footer, so it stays visible next to the Save button. */
 .dialog-error {
   flex: none;

@@ -2,11 +2,16 @@
 import { useId, useState } from "react"
 import { exercises as exercisesDb } from "../data/exercises.js"
 import DatePicker from "./DatePicker.jsx"
+import NumberStepper from "./NumberStepper"
 import Icon from "./Icon"
 import { WORKOUT_TYPES } from "../lib/workoutTypes"
-import { formatWeight, fromDisplayWeight, weightUnit } from "../lib/preferences"
+import { formatWeight, fromDisplayWeight, toDisplayWeight, weightUnit } from "../lib/preferences"
+import { lastPerformance } from "../lib/history"
+import { formatWorkoutDate } from "../lib/format"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
+// The smallest common plate pair: 2 × 1.25 kg, or 2 × 2.5 lb.
+const WEIGHT_STEP = { metric: 2.5, imperial: 5 }
 const MAX_SETS_REPS = 100
 const MAX_WEIGHT = 1000
 
@@ -32,6 +37,7 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // the parent remounts the form with a new `key` instead of syncing state in an effect.
 // Weights are typed in the chosen unit but always stored in kg.
 // saveError: message from the parent when saving failed; the form stays filled in.
+// history: the user's other workouts, for the "Minule" (last time) hint and prefill.
 function WorkoutForm({
   initialDate,
   initialType,
@@ -42,6 +48,7 @@ function WorkoutForm({
   onCancel,
   isEditing,
   saveError = "",
+  history = [],
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -68,6 +75,27 @@ function WorkoutForm({
     setSets(3)
     setReps(10)
     setWeight(DEFAULT_WEIGHT[units] ?? 60)
+  }
+
+  const formatEntry = (entry) =>
+    `${entry.sets}×${entry.reps}` + (entry.weight > 0 ? ` · ${formatWeight(entry.weight, units, { locale: "cs-CZ" })}` : "")
+
+  // Last time's numbers for the chosen exercise; workouts after this one's date don't count.
+  const findLast = (name) => lastPerformance(history, name, { onOrBefore: date })
+  const last = findLast(useCustomExercise ? customExerciseName.trim() : exerciseName)
+
+  // Fills in the first entry from last time (usually the working sets).
+  const applyLast = (performance) => {
+    const [entry] = performance.entries
+    setSets(entry.sets || 1)
+    setReps(entry.reps || 1)
+    setWeight(toDisplayWeight(entry.weight, units))
+  }
+
+  const handleExerciseSelect = (name) => {
+    setExerciseName(name)
+    const performance = findLast(name)
+    if (performance) applyLast(performance)
   }
 
   const handleAddExercise = (e) => {
@@ -175,7 +203,7 @@ function WorkoutForm({
                 id={`${id}-exercise`}
                 className="input input-select"
                 value={exerciseName}
-                onChange={(e) => setExerciseName(e.target.value)}
+                onChange={(e) => handleExerciseSelect(e.target.value)}
               >
                 <option value="">Vyber cvik…</option>
                 {filteredExercises.map((name) => (
@@ -187,50 +215,29 @@ function WorkoutForm({
             )}
           </div>
 
+          {last && (
+            <p className="last-time" aria-live="polite">
+              <span>
+                <span className="last-time-label">Minule ({formatWorkoutDate(last.date)}):</span>{" "}
+                {last.entries.map(formatEntry).join(", ")}
+              </span>
+              <button type="button" className="btn btn-ghost btn-small" onClick={() => applyLast(last)}>
+                Použít
+              </button>
+            </p>
+          )}
+
           <div className="form-row form-row-3">
-            <div className="field">
-              <label className="label" htmlFor={`${id}-sets`}>
-                Série
-              </label>
-              <input
-                id={`${id}-sets`}
-                className="input"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                value={sets}
-                onChange={(e) => setSets(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor={`${id}-reps`}>
-                Opakování
-              </label>
-              <input
-                id={`${id}-reps`}
-                className="input"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor={`${id}-weight`}>
-                Váha ({unit})
-              </label>
-              <input
-                id={`${id}-weight`}
-                className="input"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.5"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-              />
-            </div>
+            <NumberStepper id={`${id}-sets`} label="Série" value={sets} onChange={setSets} min={1} />
+            <NumberStepper id={`${id}-reps`} label="Opakování" value={reps} onChange={setReps} min={1} />
+            <NumberStepper
+              id={`${id}-weight`}
+              label={`Váha (${unit})`}
+              value={weight}
+              onChange={setWeight}
+              step={WEIGHT_STEP[units] ?? 2.5}
+              inputMode="decimal"
+            />
           </div>
 
           <button type="button" className="btn btn-secondary btn-block" onClick={handleAddExercise}>
