@@ -21,6 +21,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
 - **Settings** (saved in the browser), in three sections (Vzhled, Trénink, Účet) of equal-height rows: 10 accent colours, 7 **font styles** for headings and numbers in the mood of game genres (arcade, terminal, sci-fi, fantasy, comic, tactical, or the default), comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length
+- **CSV export** (Settings → Účet → *Stáhnout CSV*): every workout as `workouts-YYYY-MM-DD.csv`, one row per exercise (`date, workout_type, exercise, sets, reps, weight_kg, note`), UTF-8 with a BOM so Excel shows Czech characters. Exercise names and notes that start with `=`, `+`, `-` or `@` get a leading apostrophe, so a spreadsheet won't run them as formulas (CSV injection)
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
 
 ## Layout
@@ -149,6 +150,7 @@ cd .. && npm audit
 - Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
 - The overload suggestion uses one rep range for all exercises, and can't tell a failed set from a completed one.
 - Plan adherence measures past weeks against the *current* plan, because older versions of the plan aren't stored.
+- The CSV export is comma separated. Czech Excel expects semicolons, so there it has to be opened through *Data → Z textu/CSV*; Google Sheets and LibreOffice open it directly. There is no import yet.
 - The UI text is Czech only.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.

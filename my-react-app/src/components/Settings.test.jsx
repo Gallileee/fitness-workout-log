@@ -1,15 +1,23 @@
-import { describe, test, expect, vi } from "vitest"
+import { describe, test, expect, vi, afterEach } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import Settings from "./Settings"
 import { DEFAULT_PREFERENCES, OPTIONS } from "../lib/preferences"
 import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
 
-function setup(preferences = DEFAULT_PREFERENCES) {
+function setup(preferences = DEFAULT_PREFERENCES, workouts) {
   const onChange = vi.fn()
   const onLogout = vi.fn()
   const user = userEvent.setup()
-  render(<Settings preferences={preferences} onChange={onChange} user={{ email: "lifter@example.com" }} onLogout={onLogout} />)
+  render(
+    <Settings
+      preferences={preferences}
+      onChange={onChange}
+      user={{ email: "lifter@example.com" }}
+      onLogout={onLogout}
+      workouts={workouts}
+    />,
+  )
   return { user, onChange, onLogout }
 }
 
@@ -47,6 +55,47 @@ describe("Settings", () => {
     expect(screen.getByText("lifter@example.com")).toBeTruthy()
     await user.click(screen.getByRole("button", { name: "Odhlásit se" }))
     expect(onLogout).toHaveBeenCalledOnce()
+  })
+})
+
+describe("CSV export", () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  test("is disabled while there are no workouts", () => {
+    setup()
+    expect(screen.getByRole("button", { name: "Stáhnout CSV" }).disabled).toBe(true)
+    expect(screen.getByText("Zatím není co exportovat.")).toBeTruthy()
+  })
+
+  test("downloads every workout as a dated CSV file", async () => {
+    const workouts = [
+      { id: 1, date: "2026-10-27", type: "pull", note: "", exercises: [{ name: "Pull-up", sets: 3, reps: 8, weight: 0 }] },
+      { id: 2, date: "2026-10-31", type: "push", note: "", exercises: [{ name: "Bench Press", sets: 4, reps: 6, weight: 87.5 }] },
+    ]
+    let blob
+    URL.createObjectURL = vi.fn((b) => {
+      blob = b
+      return "blob:export"
+    })
+    URL.revokeObjectURL = vi.fn()
+    const clicked = []
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+      clicked.push({ href: this.getAttribute("href"), download: this.download })
+    })
+
+    const { user } = setup(DEFAULT_PREFERENCES, workouts)
+    expect(screen.getByText(/^2 tréninky jako tabulka/)).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: "Stáhnout CSV" }))
+
+    expect(clicked).toEqual([{ href: "blob:export", download: expect.stringMatching(/^workouts-\d{4}-\d{2}-\d{2}\.csv$/) }])
+    const text = (await blob.text()).replace(/^\ufeff/, "")
+    expect(text.split("\r\n")).toEqual([
+      "date,workout_type,exercise,sets,reps,weight_kg,note",
+      "2026-10-27,pull,Pull-up,3,8,0,",
+      "2026-10-31,push,Bench Press,4,6,87.5,",
+      "",
+    ])
+    await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:export"))
   })
 })
 

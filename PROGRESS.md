@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-11-02 (16th run): CSV export of all workouts
+
+Next step 1 from the list. Lifters expect to own their data: Strong and Hevy both export CSV from Settings, and an export is the first half of a later Strong / Hevy import.
+
+Done:
+- New `src/lib/csvExport.js` (pure, tested):
+  - `workoutsToCsv()`: header `date,workout_type,exercise,sets,reps,weight_kg,note`, one row per exercise entry (the app has no per-set data), oldest first, undated workouts last. A workout without exercises keeps one row. Weight is always kg, as stored.
+  - RFC 4180 quoting (comma, quote, line break), CRLF line endings.
+  - CSV injection: text cells starting with `=`, `+`, `-`, `@`, tab or CR get a leading `'` (OWASP / Symfony CVE-2021-41270). Number columns are written as numbers and never prefixed.
+  - `exportFileName()` (`workouts-2026-11-02.csv`, local date) and `csvBlob()` (UTF-8 with a BOM for Excel).
+- Settings → Účet: an *Export tréninků* row with *Stáhnout CSV* (new `download` icon). The hint shows the count with Czech plurals; the button is disabled with no workouts. The file is built in the browser and saved through a temporary `blob:` link, so nothing is sent anywhere.
+- App passes `workouts` to Settings.
+- 13 new tests (185 in total): 11 for `csvExport.js`, 2 for Settings (disabled state; the click downloads a dated file with the expected rows and releases the blob URL).
+
+Verified (Node 22.23): `npm test` 185/185, `npm run lint` clean, `vite build` passes.
+
+Not verified: the download in a real browser. Starting the demo server was declined in this unattended run, so the button was only exercised in jsdom. To check: `npm run demo`, Nastavení → Účet → *Stáhnout CSV*, open the file in Google Sheets / LibreOffice.
+
+Trade-off: comma separator (the RFC and what Google Sheets, LibreOffice and other trackers expect) rather than the semicolon Czech Excel uses by default.
+
 ## 2026-11-02 (15th run): Workout form fits an iPhone
 
 Reported by the owner with a screenshot from an iPhone 15 Pro Max (430 px wide): in the workout form the sets / reps / weight numbers weren't visible, the date stuck out of its box, and the fields had different heights.
@@ -377,12 +397,11 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **CSV export** of all workouts, as a button in Settings → Účet (later: import from Strong / Hevy).
-2. **Keep screen on during a workout** (Screen Wake Lock API), as a Settings toggle like Hevy's.
-3. **Plate calculator** with the available plates and bar weight in Settings.
-4. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
-5. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-6. Per-exercise rep ranges for the overload suggestion.
-7. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-8. Store plan history so adherence for past weeks uses the plan that applied then.
-9. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
+1. **Keep screen on during a workout** (Screen Wake Lock API), as a Settings toggle like Hevy's.
+2. **Plate calculator** with the available plates and bar weight in Settings.
+3. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
+4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+5. Per-exercise rep ranges for the overload suggestion.
+6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+7. Store plan history so adherence for past weeks uses the plan that applied then.
+8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.

@@ -1,10 +1,11 @@
 // src/components/Settings.jsx
-// Settings grouped into sections (Vzhled, Trénink, Účet). Every choice is one
+// Settings grouped into sections (Vzhled, Trénink, Účet with the CSV export). Every choice is one
 // row with the same structure: title and hint on the left, the control on the
 // right. Wide controls (colours, font styles) go full width under the title.
 import { useEffect } from "react"
 import Icon from "./Icon"
 import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
+import { workoutsToCsv, csvBlob, exportFileName } from "../lib/csvExport"
 
 const ACCENTS = [
   { value: "purple", label: "Fialová" },
@@ -76,7 +77,7 @@ const TRAINING_ROWS = [
   },
 ]
 
-function Settings({ preferences, onChange, user, onLogout }) {
+function Settings({ preferences, onChange, user, onLogout, workouts = [] }) {
   const set = (key, value) => onChange({ ...preferences, [key]: value })
 
   // The font cards preview every style, so load them all while Settings is open.
@@ -154,11 +155,41 @@ function Settings({ preferences, onChange, user, onLogout }) {
                 Odhlásit se
               </button>
             </SettingRow>
+            <SettingRow title="Export tréninků" hint={exportHint(workouts.length)}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => downloadCsv(workouts)}
+                disabled={workouts.length === 0}
+              >
+                <Icon name="download" size={18} />
+                Stáhnout CSV
+              </button>
+            </SettingRow>
           </SettingsSection>
         </div>
       </div>
     </section>
   )
+}
+
+function exportHint(count) {
+  if (count === 0) return "Zatím není co exportovat."
+  const noun = count === 1 ? "trénink" : count < 5 ? "tréninky" : "tréninků"
+  return `${count} ${noun} jako tabulka pro Excel nebo Google Sheets. Váhy jsou v kg.`
+}
+
+// Saves the CSV through a temporary link, so no server is involved. The URL is
+// released a moment later, after the browser has started the download.
+function downloadCsv(workouts) {
+  const url = URL.createObjectURL(csvBlob(workoutsToCsv(workouts)))
+  const link = document.createElement("a")
+  link.href = url
+  link.download = exportFileName()
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 function SettingsSection({ title, icon, children }) {
