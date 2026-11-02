@@ -40,11 +40,23 @@ const DESKTOP_NAV = [
   { page: "settings", label: "Nastavení", icon: "settings" },
 ]
 
+// The last signed-in user from localStorage, so a reload shows the dashboard
+// straight away. Read once when App mounts (not in an effect, which would render
+// the login screen first). Corrupt or blocked storage means "not signed in".
+function loadStoredUser() {
+  try {
+    const stored = localStorage.getItem("user")
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
 function App() {
   const [workouts, setWorkouts] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(loadStoredUser)
 
   const [currentDate, setCurrentDate] = useState("")
   const [currentType, setCurrentType] = useState("push")
@@ -81,11 +93,8 @@ function App() {
     savePreferences(browserStorage(), preferences)
   }, [preferences])
 
-  // AUTH
+  // AUTH (the stored user is read in useState above; Supabase confirms or clears it here)
   useEffect(() => {
-    const stored = localStorage.getItem("user")
-    if (stored) setUser(JSON.parse(stored))
-
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         const u = data.session.user

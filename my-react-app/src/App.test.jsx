@@ -99,6 +99,12 @@ describe("App", () => {
     expect(screen.queryByRole("timer")).toBeNull()
   })
 
+  test("a corrupt stored user doesn't crash the app", async () => {
+    localStorage.setItem("user", "{not json")
+    await renderApp() // the demo session signs the user in
+    expect(screen.getByRole("button", { name: "Nový trénink" })).toBeTruthy()
+  })
+
   test("a new workout appears in the list", async () => {
     const user = await renderApp()
     const form = await fillNewWorkout(user, "Added by the app test")
