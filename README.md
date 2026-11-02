@@ -8,7 +8,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 - Sign up / log in (Supabase Auth); every user sees only their own workouts
 - Create, edit and delete workouts (date, type, exercises, note), choosing exercises from a built-in list or entering custom ones
-- **Start today's workout**: the plan knows today is, say, push day. *Dnes: Push* (top bar) or *Začít* (mobile overview) opens the form with today's date, the planned type and the exercises from your last push workout as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
+- **New workouts start as today's**: *Nový trénink* (or + on a phone) opens the form with today's date and, on a training day, the planned type and the exercises from your last workout of that type as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
 - **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings
 - **Rest timer**: adding an exercise starts a countdown (1:30 by default; 1:00–3:00 or off in Settings), and *Pauza 1:30* starts one by hand, e.g. between sets. It's in the form and, on desktop, always in the top bar (on mobile the app bar shows it while it runs). It has +30 s and stop, keeps running when the form is closed, and vibrates and beeps when it ends
@@ -26,7 +26,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 ## Layout
 
 - **Desktop** (wide windows): a top bar with navigation, the rest timer, *Dnes* and *Nový trénink* (the account email and logout are in Settings), then one dashboard with summary tiles, the filterable workout list, the 1RM chart, and tabs for the weekly plan (first, open by default) and records. On windows at least 900×700 px it fits exactly one screen and only the lists scroll inside their cards. On shorter or zoomed-in windows the page scrolls normally instead of squeezing the content.
-- **Mobile** (≤ 760 px, or chosen in Settings): an app bar, one section per tab (Overview with today's workout, summary and the weekly plan's progress above the chart and records; Workouts; Plan; Settings) and a bottom tab bar with a central + button. Touch targets are at least 44 px, and the workout form opens as a full-screen sheet.
+- **Mobile** (≤ 760 px, or chosen in Settings): an app bar, one section per tab. *Přehled* is a gym mode with only what you need between sets: a big rest timer (start with the default length or 1:00–3:00, then +30 s / stop) and *Dnes* (today's planned type and what's logged so far). *Tréninky* has the history (*Seznam*) and progress (*Pokrok*: summary, 1RM chart, records); then *Plán* and *Nastavení*. and a bottom tab bar with a central + button. Touch targets are at least 44 px, and the workout form opens as a full-screen sheet.
 - *Auto* picks the layout from the viewport width. A manual choice always keeps the navigation reachable: the desktop layout wraps on a phone, and the mobile layout is a centred column on a monitor.
 
 ## Tech stack

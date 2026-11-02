@@ -1,50 +1,43 @@
 // src/components/TodayCard.jsx
-// Today's planned workout with a Start button (mobile overview).
-// `today` comes from todaysWorkout() in src/lib/todaysWorkout.js.
-import Icon from "./Icon"
+// "Dnes" on the mobile overview: today's planned type and everything already
+// logged today, so mid-workout you can see what's done at a glance.
+// New exercises are added with the + button, which starts today's workout.
 import { workoutTypeLabel } from "../lib/workoutTypes"
-import { formatWorkoutDate } from "../lib/format"
-import { exercisesLabel } from "../lib/todaysWorkout"
+import { formatWeight } from "../lib/preferences"
 
-function TodayCard({ today, onStart }) {
-  const label = workoutTypeLabel(today.type)
+function TodayCard({ today, workouts, units, onEdit }) {
+  const planned = today.type === "off" ? "Volno" : workoutTypeLabel(today.type)
+  const entry = (ex) =>
+    `${ex.sets}×${ex.reps}` + (Number(ex.weight) > 0 ? ` · ${formatWeight(ex.weight, units, { locale: "cs-CZ" })}` : "")
 
-  if (today.type === "off") {
-    return (
-      <section className="card today-card" aria-label="Dnešní trénink">
-        <p className="muted small today-text">Dnes je v plánu volno.</p>
-      </section>
-    )
-  }
-
-  if (today.done) {
-    return (
-      <section className="card today-card" aria-label="Dnešní trénink">
-        <p className="small today-text">
-          <span className="today-check" aria-hidden="true">
-            ✓
-          </span>{" "}
-          Dnešní trénink ({label}) je zapsaný.
-        </p>
-      </section>
-    )
-  }
-
-  const count = today.exerciseNames.length
   return (
-    <section className="card card-featured today-card" aria-label="Dnešní trénink">
-      <div className="today-body">
-        <h2 className="card-title">Dnes: {label}</h2>
-        <p className="muted small today-text">
-          {count
-            ? `${exercisesLabel(count)} jako ${formatWorkoutDate(today.sourceDate)}`
-            : `Zatím žádný ${label} trénink, začneš od nuly.`}
-        </p>
+    <section className="card today-card" aria-labelledby="today-title">
+      <div className="card-head">
+        <h2 id="today-title" className="card-title">
+          Dnes
+        </h2>
+        <span className={`pill pill-${today.type === "off" ? "other" : today.type}`}>Plán: {planned}</span>
       </div>
-      <button type="button" className="btn btn-primary" onClick={onStart}>
-        <Icon name="plus" size={18} />
-        Začít
-      </button>
+
+      {workouts.length === 0 ? (
+        <p className="muted today-text">Zatím nic zapsaného. Trénink začneš tlačítkem{"\u00a0"}+.</p>
+      ) : (
+        workouts.map((w) => (
+          <div key={w.id} className="today-workout">
+            <ul className="today-exercises">
+              {(w.exercises || []).map((ex, i) => (
+                <li key={ex.id ?? i}>
+                  <span className="today-exercise-name">{ex.name}</span>
+                  <span className="today-exercise-sets">{entry(ex)}</span>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="btn btn-ghost btn-small" onClick={() => onEdit(w.id)}>
+              Upravit
+            </button>
+          </div>
+        ))
+      )}
     </section>
   )
 }
