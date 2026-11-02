@@ -7,11 +7,10 @@ import Icon from "./Icon"
 import { WORKOUT_TYPES } from "../lib/workoutTypes"
 import { formatWeight, fromDisplayWeight, toDisplayWeight, weightUnit } from "../lib/preferences"
 import { lastPerformance } from "../lib/history"
+import { parseRepRange, suggestProgression, WEIGHT_STEP } from "../lib/progression"
 import { formatWorkoutDate } from "../lib/format"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
-// The smallest common plate pair: 2 × 1.25 kg, or 2 × 2.5 lb.
-const WEIGHT_STEP = { metric: 2.5, imperial: 5 }
 const MAX_SETS_REPS = 100
 const MAX_WEIGHT = 1000
 
@@ -38,6 +37,7 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // Weights are typed in the chosen unit but always stored in kg.
 // saveError: message from the parent when saving failed; the form stays filled in.
 // history: the user's other workouts, for the "Minule" (last time) hint and prefill.
+// repRange: "6-10" etc., for the progressive overload suggestion.
 function WorkoutForm({
   initialDate,
   initialType,
@@ -49,6 +49,7 @@ function WorkoutForm({
   isEditing,
   saveError = "",
   history = [],
+  repRange = "6-10",
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -84,13 +85,22 @@ function WorkoutForm({
   const findLast = (name) => lastPerformance(history, name, { onOrBefore: date })
   const last = findLast(useCustomExercise ? customExerciseName.trim() : exerciseName)
 
-  // Fills in the first entry from last time (usually the working sets).
-  const applyLast = (performance) => {
-    const [entry] = performance.entries
+  // Next step from the first entry of last time (usually the working sets).
+  const suggestion = last ? suggestProgression(last.entries[0], { repRange, units }) : null
+  const suggestionReason = {
+    reps: "+1 opakování",
+    weight: `horní hranice ${parseRepRange(repRange).join("–")} → přidej váhu`,
+    bodyweight: "+1 opakování",
+  }[suggestion?.reason]
+
+  const fillIn = (entry) => {
     setSets(entry.sets || 1)
     setReps(entry.reps || 1)
     setWeight(toDisplayWeight(entry.weight, units))
   }
+
+  // Fills in the first entry from last time (usually the working sets).
+  const applyLast = (performance) => fillIn(performance.entries[0])
 
   const handleExerciseSelect = (name) => {
     setExerciseName(name)
@@ -216,15 +226,28 @@ function WorkoutForm({
           </div>
 
           {last && (
-            <p className="last-time" aria-live="polite">
-              <span>
-                <span className="last-time-label">Minule ({formatWorkoutDate(last.date)}):</span>{" "}
-                {last.entries.map(formatEntry).join(", ")}
-              </span>
-              <button type="button" className="btn btn-ghost btn-small" onClick={() => applyLast(last)}>
-                Použít
-              </button>
-            </p>
+            <div className="last-time" aria-live="polite">
+              <p className="last-time-row">
+                <span>
+                  <span className="last-time-label">Minule ({formatWorkoutDate(last.date)}):</span>{" "}
+                  {last.entries.map(formatEntry).join(", ")}
+                </span>
+                <button type="button" className="btn btn-ghost btn-small" onClick={() => applyLast(last)}>
+                  Použít
+                </button>
+              </p>
+              {suggestion && (
+                <p className="last-time-row">
+                  <span>
+                    <span className="last-time-label">Návrh:</span> {formatEntry(suggestion)}{" "}
+                    <span className="muted">({suggestionReason})</span>
+                  </span>
+                  <button type="button" className="btn btn-secondary btn-small" onClick={() => fillIn(suggestion)}>
+                    Použít návrh
+                  </button>
+                </p>
+              )}
+            </div>
           )}
 
           <div className="form-row form-row-3">

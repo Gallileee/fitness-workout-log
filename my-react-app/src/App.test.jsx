@@ -90,6 +90,19 @@ describe("App", () => {
     expect(form.getByLabelText("Opakování").value).toBe("5")
   })
 
+  test("the rep range from Settings drives the overload suggestion", async () => {
+    const user = await renderApp()
+    await user.click(screen.getByRole("button", { name: "Nastavení" }))
+    await user.click(screen.getByRole("radio", { name: "4–6" }))
+
+    await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+    const form = within(screen.getByRole("dialog"))
+    await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
+
+    // The demo account's last bench was 4×6 · 87,5 kg: the top of 4–6, so add weight.
+    expect(form.getByText("Návrh:").parentElement.textContent).toMatch(/4×4 · 90 kg \(horní hranice 4–6/)
+  })
+
   test("changing the weekly plan saves it", async () => {
     const user = await renderApp()
     await user.click(screen.getByRole("tab", { name: "Týdenní plán" }))

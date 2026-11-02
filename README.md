@@ -9,6 +9,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Sign up / log in (Supabase Auth); every user sees only their own workouts
 - Create, edit and delete workouts (date, type, exercises, note), choosing exercises from a built-in list or entering custom ones
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
+- **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings
 - **− / + buttons** for sets, reps and weight (steps of 1, and 2.5 kg or 5 lb), so common changes take one tap
 - Filter the history by workout type and date range (both dates inclusive)
 - Summary: number of workouts, total volume (sets × reps × kg), volume over the last 7 days, average volume per workout
@@ -17,7 +18,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
 - **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
-- **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units
+- **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15)
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
 
 ## Layout
@@ -107,6 +108,11 @@ What the frontend tests cover:
 - **Personal records** merge exercise names case-insensitively and skip bodyweight entries (weight 0).
 - **Units**: weights are always stored in kg. In imperial mode they are shown and typed in lb (1 lb = 0.45359237 kg); typed pounds are saved to 0.01 kg, so they show the same value again.
 - **Last time** = the newest workout, on or before the date of the workout being entered, that contains the exercise (names matched case-insensitively). An edited workout never shows itself. If the exercise appears several times in that workout, all entries are shown and the first one is filled in. For a custom name the hint appears while typing, and *Použít* fills it in.
+- **Overload suggestion** (double progression, `src/lib/progression.js`), built from the first entry of last time:
+  - Below the top of the rep range (default 6–10): same weight, one more rep.
+  - At or above the top: the next weight step (2.5 kg, or 5 lb in imperial mode), back to the bottom of the range. Odd weights snap up to the plate grid (83 → 85 kg).
+  - Bodyweight entries (weight 0): one more rep.
+  - It assumes every logged set was completed, because the app stores one row per exercise (e.g. 4×6), not each set.
 - **Weekly plan saving**: each change is saved with an upsert on `user_id`. At most one save runs at a time; changes made meanwhile are merged and only the newest plan is sent next, so a slow request can't overwrite a newer plan. The card shows *Ukládám… / Plán uložen.* or the error.
 - **Plan adherence**: weeks run Monday to Sunday. This week, a planned day is *done* when a workout of the planned type was logged that date. For the 8-week bars, days may move within the week: for each type, completed = min(planned sessions, logged workouts of that type), so three legs days don't make up for a missed push day. The streak counts fully completed weeks back from last week; the current week joins it once it's complete, so the streak doesn't reset every Monday.
 - **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
@@ -114,6 +120,7 @@ What the frontend tests cover:
 ## Limitations
 
 - Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
+- The overload suggestion uses one rep range for all exercises, and can't tell a failed set from a completed one.
 - Plan adherence measures past weeks against the *current* plan, because older versions of the plan aren't stored.
 - The UI text is Czech only.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.

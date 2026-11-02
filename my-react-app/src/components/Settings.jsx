@@ -42,6 +42,17 @@ const GROUPS = [
       { value: "imperial", label: "Imperiální (lb)" },
     ],
   },
+  {
+    key: "repRange",
+    title: "Rozsah opakování",
+    hint: "Pro návrh dalšího tréninku: přidávej opakování až k horní hranici, pak přidej váhu a začni zase dole.",
+    options: [
+      { value: "4-6", label: "4–6" },
+      { value: "6-10", label: "6–10" },
+      { value: "8-12", label: "8–12" },
+      { value: "12-15", label: "12–15" },
+    ],
+  },
 ]
 
 function Settings({ preferences, onChange, user, onLogout }) {

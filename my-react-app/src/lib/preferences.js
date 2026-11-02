@@ -1,5 +1,5 @@
 // src/lib/preferences.js
-// User preferences (accent colour, spacing, layout, units), stored in localStorage
+// User preferences (accent colour, spacing, layout, units, rep range), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
 export const STORAGE_KEY = "preferences"
@@ -9,6 +9,8 @@ export const OPTIONS = {
   density: ["comfortable", "compact"],
   layout: ["auto", "desktop", "mobile"],
   units: ["metric", "imperial"],
+  // Rep range for the progressive overload suggestion (src/lib/progression.js).
+  repRange: ["4-6", "6-10", "8-12", "12-15"],
 }
 
 export const DEFAULT_PREFERENCES = {
@@ -16,6 +18,7 @@ export const DEFAULT_PREFERENCES = {
   density: "comfortable",
   layout: "auto",
   units: "metric",
+  repRange: "6-10",
 }
 
 // Keeps only known keys with allowed values, so a stale or hand-edited
