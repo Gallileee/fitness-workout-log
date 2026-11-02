@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-11-02 (4th run): "Last time" numbers and − / + buttons in the workout form
+
+Picked from the owner's list of features lifters value (Strong / Hevy comparisons): "previous" numbers next to each exercise and fast logging were the top two, and both are cheap with the existing data.
+
+Done:
+- `src/lib/history.js`:
+  - `lastPerformance(workouts, name, { onOrBefore })`: the newest workout up to a date that contains the exercise (case-insensitive), with all its entries.
+  - `stepNumber()`: +/− with a minimum and without floating-point drift.
+- Workout form:
+  - Choosing an exercise shows *Minule (út 27. 10.): 4×6 · 87,5 kg* and fills in sets, reps and weight (converted to lb when needed).
+  - A custom name shows the hint while typing, with a *Použít* button.
+  - App passes the other workouts as `history`, so an edited workout never shows itself.
+- New `NumberStepper` component: − / + around the number input. Steps: 1 for sets and reps; 2.5 kg or 5 lb for weight. Buttons are 46 px on mobile, with labels like "Váha (kg): přidat 2,5".
+- 18 new tests (108 in total): 11 for `history.js`, 6 for the form, 1 for the whole app.
+
+Verified (Node 22.23): `npm test` 108/108, `npm run lint` clean, `vite build` passes. In the browser (`npm run demo`): Bench Press showed *Minule (út 27. 10.): 4×6 · 87,5 kg* and filled in 4 / 6 / 87,5, and + changed 87,5 to 90. On mobile (375×812): no overflow, buttons 46×46 px, no console errors.
+
+Known: switching between the desktop and mobile layout while the dialog is open clears the form, because each layout renders its own dialog. This was already the case before.
+
 ## 2026-11-02 (3rd run): Component and whole-app tests, two bugs fixed
 
 Done:
@@ -107,10 +126,12 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Review `npm audit` (24 advisories in existing dependencies, 1 critical): update what has a compatible fix, and check which ones affect the production bundle rather than only dev tooling.
-2. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-3. Decide on the `workouts` schema gaps: a foreign key `user_id → auth.users on delete cascade` (check for orphaned rows first) and `created_at default now()`.
-4. Store plan history (e.g. a `valid_from` date per plan) so adherence for past weeks uses the plan that applied then.
-5. Optionally store the settings in Supabase user metadata, so they follow the account across devices.
-6. Chart polish: date labels on the x axis, optional time-proportional spacing.
-7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and the `ajv` dependency only `app.js` uses. Check with the owner first.
+1. **Overload suggestion** next to "Minule": e.g. "4×6 hotovo → zkus 4×7, po 4×8 přidej 2,5 kg" (double progression), built on `lastPerformance`.
+2. **Start today's workout from the plan**: prefill the form with the exercises from the last workout of today's planned type.
+3. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
+4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+5. Rest timer after adding an exercise (vibration / notification).
+6. CSV export (later: import from Strong / Hevy).
+7. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+8. Store plan history so adherence for past weeks uses the plan that applied then.
+9. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`). Check with the owner first.

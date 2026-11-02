@@ -16,7 +16,7 @@ async function addExercise(user, { name = "Bench Press (Barbell)", sets = "3", r
   for (const [label, value] of [
     ["Série", sets],
     ["Opakování", reps],
-    [/^Váha/, weight],
+    [/^Váha \((kg|lb)\)$/, weight],
   ]) {
     const input = screen.getByLabelText(label)
     await user.clear(input)
@@ -101,10 +101,81 @@ describe("WorkoutForm", () => {
     expect(screen.getByRole("alert").textContent).toContain("offline")
   })
 
+  test("+/− buttons change sets, reps and weight", async () => {
+    const { user } = setup()
+    await user.click(screen.getByRole("button", { name: "Série: přidat 1" }))
+    await user.click(screen.getByRole("button", { name: "Opakování: ubrat 1" }))
+    await user.click(screen.getByRole("button", { name: "Váha (kg): přidat 2,5" }))
+    expect(screen.getByLabelText("Série").value).toBe("4")
+    expect(screen.getByLabelText("Opakování").value).toBe("9")
+    expect(screen.getByLabelText("Váha (kg)").value).toBe("62.5")
+  })
+
+  test("− stops at the minimum, and lb steps by 5", async () => {
+    const { user } = setup({ units: "imperial" })
+    const sets = screen.getByLabelText("Série")
+    for (let i = 0; i < 5; i++) await user.click(screen.getByRole("button", { name: "Série: ubrat 1" }))
+    expect(sets.value).toBe("1")
+    await user.click(screen.getByRole("button", { name: "Váha (lb): přidat 5" }))
+    expect(screen.getByLabelText("Váha (lb)").value).toBe("140")
+  })
+
   test("removing an exercise updates the list", async () => {
     const { user } = setup()
     await addExercise(user)
     await user.click(screen.getByRole("button", { name: "Odebrat Bench Press (Barbell)" }))
     expect(screen.getByText("Cviky v tréninku (0)")).toBeTruthy()
+  })
+})
+
+describe("WorkoutForm: last time", () => {
+  const history = [
+    {
+      id: 1,
+      date: "2026-10-27",
+      type: "push",
+      exercises: [
+        { name: "Bench Press (Barbell)", sets: 4, reps: 6, weight: 82.5 },
+        { name: "Bench Press (Barbell)", sets: 1, reps: 3, weight: 90 },
+      ],
+    },
+    { id: 2, date: "2026-11-05", type: "push", exercises: [{ name: "Bench Press (Barbell)", sets: 3, reps: 5, weight: 95 }] },
+    { id: 3, date: "2026-10-20", type: "push", exercises: [{ name: "Cable Fly", sets: 3, reps: 15, weight: 0 }] },
+  ]
+
+  test("choosing an exercise shows last time and fills in its numbers", async () => {
+    const { user } = setup({ history, initialDate: "2026-11-02" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+
+    // The workout on 5 Nov is after this one's date, so 27 Oct is "last time".
+    expect(screen.getByText(/Minule/).parentElement.textContent).toMatch(/4×6 · 82,5 kg, 1×3 · 90 kg/)
+    expect(screen.getByLabelText("Série").value).toBe("4")
+    expect(screen.getByLabelText("Opakování").value).toBe("6")
+    expect(screen.getByLabelText("Váha (kg)").value).toBe("82.5")
+  })
+
+  test("in pounds, the filled-in weight is converted", async () => {
+    const { user } = setup({ history, units: "imperial", initialDate: "2026-11-02" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    expect(screen.getByLabelText("Váha (lb)").value).toBe("181.9")
+  })
+
+  test("a custom name shows last time, and Použít fills it in", async () => {
+    const { user } = setup({ history })
+    await user.click(screen.getByLabelText("Vlastní název cviku"))
+    await user.type(screen.getByLabelText("Cvik"), "cable fly")
+
+    expect(screen.getByText(/Minule/).parentElement.textContent).toMatch(/3×15$/)
+    expect(screen.getByLabelText("Série").value).toBe("3") // not filled in while typing
+    await user.click(screen.getByRole("button", { name: "Použít" }))
+    expect(screen.getByLabelText("Opakování").value).toBe("15")
+    expect(screen.getByLabelText("Váha (kg)").value).toBe("0")
+  })
+
+  test("no hint for an exercise that was never logged", async () => {
+    const { user } = setup({ history })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Overhead Press (Barbell)")
+    expect(screen.queryByText(/Minule/)).toBeNull()
+    expect(screen.getByLabelText("Série").value).toBe("3")
   })
 })

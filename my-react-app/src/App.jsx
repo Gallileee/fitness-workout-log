@@ -358,6 +358,7 @@ function App() {
         initialNote={currentNote}
         units={units}
         saveError={saveError}
+        history={workouts.filter((w) => w.id !== editingId)}
         onSave={async (values) => {
           if (await handleSave(values)) setView("dashboard")
         }}
