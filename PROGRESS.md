@@ -1,5 +1,34 @@
 # Progress log
 
+## 2026-11-02 (10th run): ESLint 10 and Vite 8
+
+Replaces Dependabot's separate major-version PRs #19 (eslint), #20 (@eslint/js) and #21 (vite). Those failed CI on their own, because these packages have to move together: Vite 8 needs `@vitejs/plugin-react` 6, and ESLint 10 needs `@eslint/js` 10.
+
+Done:
+- Upgraded together:
+  - `vite` 7.3.7 → 8.3.5 and `@vitejs/plugin-react` 5 → 6 (Vite 8 only).
+  - `vitest` 5.0 → 5.1.
+  - `eslint` 9 → 10.14 and `@eslint/js` 9 → 10.0.1.
+  - `globals` 16 → 17.
+- Read both migration guides first:
+  - Vite 8 switches to Rolldown and Oxc and raises the default browser targets. The config uses none of the removed options (`rollupOptions`, `esbuild`, alias `customResolver`).
+  - ESLint 10 adds three rules to `recommended`, and it now counts JSX (`<Card />`) as using a variable.
+- No code changes were needed: lint (incl. the new recommended rules), all tests and the build passed straight away.
+- `no-unused-vars`: dropped the `^[A-Z_]` exemption. It existed so that components used only in JSX weren't reported as unused, which ESLint 10 now handles itself. Unused components and constants are now reported, which I checked with a deliberately unused import (reported) and the same import used in JSX (not reported).
+- README: Node requirement 20.19+ / 22.13+ (ESLint 10 needs 22.13 on Node 22), and the browser targets.
+
+Bundle size, compared like for like (both on main's current dependencies, measured in a clean worktree):
+- Vite 7: 495.3 kB (gzip 144.9 kB).
+- Vite 8: 483.5 kB (gzip 139.7 kB), so 5 kB smaller gzipped.
+- The bundle had grown before this change, because of the Supabase 2.99 → 2.118 update in #18.
+
+Verified (Node 22.23, npm 11): `npm test` 152/152, `npm run lint` clean, `vite build` passes (154 ms, was ~1.2 s). `npm audit` shows the same 6 moderate `minimatch` advisories inside ESLint and nothing new. `npm run demo` runs on Vite 8.3.5, and I went through the main flow there:
+- *Dnes: Push* → chip → Minule + Návrh → *Přidat cvik*.
+- The rest timer started.
+- Saving added a workout (24 → 25).
+- A plan change showed *Plán uložen.* and adherence updated.
+- No console errors and no Vite warnings.
+
 ## 2026-11-02 (9th run): Dependabot
 
 Done:

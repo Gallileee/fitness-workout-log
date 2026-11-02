@@ -23,7 +23,9 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // ESLint 10 counts <Component /> as a use, so unused components and
+      // constants are reported too; only names starting with _ are exempt.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
     },
   },
 ])

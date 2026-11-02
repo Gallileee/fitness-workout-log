@@ -33,7 +33,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 | Part | Choice |
 | --- | --- |
-| Frontend | React 19 + Vite 7 (`my-react-app/`) |
+| Frontend | React 19 + Vite 8 (`my-react-app/`) |
 | Auth + database | Supabase (Postgres tables `workouts` and `weekly_plans`, called directly from the browser) |
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
 | Weekly plan | Model in `src/lib/weeklyPlan.js`, loading/saving in `src/lib/weeklyPlanStore.js` |
@@ -45,7 +45,9 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 ## Setup
 
-Requires **Node.js 20.19+ or 22.12+** (needed by Vite 7).
+Requires **Node.js 20.19+ or 22.13+** (needed by Vite 8 and ESLint 10).
+
+The production build targets the browsers Vite 8 supports by default: Chrome / Edge 111+, Firefox 114+ and Safari 16.4+.
 
 ```bash
 cd my-react-app
@@ -107,7 +109,7 @@ What the frontend tests cover:
 `npm audit` (last checked 2026-11-02):
 - **Server** (repo root): 0 vulnerabilities.
 - **Frontend production dependencies** (`npm audit --omit=dev` in `my-react-app`): 0 vulnerabilities.
-- **Frontend dev tooling**: 6 moderate advisories, all from `minimatch < 11.0.1` inside ESLint ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249), DoS through crafted glob patterns). There is no fix: even ESLint 10 depends on `minimatch` 10. Only ESLint reads those patterns, and they come from our own config, so the risk is accepted. Check again when ESLint moves to `minimatch` 11.
+- **Frontend dev tooling**: 6 moderate advisories, all from `minimatch < 11.0.1` inside ESLint ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249), DoS through crafted glob patterns). There is no fix: ESLint 10, which the project uses, still depends on `minimatch` 10. Only ESLint reads those patterns, and they come from our own config, so the risk is accepted. Check again when ESLint moves to `minimatch` 11.
 
 To re-check:
 
