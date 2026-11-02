@@ -34,6 +34,7 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 28px;
+  --page-max: 1480px; /* widest the dashboard gets; the top bar's content lines up with it */
   --control-h: 42px;
   --radius: 14px;
   --radius-sm: 10px;
@@ -1357,7 +1358,9 @@ textarea.input {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3) var(--space-5);
-  padding: var(--space-3) var(--space-5);
+  /* The bar's background spans the window, but its content uses the same
+     width and side padding as .page, so it lines up with the cards below. */
+  padding: var(--space-3) max(var(--space-5), calc((100% - var(--page-max)) / 2 + var(--space-5)));
   border-bottom: 1px solid var(--border);
   background: rgba(9, 9, 11, 0.85);
   backdrop-filter: blur(10px);
@@ -1414,7 +1417,7 @@ textarea.input {
 
 .page {
   width: 100%;
-  max-width: 1480px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: var(--space-5);
 }
