@@ -120,6 +120,12 @@ describe("WorkoutForm", () => {
     expect(screen.getByLabelText("Váha (lb)").value).toBe("140")
   })
 
+  test("the add-exercise part has no visible heading, but is still a named group", () => {
+    setup()
+    expect(screen.queryByText("Přidat cvik", { selector: "legend" })).toBeNull()
+    expect(screen.getByRole("group", { name: "Přidat cvik" })).toBeTruthy()
+  })
+
   test("removing an exercise updates the list", async () => {
     const { user } = setup()
     await addExercise(user)

@@ -209,9 +209,8 @@ function WorkoutForm({
           </div>
         </div>
 
-        <fieldset className="subcard">
-          <legend className="subcard-title">Přidat cvik</legend>
-
+        {/* No visible heading: the "Přidat cvik" button below already says what this part is for. */}
+        <fieldset className="subcard" aria-label="Přidat cvik">
           {plannedExercises.length > 0 && (
             <div className="planned" role="group" aria-labelledby={`${id}-planned`}>
               <span id={`${id}-planned`} className="label">
