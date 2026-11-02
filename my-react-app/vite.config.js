@@ -18,4 +18,10 @@ export default defineConfig(({ mode }) => ({
           ]
         : [],
   },
+  // `npm test`: unit tests for src/lib and component tests, in a simulated browser (jsdom).
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    restoreMocks: true,
+  },
 }))

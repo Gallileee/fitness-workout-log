@@ -34,7 +34,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Weekly plan | Model in `src/lib/weeklyPlan.js`, loading/saving in `src/lib/weeklyPlanStore.js` |
 | Charts | Hand-written inline SVG (`src/lib/chart.js` does the scaling), no chart library |
 | Styling | Plain CSS with design tokens (custom properties) for colours, spacing and accent themes; media and container queries for layout. No UI or icon library |
-| Tests | Built-in `node:test` runner, no extra dependencies |
+| Tests | Frontend: Vitest + React Testing Library in jsdom (unit, component and whole-app tests). Server: built-in `node:test` |
 | Static server | Express (`server.js`): serves `my-react-app/dist` only, no API |
 | CI | GitHub Actions: install, test, lint, build |
 
@@ -82,12 +82,20 @@ cd .. && npm install && npm start  # serves the build on http://localhost:3000 (
 
 ```bash
 cd my-react-app
-npm test        # unit tests for src/lib (stats, chart scaling, preferences and units, weekly plan)
-npm run lint    # must pass; CI fails on lint errors
+npm test            # all frontend tests once (Vitest)
+npm run test:watch  # re-run tests on every file change
+npm run lint        # must pass; CI fails on lint errors
 
 cd ..
 npm test        # server tests: static files, SPA fallback, removed API returns 404
 ```
+
+What the frontend tests cover:
+- `src/lib/*.test.js`: the pure logic (statistics, dates, units, weekly plan, adherence, the save queue).
+- `src/components/*.test.jsx`: components as a user sees them: found by their labels and roles, driven with `user-event` (typing, clicking, choosing options). Includes the workout form's validation.
+- `src/App.test.jsx`: the whole app on top of the in-memory demo client: adding a workout, saving the plan, and what happens when the server fails (the form stays open with the error and the entered data).
+
+`src/test/setup.js` adds stand-ins for browser APIs that jsdom lacks (`matchMedia`, `ResizeObserver`) and cleans up after each test.
 
 ## How the statistics work
 

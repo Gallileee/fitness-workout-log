@@ -1208,6 +1208,12 @@ textarea.input {
   border-top: 1px solid var(--border);
 }
 
+/* Sits between the scrolling form and the footer, so it stays visible next to the Save button. */
+.dialog-error {
+  flex: none;
+  margin: 0 var(--space-4) var(--space-3);
+}
+
 .form-exercises {
   list-style: none;
   margin: 0;

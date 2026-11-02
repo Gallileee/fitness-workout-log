@@ -7,10 +7,31 @@ import { WORKOUT_TYPES } from "../lib/workoutTypes"
 import { formatWeight, fromDisplayWeight, weightUnit } from "../lib/preferences"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
+const MAX_SETS_REPS = 100
+const MAX_WEIGHT = 1000
+
+const isWholeNumberInRange = (value, min, max) => {
+  const n = Number(value)
+  return value !== "" && Number.isInteger(n) && n >= min && n <= max
+}
+
+// Returns an error message for the "add exercise" fields, or "" when they are valid.
+// The inputs' min/step attributes aren't enforced, because "Přidat cvik" isn't a submit button.
+function exerciseError({ name, sets, reps, weight, unit }) {
+  if (!name) return "Vyber nebo zadej název cviku."
+  if (!isWholeNumberInRange(sets, 1, MAX_SETS_REPS)) return `Série musí být celé číslo od 1 do ${MAX_SETS_REPS}.`
+  if (!isWholeNumberInRange(reps, 1, MAX_SETS_REPS)) return `Opakování musí být celé číslo od 1 do ${MAX_SETS_REPS}.`
+  const w = Number(weight)
+  if (weight === "" || !Number.isFinite(w) || w < 0 || w > MAX_WEIGHT) {
+    return `Váha musí být číslo od 0 do ${MAX_WEIGHT} ${unit} (0 = vlastní váha).`
+  }
+  return ""
+}
 
 // The initial* props are only read on mount. To load a different workout,
 // the parent remounts the form with a new `key` instead of syncing state in an effect.
 // Weights are typed in the chosen unit but always stored in kg.
+// saveError: message from the parent when saving failed; the form stays filled in.
 function WorkoutForm({
   initialDate,
   initialType,
@@ -20,6 +41,7 @@ function WorkoutForm({
   onSave,
   onCancel,
   isEditing,
+  saveError = "",
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -37,6 +59,7 @@ function WorkoutForm({
   const [customExerciseName, setCustomExerciseName] = useState("")
 
   const [note, setNote] = useState(initialNote || "")
+  const [error, setError] = useState("")
 
   const resetExerciseForm = () => {
     setExerciseName("")
@@ -51,11 +74,9 @@ function WorkoutForm({
     e.preventDefault()
 
     const finalName = useCustomExercise ? customExerciseName.trim() : exerciseName
-
-    if (!finalName) {
-      alert("Vyber nebo zadej název cviku")
-      return
-    }
+    const message = exerciseError({ name: finalName, sets, reps, weight, unit })
+    setError(message)
+    if (message) return
 
     const newExercise = {
       id: Date.now() + Math.random(),
@@ -76,15 +97,9 @@ function WorkoutForm({
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    if (!date) {
-      alert("Vyber datum")
-      return
-    }
-
-    if (exercises.length === 0) {
-      alert("Přidej aspoň jeden cvik")
-      return
-    }
+    const message = !date ? "Vyber datum tréninku." : exercises.length === 0 ? "Přidej aspoň jeden cvik." : ""
+    setError(message)
+    if (message) return
 
     onSave({
       date,
@@ -267,6 +282,12 @@ function WorkoutForm({
           />
         </div>
       </form>
+
+      {(error || saveError) && (
+        <p className="alert alert-error dialog-error" role="alert">
+          {error || saveError}
+        </p>
+      )}
 
       <footer className="dialog-footer">
         <button type="button" className="btn btn-ghost" onClick={onCancel}>

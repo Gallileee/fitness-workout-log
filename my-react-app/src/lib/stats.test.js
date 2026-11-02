@@ -1,5 +1,5 @@
 // Run with: npm test  (uses the built-in node:test runner, no extra dependencies)
-import { test, describe } from "node:test"
+import { test, describe } from "vitest"
 import assert from "node:assert/strict"
 import {
   parseLocalDate,
