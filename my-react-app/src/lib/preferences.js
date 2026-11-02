@@ -1,5 +1,5 @@
 // src/lib/preferences.js
-// User preferences (accent colour, spacing, layout, units, rep range), stored in localStorage
+// User preferences (accent colour, spacing, layout, units, rep range, rest timer), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
 export const STORAGE_KEY = "preferences"
@@ -11,6 +11,8 @@ export const OPTIONS = {
   units: ["metric", "imperial"],
   // Rep range for the progressive overload suggestion (src/lib/progression.js).
   repRange: ["4-6", "6-10", "8-12", "12-15"],
+  // Rest timer started after adding an exercise, in seconds (src/lib/restTimer.js).
+  restTimer: ["off", "60", "90", "120", "180"],
 }
 
 export const DEFAULT_PREFERENCES = {
@@ -19,6 +21,7 @@ export const DEFAULT_PREFERENCES = {
   layout: "auto",
   units: "metric",
   repRange: "6-10",
+  restTimer: "90",
 }
 
 // Keeps only known keys with allowed values, so a stale or hand-edited

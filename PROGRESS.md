@@ -1,5 +1,38 @@
 # Progress log
 
+## 2026-11-02 (7th run): Rest timer
+
+Done:
+- `src/lib/restTimer.js`:
+  - `useRestTimer()` stores the end time; a 250 ms interval checks it, but state only changes when the shown second does, so the app re-renders about once a second.
+  - `remainingSeconds()` rounds up, `formatClock()`.
+  - `signalRestDone()` vibrates (where supported) and plays a short Web Audio beep, and never throws.
+- `RestTimer` component:
+  - Full version in the workout form footer: start *Pauza 1:30*, or countdown with +30 s and stop, then *Pauza skončila · OK*.
+  - Compact version in the desktop top bar and the mobile app bar while the form is closed.
+- The timer lives in `App`, so it survives closing the form and switching pages. Adding an exercise starts it automatically.
+- New setting **Pauza po přidání cviku**: off, 1:00, 1:30 (default), 2:00, 3:00.
+- Top bar stays one row while the timer runs:
+  - The email is hidden below 1280 px.
+  - Below 1100 px, +30 s (still in the form) and the brand name are hidden.
+  - The pill's close button is 28 px.
+- On mobile the timer gets its own full-width row above Zrušit / Uložit.
+- 13 new tests (151 in total):
+  - Countdown, done, +30 s, stop, and a delayed-interval case, all with fake timers (`fireEvent`, because user-event waits on timers the fake clock controls).
+  - Auto start on/off in the form.
+  - A whole-app test that the timer keeps running after the dialog closes.
+  - The extended preferences test.
+
+Verified (Node 22.23): `npm test` 151/151, `npm run lint` clean, `vite build` passes. In the browser (`npm run demo`):
+- After *Přidat cvik* the footer counted down from 1:30.
+- After closing the form the top-bar pill kept counting.
+- At the end the pill showed *Pauza skončila · OK*.
+- The top bar is one row at 900, 1024 and 1222 px.
+- On mobile the timer sits in the app bar and has its own row in the form (46 px buttons).
+- No console errors.
+
+Not verified: vibration and sound on a real phone (the emulated browser has neither).
+
 ## 2026-11-02 (6th run): Start today's workout from the plan
 
 Done:
@@ -166,10 +199,10 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Rest timer** after adding an exercise (configurable, e.g. 90 s; vibration / sound when done).
-2. **CSV export** of all workouts (later: import from Strong / Hevy).
-3. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
-4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+1. **CSV export** of all workouts (later: import from Strong / Hevy).
+2. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
+3. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+4. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
 5. Per-exercise rep ranges for the overload suggestion.
 6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
 7. Store plan history so adherence for past weeks uses the plan that applied then.

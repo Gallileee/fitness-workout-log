@@ -81,6 +81,24 @@ describe("App", () => {
     }
   })
 
+  test("adding an exercise starts the rest timer, which keeps running after the dialog closes", async () => {
+    const user = await renderApp()
+    await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+    const form = within(screen.getByRole("dialog"))
+    await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    await user.click(form.getByRole("button", { name: "Přidat cvik" }))
+
+    // Default setting: 1:30.
+    expect(form.getByRole("timer").textContent).toMatch(/^1:(30|29)$/)
+
+    await user.click(form.getByRole("button", { name: "Zrušit" }))
+    expect(screen.queryByRole("dialog")).toBeNull()
+    expect(screen.getByRole("timer").textContent).toMatch(/^1:(30|29|28)$/)
+
+    await user.click(screen.getByRole("button", { name: "Zastavit pauzu" }))
+    expect(screen.queryByRole("timer")).toBeNull()
+  })
+
   test("a new workout appears in the list", async () => {
     const user = await renderApp()
     const form = await fillNewWorkout(user, "Added by the app test")

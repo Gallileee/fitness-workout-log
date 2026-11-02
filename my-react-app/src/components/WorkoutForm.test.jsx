@@ -271,3 +271,31 @@ describe("WorkoutForm: today's planned exercises", () => {
     expect(screen.getByRole("button", { name: "Dips" })).toBeTruthy()
   })
 })
+
+describe("WorkoutForm: rest timer", () => {
+  const idleTimer = () => ({ running: false, finished: false, remaining: 0, start: vi.fn() })
+
+  test("adding an exercise starts the rest timer with the configured length", async () => {
+    const restTimer = idleTimer()
+    const { user } = setup({ restTimer, restSeconds: 120 })
+    await addExercise(user)
+    expect(restTimer.start).toHaveBeenCalledWith(120)
+  })
+
+  test("with the automatic timer off, adding doesn't start it, but the button still does", async () => {
+    const restTimer = idleTimer()
+    const { user } = setup({ restTimer, restSeconds: null })
+    await addExercise(user)
+    expect(restTimer.start).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole("button", { name: "Pauza 1:30" }))
+    expect(restTimer.start).toHaveBeenCalledWith(90)
+  })
+
+  test("an invalid exercise doesn't start the timer", async () => {
+    const restTimer = idleTimer()
+    const { user } = setup({ restTimer, restSeconds: 90 })
+    await user.click(screen.getByRole("button", { name: "Přidat cvik" }))
+    expect(restTimer.start).not.toHaveBeenCalled()
+  })
+})
