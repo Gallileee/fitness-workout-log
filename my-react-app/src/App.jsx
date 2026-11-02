@@ -359,6 +359,7 @@ function App() {
         units={units}
         saveError={saveError}
         history={workouts.filter((w) => w.id !== editingId)}
+        repRange={preferences.repRange}
         onSave={async (values) => {
           if (await handleSave(values)) setView("dashboard")
         }}

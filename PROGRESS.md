@@ -1,5 +1,22 @@
 # Progress log
 
+## 2026-11-02 (5th run): Progressive overload suggestion
+
+Done:
+- `src/lib/progression.js`: `suggestProgression(last, { repRange, units })` using double progression:
+  - Below the top of the range: +1 rep at the same weight.
+  - At or above the top: the next plate step (2.5 kg / 5 lb, snapping odd weights up to the grid) and back to the bottom of the range.
+  - Bodyweight: +1 rep.
+  - The result is stored in kg; imperial steps are computed in lb.
+- New setting **Rozsah opakování** (4–6, 6–10 default, 8–12, 12–15), validated with the other preferences.
+- Workout form: under *Minule*, a *Návrh* row such as *4×7 · 87,5 kg (+1 opakování)* or *4×4 · 90 kg (horní hranice 4–6 → přidej váhu)*. The *Použít návrh* button fills it in. The prefill on choosing an exercise is still last time's numbers, so nothing heavier gets filled in without a tap.
+- `WEIGHT_STEP` moved from the form to `progression.js`, so the − / + weight buttons and the suggestion share one step size.
+- 15 new tests (123 in total): 10 for `progression.js`, 4 for the form, 1 whole-app test (rep range from Settings → suggestion). Also 1 extended preferences test.
+
+Verified (Node 22.23): `npm test` 123/123, `npm run lint` clean, `vite build` passes. In the browser (`npm run demo`): Bench Press showed *Návrh: 4×7 · 87,5 kg (+1 opakování)* and *Použít návrh* filled in 4 / 7 / 87,5. On mobile (375×812) the rows wrap cleanly, buttons are 44 px, there is no overflow and there are no console errors.
+
+Limitations: one rep range for all exercises; every logged set is assumed completed (no per-set data).
+
 ## 2026-11-02 (4th run): "Last time" numbers and − / + buttons in the workout form
 
 Picked from the owner's list of features lifters value (Strong / Hevy comparisons): "previous" numbers next to each exercise and fast logging were the top two, and both are cheap with the existing data.
@@ -126,12 +143,12 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Overload suggestion** next to "Minule": e.g. "4×6 hotovo → zkus 4×7, po 4×8 přidej 2,5 kg" (double progression), built on `lastPerformance`.
-2. **Start today's workout from the plan**: prefill the form with the exercises from the last workout of today's planned type.
-3. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
-4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-5. Rest timer after adding an exercise (vibration / notification).
-6. CSV export (later: import from Strong / Hevy).
-7. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-8. Store plan history so adherence for past weeks uses the plan that applied then.
-9. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`). Check with the owner first.
+1. **Start today's workout from the plan**: prefill the form with the exercises from the last workout of today's planned type.
+2. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
+3. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+4. Rest timer after adding an exercise (vibration / notification).
+5. CSV export (later: import from Strong / Hevy).
+6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+7. Store plan history so adherence for past weeks uses the plan that applied then.
+8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`). Check with the owner first.
+9. Per-exercise rep ranges (e.g. 4–6 for squats, 10–15 for curls) for the overload suggestion.

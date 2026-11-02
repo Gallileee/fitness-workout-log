@@ -172,6 +172,43 @@ describe("WorkoutForm: last time", () => {
     expect(screen.getByLabelText("Váha (kg)").value).toBe("0")
   })
 
+  const suggestionText = () => screen.getByText("Návrh:").parentElement.textContent
+
+  test("suggests one more rep below the top of the rep range", async () => {
+    const { user } = setup({ history, initialDate: "2026-11-02" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    expect(suggestionText()).toMatch(/4×7 · 82,5 kg \(\+1 opakování\)/)
+
+    await user.click(screen.getByRole("button", { name: "Použít návrh" }))
+    expect(screen.getByLabelText("Série").value).toBe("4")
+    expect(screen.getByLabelText("Opakování").value).toBe("7")
+    expect(screen.getByLabelText("Váha (kg)").value).toBe("82.5")
+  })
+
+  test("at the top of the rep range suggests more weight and the bottom of the range", async () => {
+    const { user } = setup({ history, initialDate: "2026-11-02", repRange: "4-6" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    expect(suggestionText()).toMatch(/4×4 · 85 kg \(horní hranice 4–6 → přidej váhu\)/)
+
+    await user.click(screen.getByRole("button", { name: "Použít návrh" }))
+    expect(screen.getByLabelText("Opakování").value).toBe("4")
+    expect(screen.getByLabelText("Váha (kg)").value).toBe("85")
+  })
+
+  test("in pounds the weight step is 5 lb", async () => {
+    const { user } = setup({ history, initialDate: "2026-11-02", repRange: "4-6", units: "imperial" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    await user.click(screen.getByRole("button", { name: "Použít návrh" }))
+    expect(screen.getByLabelText("Váha (lb)").value).toBe("185")
+  })
+
+  test("a bodyweight exercise only gets one more rep", async () => {
+    const { user } = setup({ history })
+    await user.click(screen.getByLabelText("Vlastní název cviku"))
+    await user.type(screen.getByLabelText("Cvik"), "Cable Fly")
+    expect(suggestionText()).toMatch(/3×16 \(\+1 opakování\)$/)
+  })
+
   test("no hint for an exercise that was never logged", async () => {
     const { user } = setup({ history })
     await user.selectOptions(screen.getByLabelText("Cvik"), "Overhead Press (Barbell)")
