@@ -37,6 +37,8 @@ describe("sanitizePreferences", () => {
     assert.deepEqual(sanitizePreferences({ accent: "pink", layout: "tv", extra: 1 }), DEFAULT_PREFERENCES)
     assert.deepEqual(sanitizePreferences({ repRange: "5-500" }), DEFAULT_PREFERENCES)
     assert.equal(sanitizePreferences({ repRange: "8-12" }).repRange, "8-12")
+    assert.equal(sanitizePreferences({ restTimer: "45" }).restTimer, "90")
+    assert.equal(sanitizePreferences({ restTimer: "off" }).restTimer, "off")
     assert.deepEqual(sanitizePreferences(null), DEFAULT_PREFERENCES)
     assert.deepEqual(sanitizePreferences("compact"), DEFAULT_PREFERENCES)
   })
@@ -45,7 +47,7 @@ describe("sanitizePreferences", () => {
 describe("loadPreferences / savePreferences", () => {
   test("round-trips through storage", () => {
     const storage = memoryStorage()
-    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15" }
+    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off" }
     assert.equal(savePreferences(storage, prefs), true)
     assert.deepEqual(loadPreferences(storage), prefs)
   })

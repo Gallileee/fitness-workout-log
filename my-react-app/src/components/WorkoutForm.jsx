@@ -3,11 +3,13 @@ import { useId, useState } from "react"
 import { exercises as exercisesDb } from "../data/exercises.js"
 import DatePicker from "./DatePicker.jsx"
 import NumberStepper from "./NumberStepper"
+import RestTimer from "./RestTimer"
 import Icon from "./Icon"
 import { WORKOUT_TYPES } from "../lib/workoutTypes"
 import { formatWeight, fromDisplayWeight, toDisplayWeight, weightUnit } from "../lib/preferences"
 import { lastPerformance } from "../lib/history"
 import { parseRepRange, suggestProgression, WEIGHT_STEP } from "../lib/progression"
+import { DEFAULT_REST_SECONDS } from "../lib/restTimer"
 import { formatWorkoutDate } from "../lib/format"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
@@ -39,6 +41,8 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // history: the user's other workouts, for the "Minule" (last time) hint and prefill.
 // repRange: "6-10" etc., for the progressive overload suggestion.
 // plannedExercises: names to offer as one-tap choices ("Dnešní cviky"), e.g. from today's plan.
+// restTimer: from useRestTimer() in the parent, so it keeps running when the dialog closes.
+// restSeconds: started automatically after adding an exercise; null = don't.
 function WorkoutForm({
   initialDate,
   initialType,
@@ -52,6 +56,8 @@ function WorkoutForm({
   history = [],
   repRange = "6-10",
   plannedExercises = [],
+  restTimer = null,
+  restSeconds = null,
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -129,6 +135,7 @@ function WorkoutForm({
 
     setExercises((prev) => [...prev, newExercise])
     resetExerciseForm()
+    if (restTimer && restSeconds) restTimer.start(restSeconds)
   }
 
   const handleRemoveExercise = (exerciseId) => {
@@ -366,6 +373,11 @@ function WorkoutForm({
       )}
 
       <footer className="dialog-footer">
+        {restTimer && (
+          <div className="dialog-footer-start">
+            <RestTimer timer={restTimer} defaultSeconds={restSeconds ?? DEFAULT_REST_SECONDS} />
+          </div>
+        )}
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           Zrušit
         </button>

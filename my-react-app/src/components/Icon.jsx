@@ -12,6 +12,7 @@ const PATHS = {
   close: "M6 6l12 12M18 6 6 18",
   logout: "M10 5H5v14h5M14.5 8l4 4-4 4M18.5 12H9.5",
   filter: "M4 6h16M7 12h10M10 18h4",
+  timer: "M10 2.5h4M12 2.5v3M4 13.5a8 8 0 1 0 16 0a8 8 0 1 0 -16 0M12 9.5v4l2.5 2",
 }
 
 function Icon({ name, size = 20, className = "" }) {

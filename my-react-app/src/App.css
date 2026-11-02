@@ -1343,6 +1343,83 @@ textarea.input {
   font-weight: 600;
 }
 
+/* Rest timer: in the dialog footer, and compact in the top bar / app bar */
+.dialog-footer-start {
+  margin-right: auto;
+  min-width: 0;
+}
+
+.rest-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.rest-timer-clock {
+  min-width: 3.2em;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.rest-timer .icon-btn {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+}
+
+.rest-timer.is-finished {
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+  color: var(--on-accent);
+  animation: rest-done-pulse 1s ease-in-out 3;
+}
+
+.rest-timer.is-finished .btn {
+  color: var(--on-accent);
+}
+
+@keyframes rest-done-pulse {
+  50% {
+    box-shadow: 0 0 0 6px var(--accent-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rest-timer.is-finished {
+    animation: none;
+  }
+}
+
+.m-appbar .rest-timer {
+  margin-left: auto;
+}
+
+/* Make room for the running timer so the top bar stays one row; the email is also in Settings. */
+@media (max-width: 1279px) {
+  .topbar-end:has(.rest-timer) .user-email {
+    display: none;
+  }
+}
+
+/* On the narrowest desktop windows, +30 s stays available in the workout form
+   only, and the logo keeps its mark but not its name. */
+@media (max-width: 1099px) {
+  .topbar .rest-timer-extend,
+  .topbar:has(.rest-timer) .brand-name {
+    display: none;
+  }
+}
+
 /* Sits between the scrolling form and the footer, so it stays visible next to the Save button. */
 .dialog-error {
   flex: none;
@@ -1786,6 +1863,24 @@ textarea.input {
 
 .app-shell[data-layout="mobile"] .dialog-footer .btn {
   flex: 1;
+}
+
+/* On a phone the timer gets its own row above Zrušit / Uložit. */
+.app-shell[data-layout="mobile"] .dialog-footer {
+  flex-wrap: wrap;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer-start {
+  flex-basis: 100%;
+  margin-right: 0;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer .dialog-footer-start .btn {
+  flex: none;
+}
+
+.app-shell[data-layout="mobile"] .dialog-footer .rest-timer-start {
+  width: 100%;
 }
 
 @media (max-width: 380px) {

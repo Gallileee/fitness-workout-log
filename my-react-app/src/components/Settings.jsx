@@ -53,6 +53,18 @@ const GROUPS = [
       { value: "12-15", label: "12–15" },
     ],
   },
+  {
+    key: "restTimer",
+    title: "Pauza po přidání cviku",
+    hint: "Odpočet se spustí sám po „Přidat cvik“. Ve formuláři ho jde spustit i ručně, třeba mezi sériemi.",
+    options: [
+      { value: "off", label: "Vypnuto" },
+      { value: "60", label: "1:00" },
+      { value: "90", label: "1:30" },
+      { value: "120", label: "2:00" },
+      { value: "180", label: "3:00" },
+    ],
+  },
 ]
 
 function Settings({ preferences, onChange, user, onLogout }) {

@@ -10,12 +10,14 @@ import ProgressChart from "./components/ProgressChart"
 import WeeklyPlan from "./components/WeeklyPlan"
 import PlanAdherence from "./components/PlanAdherence"
 import TodayCard from "./components/TodayCard"
+import RestTimer from "./components/RestTimer"
 import Settings from "./components/Settings"
 import Login from "./components/Login"
 import Icon from "./components/Icon"
 import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
 import { todaysWorkout, exercisesLabel } from "./lib/todaysWorkout"
+import { useRestTimer, restSecondsFromPreference, signalRestDone } from "./lib/restTimer"
 import { workoutTypeLabel } from "./lib/workoutTypes"
 import { formatWorkoutDate } from "./lib/format"
 import { supabase } from "./supabaseClient"
@@ -65,6 +67,8 @@ function App() {
   const isNarrow = useMediaQuery(NARROW_VIEWPORT)
   const layout = resolveLayout(preferences.layout, isNarrow)
   const units = preferences.units
+  const restTimer = useRestTimer({ onDone: signalRestDone })
+  const restSeconds = restSecondsFromPreference(preferences.restTimer)
 
   const filteredWorkouts = filterWorkouts(workouts, filters)
   const filtersActive = filters.type !== "all" || Boolean(filters.from || filters.to)
@@ -378,6 +382,8 @@ function App() {
         history={workouts.filter((w) => w.id !== editingId)}
         repRange={preferences.repRange}
         plannedExercises={plannedExercises}
+        restTimer={restTimer}
+        restSeconds={restSeconds}
         onSave={async (values) => {
           if (await handleSave(values)) setView("dashboard")
         }}
@@ -397,6 +403,7 @@ function App() {
             <Icon name="brand" size={18} />
           </span>
           <h1 className="m-title">{current.label}</h1>
+          {!dialogOpen && <RestTimer timer={restTimer} compact />}
           {loading && <span className="loading-dot" role="status" aria-label="Načítám tréninky" />}
         </header>
 
@@ -500,6 +507,7 @@ function App() {
         </nav>
 
         <div className="topbar-end">
+          {!dialogOpen && <RestTimer timer={restTimer} compact />}
           <span className="user-email" title={user.email}>
             {user.email}
           </span>

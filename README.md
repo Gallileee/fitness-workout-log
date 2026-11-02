@@ -11,6 +11,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **Start today's workout**: the plan knows today is, say, push day. *Dnes: Push* (top bar) or *Začít* (mobile overview) opens the form with today's date, the planned type and the exercises from your last push workout as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
 - **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings
+- **Rest timer**: adding an exercise starts a countdown (1:30 by default; 1:00–3:00 or off in Settings), and *Pauza 1:30* in the form starts one by hand, e.g. between sets. It has +30 s and stop, keeps running when the form is closed (shown in the top bar / app bar), and vibrates and beeps when it ends
 - **− / + buttons** for sets, reps and weight (steps of 1, and 2.5 kg or 5 lb), so common changes take one tap
 - Filter the history by workout type and date range (both dates inclusive)
 - Summary: number of workouts, total volume (sets × reps × kg), volume over the last 7 days, average volume per workout
@@ -19,7 +20,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
 - **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
-- **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15)
+- **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
 
 ## Layout
@@ -115,6 +116,7 @@ What the frontend tests cover:
   - At or above the top: the next weight step (2.5 kg, or 5 lb in imperial mode), back to the bottom of the range. Odd weights snap up to the plate grid (83 → 85 kg).
   - Bodyweight entries (weight 0): one more rep.
   - It assumes every logged set was completed, because the app stores one row per exercise (e.g. 4×6), not each set.
+- **Rest timer** (`src/lib/restTimer.js`): it stores the time it ends, not a tick count, so it stays right when the browser slows down timers in a background tab or on a locked phone. Vibration needs a phone browser that supports it (not iOS Safari); the beep uses the Web Audio API.
 - **Weekly plan saving**: each change is saved with an upsert on `user_id`. At most one save runs at a time; changes made meanwhile are merged and only the newest plan is sent next, so a slow request can't overwrite a newer plan. The card shows *Ukládám… / Plán uložen.* or the error.
 - **Plan adherence**: weeks run Monday to Sunday. This week, a planned day is *done* when a workout of the planned type was logged that date. For the 8-week bars, days may move within the week: for each type, completed = min(planned sessions, logged workouts of that type), so three legs days don't make up for a missed push day. The streak counts fully completed weeks back from last week; the current week joins it once it's complete, so the streak doesn't reset every Monday.
 - **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
