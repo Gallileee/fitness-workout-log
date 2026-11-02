@@ -28,7 +28,8 @@ export function restSecondsFromPreference(value) {
 // without these APIs, or that block audio until the user interacts, just stay quiet.
 export function signalRestDone() {
   try {
-    navigator.vibrate?.([200, 100, 200])
+    // Chrome refuses (and logs an error) before the user has interacted with the page.
+    if (navigator.userActivation?.hasBeenActive !== false) navigator.vibrate?.([200, 100, 200])
   } catch {
     // vibration not allowed
   }

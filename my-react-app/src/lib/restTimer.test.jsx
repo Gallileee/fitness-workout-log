@@ -47,6 +47,16 @@ describe("signalRestDone", () => {
     delete navigator.vibrate
     expect(() => signalRestDone()).not.toThrow()
   })
+
+  test("doesn't vibrate before the user has interacted with the page", () => {
+    const vibrate = vi.fn()
+    Object.defineProperty(navigator, "vibrate", { value: vibrate, configurable: true })
+    Object.defineProperty(navigator, "userActivation", { value: { hasBeenActive: false }, configurable: true })
+    signalRestDone()
+    expect(vibrate).not.toHaveBeenCalled()
+    delete navigator.vibrate
+    delete navigator.userActivation
+  })
 })
 
 // The hook and the component together, with a fake clock.

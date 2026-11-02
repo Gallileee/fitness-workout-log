@@ -105,6 +105,21 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Nový trénink" })).toBeTruthy()
   })
 
+  test("the top bar has the rest timer; email and logout are in Settings", async () => {
+    const user = await renderApp()
+    expect(screen.queryByText("demo@example.com")).toBeNull()
+    expect(screen.queryByRole("button", { name: "Odhlásit se" })).toBeNull()
+
+    await user.click(screen.getByRole("button", { name: "Pauza 1:30" }))
+    expect(screen.getByRole("timer").textContent).toMatch(/^1:(30|29)$/)
+    await user.click(screen.getByRole("button", { name: "Zastavit pauzu" }))
+    expect(screen.getByRole("button", { name: "Pauza 1:30" })).toBeTruthy()
+
+    await user.click(screen.getByRole("button", { name: "Nastavení" }))
+    expect(screen.getByText("demo@example.com")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeTruthy()
+  })
+
   test("a new workout appears in the list", async () => {
     const user = await renderApp()
     const form = await fillNewWorkout(user, "Added by the app test")

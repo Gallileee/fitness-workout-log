@@ -1404,18 +1404,9 @@ textarea.input {
   margin-left: auto;
 }
 
-/* Make room for the running timer so the top bar stays one row; the email is also in Settings. */
-@media (max-width: 1279px) {
-  .topbar-end:has(.rest-timer) .user-email {
-    display: none;
-  }
-}
-
-/* On the narrowest desktop windows, +30 s stays available in the workout form
-   only, and the logo keeps its mark but not its name. */
+/* On the narrowest desktop windows, +30 s stays available in the workout form only. */
 @media (max-width: 1099px) {
-  .topbar .rest-timer-extend,
-  .topbar:has(.rest-timer) .brand-name {
+  .topbar .rest-timer-extend {
     display: none;
   }
 }
@@ -1542,15 +1533,6 @@ textarea.input {
   min-width: 0;
 }
 
-.user-email {
-  color: var(--text-faint);
-  font-size: var(--fs-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 220px;
-}
-
 .page {
   width: 100%;
   max-width: var(--page-max);
@@ -1664,12 +1646,6 @@ textarea.input {
 
   .kpi-value {
     font-size: var(--fs-lg);
-  }
-}
-
-@media (max-width: 899px) {
-  .user-email {
-    display: none;
   }
 }
 

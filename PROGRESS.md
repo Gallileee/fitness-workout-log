@@ -1,5 +1,19 @@
 # Progress log
 
+## 2026-11-02 (11th run): Rest timer in the top bar; email and logout only in Settings
+
+Requested by the owner:
+- The desktop top bar no longer shows the account email or a logout button. Both are in Settings (*Účet*: "Přihlášen jako …" and *Odhlásit se*).
+- In their place the rest timer is always in the top bar: *Pauza 1:30* to start one while idle, the countdown with +30 s and stop while running, and *Pauza skončila* at the end.
+- Removed the CSS that only existed to hide the email when space was short. The brand name no longer needs hiding either.
+- Vibration is skipped before the user has interacted with the page. Chrome blocks it then and logs an error, which showed up during browser testing with scripted clicks.
+- 2 new tests (154 in total): the top bar has the timer and no email or logout (which are in Settings), and no vibration without user activation.
+
+Verified (Node 22.23): `npm test` 154/154, `npm run lint` clean. In the browser (`npm run demo`):
+- With *Dnes: Push* also showing, the top bar is one row at 900, 1100 and 2560 px, idle and running.
+- At 2560 px it still lines up with the cards (560 / 2000).
+- +30 s shows from 1100 px up.
+
 ## 2026-11-02 (10th run): ESLint 10 and Vite 8
 
 Replaces Dependabot's separate major-version PRs #19 (eslint), #20 (@eslint/js) and #21 (vite). Those failed CI on their own, because these packages have to move together: Vite 8 needs `@vitejs/plugin-react` 6, and ESLint 10 needs `@eslint/js` 10.

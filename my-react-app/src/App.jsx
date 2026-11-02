@@ -17,7 +17,7 @@ import Icon from "./components/Icon"
 import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
 import { todaysWorkout, exercisesLabel } from "./lib/todaysWorkout"
-import { useRestTimer, restSecondsFromPreference, signalRestDone } from "./lib/restTimer"
+import { useRestTimer, restSecondsFromPreference, signalRestDone, DEFAULT_REST_SECONDS } from "./lib/restTimer"
 import { workoutTypeLabel } from "./lib/workoutTypes"
 import { formatWorkoutDate } from "./lib/format"
 import { supabase } from "./supabaseClient"
@@ -516,13 +516,8 @@ function App() {
         </nav>
 
         <div className="topbar-end">
-          {!dialogOpen && <RestTimer timer={restTimer} compact />}
-          <span className="user-email" title={user.email}>
-            {user.email}
-          </span>
-          <button type="button" className="icon-btn" onClick={handleLogout} aria-label="Odhlásit se" title="Odhlásit se">
-            <Icon name="logout" />
-          </button>
+          {/* Start button while idle, countdown while running. Email and logout are in Settings. */}
+          {!dialogOpen && <RestTimer timer={restTimer} defaultSeconds={restSeconds ?? DEFAULT_REST_SECONDS} />}
           {canStartToday && (
             <button
               type="button"
