@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import "./App.css"
 import WorkoutForm from "./components/WorkoutForm"
 import WorkoutList from "./components/WorkoutList"
@@ -12,6 +12,7 @@ import Settings from "./components/Settings"
 import Login from "./components/Login"
 import Icon from "./components/Icon"
 import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
+import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
 import { browserStorage, loadPreferences, savePreferences, resolveLayout } from "./lib/preferences"
@@ -48,7 +49,10 @@ function App() {
   const [sideTab, setSideTab] = useState("records")
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [statsSource, setStatsSource] = useState("all")
-  const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan())
+  const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan)
+  // { state: "idle" | "loading" | "load-error" | "saving" | "saved" | "error", message? }
+  const [planStatus, setPlanStatus] = useState({ state: "idle" })
+  const planSaverRef = useRef(null)
 
   const [preferences, setPreferences] = useState(() => loadPreferences(browserStorage()))
   const isNarrow = useMediaQuery(NARROW_VIEWPORT)
@@ -104,6 +108,8 @@ function App() {
     await supabase.auth.signOut()
     setUser(null)
     setWorkouts([])
+    setWeeklyPlan(createDefaultWeeklyPlan())
+    setPlanStatus({ state: "idle" })
     setPage("overview")
     localStorage.removeItem("user")
   }
@@ -133,6 +139,45 @@ function App() {
 
     fetchWorkouts()
   }, [user])
+
+  // LOAD WEEKLY PLAN, and set up saving it for this user
+  useEffect(() => {
+    if (!user) return
+    const userId = user.userId
+    let cancelled = false
+
+    planSaverRef.current = createLatestSaver(
+      (plan) => saveWeeklyPlan(supabase, userId, plan),
+      (state, error) => {
+        if (error) console.error("Chyba při ukládání plánu:", error)
+        if (!cancelled) setPlanStatus({ state, message: error?.message })
+      }
+    )
+
+    const fetchPlan = async () => {
+      setPlanStatus({ state: "loading" })
+      try {
+        const plan = await loadWeeklyPlan(supabase, userId)
+        if (cancelled) return
+        setWeeklyPlan(plan)
+        setPlanStatus({ state: "idle" })
+      } catch (err) {
+        console.error("Chyba při načítání plánu:", err)
+        if (!cancelled) setPlanStatus({ state: "load-error", message: err.message })
+      }
+    }
+
+    fetchPlan()
+    return () => {
+      cancelled = true
+      planSaverRef.current = null
+    }
+  }, [user])
+
+  const handlePlanChange = (plan) => {
+    setWeeklyPlan(plan)
+    planSaverRef.current?.(plan)
+  }
 
   const resetEditing = () => {
     setEditingId(null)
@@ -280,9 +325,10 @@ function App() {
   const plan = (
     <WeeklyPlan
       plan={weeklyPlan}
-      onChange={setWeeklyPlan}
+      onChange={handlePlanChange}
       onDayClick={handlePlanDayClick}
       activeType={filters.type}
+      status={planStatus}
     />
   )
 

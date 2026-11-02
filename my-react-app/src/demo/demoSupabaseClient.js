@@ -61,7 +61,8 @@ function sampleWorkouts() {
   return rows.sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
-let rows = sampleWorkouts()
+// Rows per table. weekly_plans starts empty, like for a new account.
+const tables = { workouts: sampleWorkouts(), weekly_plans: [] }
 let session = { user: DEMO_USER }
 const listeners = new Set()
 
@@ -71,31 +72,50 @@ function notify(event) {
 
 const ok = (data) => Promise.resolve({ data, error: null })
 
-// A tiny query builder covering select/insert/update/delete + eq/order/single.
-function query() {
-  const state = { action: "select", filters: [], payload: null, order: null, single: false }
+// A tiny query builder covering select/insert/update/upsert/delete
+// + eq/order/single/maybeSingle, for one table.
+function query(table) {
+  tables[table] ??= []
+  const rows = () => tables[table]
+  const setRows = (next) => {
+    tables[table] = next
+  }
+  const state = { action: "select", filters: [], payload: null, onConflict: null, order: null, single: false, maybe: false }
 
   const matches = (row) => state.filters.every(([col, val]) => String(row[col]) === String(val))
 
   function run() {
     if (state.action === "insert") {
       const row = { ...state.payload, id: nextId++ }
-      rows = [row, ...rows]
+      setRows([row, ...rows()])
+      return ok(state.single ? row : [row])
+    }
+    if (state.action === "upsert") {
+      const key = state.onConflict ?? "id"
+      const existing = rows().find((r) => String(r[key]) === String(state.payload[key]))
+      const row = existing ? { ...existing, ...state.payload } : { ...state.payload }
+      setRows(existing ? rows().map((r) => (r === existing ? row : r)) : [row, ...rows()])
       return ok(state.single ? row : [row])
     }
     if (state.action === "update") {
       let updated = null
-      rows = rows.map((r) => (matches(r) ? (updated = { ...r, ...state.payload }) : r))
+      setRows(rows().map((r) => (matches(r) ? (updated = { ...r, ...state.payload }) : r)))
       return ok(state.single ? updated : updated ? [updated] : [])
     }
     if (state.action === "delete") {
-      rows = rows.filter((r) => !matches(r))
+      setRows(rows().filter((r) => !matches(r)))
       return ok(null)
     }
-    let result = rows.filter(matches)
+    let result = rows().filter(matches)
     if (state.order) {
       const { col, ascending } = state.order
       result = [...result].sort((a, b) => (a[col] < b[col] ? -1 : a[col] > b[col] ? 1 : 0) * (ascending ? 1 : -1))
+    }
+    if (state.single && result.length !== 1) {
+      // Like PostgREST: .single() needs exactly one row, .maybeSingle() zero or one.
+      if (!(state.maybe && result.length === 0)) {
+        return Promise.resolve({ data: null, error: { message: `Expected one row, got ${result.length}` } })
+      }
     }
     return ok(state.single ? result[0] ?? null : result)
   }
@@ -114,6 +134,12 @@ function query() {
       state.payload = payload
       return builder
     },
+    upsert(payload, { onConflict } = {}) {
+      state.action = "upsert"
+      state.payload = payload
+      state.onConflict = onConflict ?? null
+      return builder
+    },
     delete() {
       state.action = "delete"
       return builder
@@ -130,6 +156,11 @@ function query() {
       state.single = true
       return builder
     },
+    maybeSingle() {
+      state.single = true
+      state.maybe = true
+      return builder
+    },
     then(resolve, reject) {
       return run().then(resolve, reject)
     },
@@ -138,7 +169,7 @@ function query() {
 }
 
 export const supabase = {
-  from: () => query(),
+  from: (table) => query(table),
   auth: {
     getSession: () => ok({ session }),
     onAuthStateChange(cb) {
