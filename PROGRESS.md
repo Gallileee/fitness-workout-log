@@ -1,5 +1,40 @@
 # Progress log
 
+## 2026-11-02 (12th run): Settings redesign, more colours, game-style fonts
+
+Requested by the owner: a nicer Settings page (the cards had different heights), more colours, and font styles inspired by games for more personality.
+
+Research ([setproduct](https://setproduct.com/blog/settings-ui-design), [Cieden](https://cieden.com/book/atoms/toggle-switch/how-to-design-a-toggle-list), [Hevy settings](https://www.hevyapp.com/features/workout-settings/)):
+- Group settings into labelled sections.
+- Use segmented controls for 2–5 exclusive choices.
+- Touch targets of at least 44 px.
+- Labels that make sense on their own.
+- Hevy also puts the default rest timer, a plate calculator and "keep screen on" in its workout settings.
+
+Done:
+- **Settings layout:**
+  - Three sections with icons: *Vzhled* (left on wide screens), *Trénink* and *Účet* (right).
+  - Every row has the same structure (title and hint on the left, control on the right) and the same height (96 px). Colours and fonts are full-width rows.
+  - On phones the controls go under the text and are at least 44 px tall.
+- **10 accent colours** (was 4): purple, blue, cyan, emerald, lime, amber, orange, rose, fuchsia, and black & white (`mono`). Each defines the full token set; white text only on the colours dark enough for it.
+- **7 font styles** (`preferences.font`, `src/lib/fonts.js`): Výchozí, Arkáda (Press Start 2P), Terminál (VT323), Sci-fi (Audiowide), Fantasy (Cinzel), Komiks (Bangers), Taktické (Black Ops One).
+  - All are OFL fonts that include Czech letters (latin-ext). They are bundled from Fontsource, so nothing is requested from Google Fonts, and each one is downloaded only when it is selected or Settings shows its preview.
+  - Only headings and numbers use the style (brand, page and card titles, KPI values, 1RM, adherence, timer, workout dates). Body text and small uppercase labels stay in the readable UI font.
+  - `font-size-adjust: cap-height …` makes the very different fonts about the same visual size.
+  - Font cards show a live preview ("4×8 · 90") in their own font.
+  - The UI doesn't use game names (trademarks); styles are named by genre.
+- Fixed while testing:
+  - The default preview card inherited the active style's font, because `--font-display: inherit` on a custom property inherits the parent's value.
+  - The tiny uppercase section labels were unreadable in the pixel font, so they no longer use the display font.
+  - Komiks looked smaller than the rest, which the switch from x-height to cap-height fixed.
+- 8 new tests (162 in total): Settings sections, colours, fonts, training choices, account; font themes match the preferences; loading never throws; the whole app picks up the font and colour from Settings.
+
+Verified (Node 22.23): `npm test` 162/162, `npm run lint` clean, `vite build` passes (fonts are separate chunks), and `npm audit --omit=dev` shows 0. In the browser (`npm run demo`):
+- Desktop 1366×900: all non-wide rows are 96 px.
+- 1366×768: the dashboard still fits one screen and the top bar stays one row with every font style.
+- Mobile 375×812: no overflow, every choice at least 44 px.
+- Tried arcade + lime, fantasy + rose, tactical + rose.
+
 ## 2026-11-02 (11th run): Rest timer in the top bar; email and logout only in Settings
 
 Requested by the owner:
@@ -283,10 +318,12 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **CSV export** of all workouts (later: import from Strong / Hevy).
-2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
-3. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-4. Per-exercise rep ranges for the overload suggestion.
-5. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-6. Store plan history so adherence for past weeks uses the plan that applied then.
-7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`, which only `app.js` uses. Check with the owner first.
+1. **CSV export** of all workouts, as a button in Settings → Účet (later: import from Strong / Hevy).
+2. **Keep screen on during a workout** (Screen Wake Lock API), as a Settings toggle like Hevy's.
+3. **Plate calculator** with the available plates and bar weight in Settings.
+4. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
+5. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
+6. Per-exercise rep ranges for the overload suggestion.
+7. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+8. Store plan history so adherence for past weeks uses the plan that applied then.
+9. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.

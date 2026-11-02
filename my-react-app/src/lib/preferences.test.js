@@ -47,7 +47,7 @@ describe("sanitizePreferences", () => {
 describe("loadPreferences / savePreferences", () => {
   test("round-trips through storage", () => {
     const storage = memoryStorage()
-    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off" }
+    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade" }
     assert.equal(savePreferences(storage, prefs), true)
     assert.deepEqual(loadPreferences(storage), prefs)
   })

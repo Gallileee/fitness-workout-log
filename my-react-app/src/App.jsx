@@ -18,6 +18,7 @@ import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
 import { todaysWorkout, exercisesLabel } from "./lib/todaysWorkout"
 import { useRestTimer, restSecondsFromPreference, signalRestDone, DEFAULT_REST_SECONDS } from "./lib/restTimer"
+import { loadFontTheme } from "./lib/fonts"
 import { workoutTypeLabel } from "./lib/workoutTypes"
 import { formatWorkoutDate } from "./lib/format"
 import { supabase } from "./supabaseClient"
@@ -92,6 +93,11 @@ function App() {
   useEffect(() => {
     savePreferences(browserStorage(), preferences)
   }, [preferences])
+
+  // Download the chosen heading font (only that one; Settings loads the rest for its previews).
+  useEffect(() => {
+    loadFontTheme(preferences.font)
+  }, [preferences.font])
 
   // AUTH (the stored user is read in useState above; Supabase confirms or clears it here)
   useEffect(() => {
@@ -329,7 +335,7 @@ function App() {
   // LOGIN VIEW
   if (!user) {
     return (
-      <div className="app-shell" data-accent={preferences.accent} data-density={preferences.density}>
+      <div className="app-shell" data-accent={preferences.accent} data-font={preferences.font} data-density={preferences.density}>
         <Login onLogin={handleLogin} />
       </div>
     )
@@ -406,7 +412,7 @@ function App() {
   if (layout === "mobile") {
     const current = MOBILE_NAV.find((n) => n.page === page) ?? MOBILE_NAV[0]
     return (
-      <div className="app-shell" data-layout="mobile" data-accent={preferences.accent} data-density={preferences.density}>
+      <div className="app-shell" data-layout="mobile" data-accent={preferences.accent} data-font={preferences.font} data-density={preferences.density}>
         <header className="m-appbar">
           <span className="brand-mark" aria-hidden="true">
             <Icon name="brand" size={18} />
@@ -491,7 +497,7 @@ function App() {
   // --- DESKTOP LAYOUT: everything important on one dashboard ---
   const desktopPage = page === "settings" ? "settings" : "overview"
   return (
-    <div className="app-shell" data-layout="desktop" data-accent={preferences.accent} data-density={preferences.density}>
+    <div className="app-shell" data-layout="desktop" data-accent={preferences.accent} data-font={preferences.font} data-density={preferences.density}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">

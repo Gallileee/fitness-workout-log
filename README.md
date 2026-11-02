@@ -20,7 +20,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
 - **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
-- **Settings** (saved in the browser): accent colour, comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length
+- **Settings** (saved in the browser), in three sections (Vzhled, Trénink, Účet) of equal-height rows: 10 accent colours, 7 **font styles** for headings and numbers in the mood of game genres (arcade, terminal, sci-fi, fantasy, comic, tactical, or the default), comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
 
 ## Layout
@@ -37,6 +37,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Auth + database | Supabase (Postgres tables `workouts` and `weekly_plans`, called directly from the browser) |
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
 | Weekly plan | Model in `src/lib/weeklyPlan.js`, loading/saving in `src/lib/weeklyPlanStore.js` |
+| Fonts | Inter / system UI font for text; 6 OFL display fonts from Fontsource (Press Start 2P, VT323, Audiowide, Cinzel, Bangers, Black Ops One), bundled and each downloaded only when used |
 | Charts | Hand-written inline SVG (`src/lib/chart.js` does the scaling), no chart library |
 | Styling | Plain CSS with design tokens (custom properties) for colours, spacing and accent themes; media and container queries for layout. No UI or icon library |
 | Tests | Frontend: Vitest + React Testing Library in jsdom (unit, component and whole-app tests). Server: built-in `node:test` |
