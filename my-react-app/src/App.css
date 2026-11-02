@@ -1223,6 +1223,13 @@ textarea.input {
   margin: 0;
 }
 
+/* On its own (mobile overview card) there is no plan list below it to separate from. */
+.adherence:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .tabs {
   display: flex;
   gap: var(--space-1);

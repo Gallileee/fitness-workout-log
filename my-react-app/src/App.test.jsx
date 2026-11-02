@@ -132,6 +132,14 @@ describe("App", () => {
     expect(JSON.parse(localStorage.getItem("preferences"))).toMatchObject({ font: "fantasy", accent: "orange" })
   })
 
+  test("the weekly plan is the first tab and open by default, before the records", async () => {
+    await renderApp()
+    const tabs = screen.getAllByRole("tab")
+    expect(tabs.map((t) => t.textContent)).toEqual(["Týdenní plán", "Osobní rekordy"])
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true")
+    expect(screen.getByLabelText("Plán na Pondělí")).toBeTruthy()
+  })
+
   test("a new workout appears in the list", async () => {
     const user = await renderApp()
     const form = await fillNewWorkout(user, "Added by the app test")

@@ -68,7 +68,8 @@ function App() {
 
   const [view, setView] = useState("dashboard")
   const [page, setPage] = useState("overview")
-  const [sideTab, setSideTab] = useState("records")
+  // The weekly plan comes first: it matters more day to day than the records.
+  const [sideTab, setSideTab] = useState("plan")
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan)
@@ -427,6 +428,15 @@ function App() {
             <>
               <TodayCard today={today} onStart={handleStartToday} />
               {statsSummary}
+              <section className="card">
+                <div className="card-head">
+                  <h2 className="card-title">Týdenní plán</h2>
+                  <button type="button" className="btn btn-ghost btn-small" onClick={() => setPage("plan")}>
+                    Upravit
+                  </button>
+                </div>
+                <PlanAdherence plan={weeklyPlan} workouts={workouts} />
+              </section>
               <section className="card card-featured">
                 <h2 className="card-title">Vývoj odhadu 1RM</h2>
                 {chart}
@@ -575,8 +585,8 @@ function App() {
               <section className="card panel">
                 <div className="tabs" role="tablist" aria-label="Rekordy a plán">
                   {[
-                    { id: "records", label: "Osobní rekordy" },
                     { id: "plan", label: "Týdenní plán" },
+                    { id: "records", label: "Osobní rekordy" },
                   ].map((t) => (
                     <button
                       key={t.id}
