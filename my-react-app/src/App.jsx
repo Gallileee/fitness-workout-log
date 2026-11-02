@@ -8,6 +8,7 @@ import StatsSummary from "./components/StatsSummary"
 import PersonalRecords from "./components/PersonalRecords"
 import ProgressChart from "./components/ProgressChart"
 import WeeklyPlan from "./components/WeeklyPlan"
+import PlanAdherence from "./components/PlanAdherence"
 import Settings from "./components/Settings"
 import Login from "./components/Login"
 import Icon from "./components/Icon"
@@ -323,13 +324,16 @@ function App() {
   const chart = <ProgressChart workouts={statsWorkouts} units={units} />
   const records = <PersonalRecords workouts={statsWorkouts} units={units} />
   const plan = (
-    <WeeklyPlan
-      plan={weeklyPlan}
-      onChange={handlePlanChange}
-      onDayClick={handlePlanDayClick}
-      activeType={filters.type}
-      status={planStatus}
-    />
+    <>
+      <PlanAdherence plan={weeklyPlan} workouts={workouts} />
+      <WeeklyPlan
+        plan={weeklyPlan}
+        onChange={handlePlanChange}
+        onDayClick={handlePlanDayClick}
+        activeType={filters.type}
+        status={planStatus}
+      />
+    </>
   )
 
   const settings = (
