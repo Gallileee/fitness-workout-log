@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-11-02 (14th run): Gym mode on the phone; no separate "Dnes" button
+
+Requested by the owner:
+- Remove the *Dnes: Push* button.
+- Remove the weekly plan from the mobile overview.
+- The mobile overview should show only what matters in the gym between sets.
+
+Done:
+- **No *Dnes: Push* button** (desktop top bar and mobile card). Its job moved into **Nový trénink / +**: a new workout now starts as today's, with today's date and, on a training day, the planned type and *Dnešní cviky*. So nothing was lost, and there's one less button.
+- **Mobile *Přehled* = gym mode**, two cards only:
+  - **Pauza**: a big clock (up to 5.5 rem). Idle: *Spustit 1:30* (the default length, 64 px) plus 1:00 / 2:00 / 3:00 (52 px). Running: +30 s and *Zastavit* (60 px). Done: *Pauza skončila* → *Jdu na sérii*. The app bar doesn't show a second timer on this page.
+  - **Dnes**: today's planned type and the exercises logged today (e.g. *Bench Press 4×6 · 87,5 kg*), with *Upravit*.
+- **Summary, 1RM chart and records** moved from the mobile overview to **Tréninky → Pokrok**, a *Seznam / Pokrok* switch at the top. The weekly plan stays on *Plán*. Desktop is unchanged apart from the removed button.
+- Removed the now-unused `exercisesLabel` helper and the old Today card CSS.
+- Tests:
+  - Updated the app tests for the prefilled form: they clear the date and pick the type themselves.
+  - New: + / Nový trénink starts today's workout; the mobile overview shows only the timer and *Dnes*, the timer starts and stops, and *Pokrok* has the summary, 1RM and records; `TodayCard` and `RestTimerPanel` component tests.
+  - 171 in total.
+
+The owner's screenshots differed between Vercel and my browser, but not because of a bug. Both run the same code. The demo account hadn't logged today's push yet (the real account had), and my test browser still had rose + fantasy saved from earlier tests. I reset my test browser's preferences before checking this change.
+
+Verified (Node 22.23): `npm test` 171/171, `npm run lint` clean, `vite build` passes. In the browser (`npm run demo`):
+- Mobile 375×812: the overview fits one screen with no overflow.
+- + prefilled 02.11.2026, Push and the three exercises from 27 Oct; after saving, *Dnes* listed *Bench Press 4×6 · 87,5 kg* and the big timer ran.
+- *Pokrok* shows the summary, 1RM and records.
+- Desktop 1366×768: the top bar is the timer and *Nový trénink* only, and the dashboard still fits one screen.
+- No console errors.
+
 ## 2026-11-02 (13th run): Weekly plan before personal records
 
 Requested by the owner: the plan matters more than the records, so it should come first.

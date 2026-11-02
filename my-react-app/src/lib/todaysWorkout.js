@@ -44,10 +44,3 @@ export function todaysWorkout(plan, workouts, today = new Date()) {
   result.sourceDate = source.date
   return result
 }
-
-// "1 cvik", "3 cviky", "5 cviků" (Czech plural forms).
-export function exercisesLabel(n) {
-  if (n === 1) return "1 cvik"
-  if (n >= 2 && n <= 4) return `${n} cviky`
-  return `${n} cviků`
-}

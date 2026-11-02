@@ -36,7 +36,10 @@ async function fillNewWorkout(user, note) {
   await user.click(screen.getByRole("button", { name: "Nový trénink" }))
   const dialog = screen.getByRole("dialog")
   const form = within(dialog)
+  // The form starts as today's planned workout; these tests pick their own date and type.
+  await user.clear(form.getByLabelText("Datum"))
   await user.type(form.getByLabelText("Datum"), "2026-11-02")
+  await user.selectOptions(form.getByLabelText("Typ tréninku"), "push")
   await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
   await user.click(form.getByRole("button", { name: "Přidat cvik" }))
   await user.type(form.getByLabelText("Poznámka"), note)
@@ -50,7 +53,7 @@ describe("App", () => {
     })
   })
 
-  test("'Dnes' starts today's planned workout with last time's exercises", async () => {
+  test("'Nový trénink' starts as today's planned workout, with last time's exercises", async () => {
     // A Friday at least a week ahead: the default plan has push on Fridays,
     // and no other test changes Friday or logs a workout on that date.
     const friday = new Date()
@@ -61,7 +64,8 @@ describe("App", () => {
     vi.setSystemTime(friday)
     try {
       const user = await renderApp()
-      await user.click(screen.getByRole("button", { name: "Dnes: Push" }))
+      expect(screen.queryByRole("button", { name: /^Dnes/ })).toBeNull() // no separate shortcut
+      await user.click(screen.getByRole("button", { name: "Nový trénink" }))
 
       const form = within(screen.getByRole("dialog"))
       expect(form.getByLabelText("Datum").value).toBe(toIsoDate(friday))
@@ -73,9 +77,7 @@ describe("App", () => {
       await user.click(form.getByRole("button", { name: "Přidat cvik" }))
       await user.click(form.getByRole("button", { name: "Uložit trénink" }))
 
-      // Today's push is logged, so the shortcut disappears.
       expect(screen.queryByRole("dialog")).toBeNull()
-      expect(screen.queryByRole("button", { name: "Dnes: Push" })).toBeNull()
     } finally {
       vi.useRealTimers()
     }
@@ -215,3 +217,47 @@ describe("App", () => {
     expect(screen.getByLabelText("Plán na Úterý").value).toBe("legs")
   })
 })
+
+describe("App on a phone (gym mode)", () => {
+  beforeEach(() => {
+    localStorage.setItem("preferences", JSON.stringify({ layout: "mobile" }))
+  })
+
+  test("the overview shows only the rest timer and today's workout", async () => {
+    const user = await renderAppMobile()
+    expect(screen.getByRole("region", { name: "Pauza" })).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "Dnes" })).toBeTruthy()
+    for (const gone of ["Souhrn", "Vývoj odhadu 1RM", "Osobní rekordy", "Týdenní plán", "Poslední tréninky"]) {
+      expect(screen.queryByRole("heading", { name: gone })).toBeNull()
+    }
+
+    await user.click(screen.getByRole("button", { name: "Spustit 1:30" }))
+    expect(screen.getByRole("timer").textContent).toMatch(/^1:(30|29)$/)
+    // Only the big timer on the overview, not a second one in the app bar.
+    expect(screen.getAllByRole("timer")).toHaveLength(1)
+    await user.click(screen.getByRole("button", { name: "Zastavit" }))
+    await user.click(screen.getByRole("button", { name: "2:00" }))
+    expect(screen.getByRole("timer").textContent).toMatch(/^(2:00|1:59)$/)
+    await user.click(screen.getByRole("button", { name: "Zastavit" }))
+  })
+
+  test("summary, 1RM and records are under Tréninky → Pokrok", async () => {
+    const user = await renderAppMobile()
+    await user.click(screen.getByRole("button", { name: "Tréninky" }))
+    expect(screen.queryByRole("heading", { name: "Osobní rekordy" })).toBeNull()
+
+    await user.click(screen.getByRole("radio", { name: "Pokrok" }))
+    expect(screen.getByRole("heading", { name: "Vývoj odhadu 1RM" })).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "Osobní rekordy" })).toBeTruthy()
+    expect(screen.getByText("Objem za 7 dní")).toBeTruthy()
+  })
+})
+
+async function renderAppMobile() {
+  const user = userEvent.setup()
+  render(<App />)
+  // The demo account's workouts are loaded once the Dnes card is there and the data has arrived.
+  await screen.findByRole("heading", { name: "Dnes" })
+  await new Promise((r) => setTimeout(r, 0))
+  return user
+}

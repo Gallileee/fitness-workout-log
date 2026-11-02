@@ -10,17 +10,16 @@ import ProgressChart from "./components/ProgressChart"
 import WeeklyPlan from "./components/WeeklyPlan"
 import PlanAdherence from "./components/PlanAdherence"
 import TodayCard from "./components/TodayCard"
+import RestTimerPanel from "./components/RestTimerPanel"
 import RestTimer from "./components/RestTimer"
 import Settings from "./components/Settings"
 import Login from "./components/Login"
 import Icon from "./components/Icon"
 import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
 import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
-import { todaysWorkout, exercisesLabel } from "./lib/todaysWorkout"
+import { todaysWorkout } from "./lib/todaysWorkout"
 import { useRestTimer, restSecondsFromPreference, signalRestDone, DEFAULT_REST_SECONDS } from "./lib/restTimer"
 import { loadFontTheme } from "./lib/fonts"
-import { workoutTypeLabel } from "./lib/workoutTypes"
-import { formatWorkoutDate } from "./lib/format"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
 import { browserStorage, loadPreferences, savePreferences, resolveLayout } from "./lib/preferences"
@@ -70,6 +69,8 @@ function App() {
   const [page, setPage] = useState("overview")
   // The weekly plan comes first: it matters more day to day than the records.
   const [sideTab, setSideTab] = useState("plan")
+  // Mobile "Tréninky" page: the history list, or progress (summary, 1RM, records).
+  const [workoutsView, setWorkoutsView] = useState("list")
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan)
@@ -89,7 +90,7 @@ function App() {
 
   const statsWorkouts = statsSource === "all" ? workouts : filteredWorkouts
   const today = todaysWorkout(weeklyPlan, workouts)
-  const canStartToday = today.type !== "off" && !today.done
+  const todaysWorkouts = workouts.filter((w) => w.date === today.date)
 
   useEffect(() => {
     savePreferences(browserStorage(), preferences)
@@ -281,17 +282,15 @@ function App() {
     }
   }
 
+  // A new workout starts as today's: today's date and, on a training day, the
+  // planned type with last time's exercises as one-tap choices ("Dnešní cviky").
   const handleNewWorkout = () => {
     resetEditing()
-    setView("newWorkout")
-  }
-
-  // Opens the form for today's planned type, with last time's exercises as one-tap choices.
-  const handleStartToday = () => {
-    resetEditing()
     setCurrentDate(today.date)
-    setCurrentType(today.type)
-    setPlannedExercises(today.exerciseNames)
+    if (today.type !== "off") {
+      setCurrentType(today.type)
+      setPlannedExercises(today.exerciseNames)
+    }
     setView("newWorkout")
   }
 
@@ -419,41 +418,52 @@ function App() {
             <Icon name="brand" size={18} />
           </span>
           <h1 className="m-title">{current.label}</h1>
-          {!dialogOpen && <RestTimer timer={restTimer} compact />}
+          {!dialogOpen && current.page !== "overview" && <RestTimer timer={restTimer} compact />}
           {loading && <span className="loading-dot" role="status" aria-label="Načítám tréninky" />}
         </header>
 
         <main className="m-main">
+          {/* Gym mode: only what you need between sets. Progress is under Tréninky → Pokrok. */}
           {current.page === "overview" && (
             <>
-              <TodayCard today={today} onStart={handleStartToday} />
+              <RestTimerPanel timer={restTimer} restSeconds={restSeconds} />
+              <TodayCard
+                today={today}
+                workouts={todaysWorkouts}
+                units={units}
+                onEdit={handleEditWorkout}
+              />
+            </>
+          )}
+
+          {current.page === "workouts" && (
+            <>
+              <div className="segmented m-view-switch" role="radiogroup" aria-label="Zobrazit">
+                {[
+                  { value: "list", label: "Seznam" },
+                  { value: "progress", label: "Pokrok" },
+                ].map((opt) => (
+                  <label key={opt.value} className="segmented-option">
+                    <input
+                      type="radio"
+                      name="workouts-view"
+                      value={opt.value}
+                      checked={workoutsView === opt.value}
+                      onChange={() => setWorkoutsView(opt.value)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+
+          {current.page === "workouts" && workoutsView === "progress" && (
+            <>
               {statsSummary}
-              <section className="card">
-                <div className="card-head">
-                  <h2 className="card-title">Týdenní plán</h2>
-                  <button type="button" className="btn btn-ghost btn-small" onClick={() => setPage("plan")}>
-                    Upravit
-                  </button>
-                </div>
-                <PlanAdherence plan={weeklyPlan} workouts={workouts} />
-              </section>
               <section className="card card-featured">
                 <h2 className="card-title">Vývoj odhadu 1RM</h2>
                 {chart}
-              </section>
-              <section className="card">
-                <div className="card-head">
-                  <h2 className="card-title">Poslední tréninky</h2>
-                  <button type="button" className="btn btn-ghost btn-small" onClick={() => setPage("workouts")}>
-                    Vše ({workouts.length})
-                  </button>
-                </div>
-                <WorkoutList
-                  workouts={workouts.slice(0, 3)}
-                  units={units}
-                  onEdit={handleEditWorkout}
-                  onDelete={handleDeleteWorkout}
-                />
               </section>
               <section className="card">
                 <h2 className="card-title">Osobní rekordy</h2>
@@ -462,7 +472,7 @@ function App() {
             </>
           )}
 
-          {current.page === "workouts" && (
+          {current.page === "workouts" && workoutsView === "list" && (
             <>
               <details className="card filters-card" open={filtersActive}>
                 <summary className="card-title">
@@ -534,21 +544,6 @@ function App() {
         <div className="topbar-end">
           {/* Start button while idle, countdown while running. Email and logout are in Settings. */}
           {!dialogOpen && <RestTimer timer={restTimer} defaultSeconds={restSeconds ?? DEFAULT_REST_SECONDS} />}
-          {canStartToday && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleStartToday}
-              title={
-                today.sourceDate
-                  ? `${exercisesLabel(today.exerciseNames.length)} jako ${formatWorkoutDate(today.sourceDate)}`
-                  : undefined
-              }
-            >
-              <Icon name="calendar" size={18} />
-              Dnes: {workoutTypeLabel(today.type)}
-            </button>
-          )}
           <button type="button" className="btn btn-primary" onClick={handleNewWorkout}>
             <Icon name="plus" size={18} />
             Nový trénink

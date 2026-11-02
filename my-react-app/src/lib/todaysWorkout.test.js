@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest"
-import { plannedTypeFor, todaysWorkout, exercisesLabel } from "./todaysWorkout.js"
+import { plannedTypeFor, todaysWorkout } from "./todaysWorkout.js"
 import { createDefaultWeeklyPlan } from "./weeklyPlan.js"
 
 // Default plan: Mon push, Tue pull, Wed legs, Thu off, Fri push, Sat pull, Sun off.
@@ -67,11 +67,5 @@ describe("todaysWorkout", () => {
   test("ignores later workouts and invalid dates", () => {
     const odd = [w("2026-11-09", "push", ["Future"]), w("2026-02-31", "push", ["Invalid"]), ...workouts]
     expect(todaysWorkout(PLAN, odd, MONDAY).sourceDate).toBe("2026-10-30")
-  })
-})
-
-describe("exercisesLabel", () => {
-  test("uses Czech plural forms", () => {
-    expect([1, 2, 4, 5, 11].map(exercisesLabel)).toEqual(["1 cvik", "2 cviky", "4 cviky", "5 cviků", "11 cviků"])
   })
 })
