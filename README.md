@@ -102,6 +102,20 @@ What the frontend tests cover:
 
 `src/test/setup.js` adds stand-ins for browser APIs that jsdom lacks (`matchMedia`, `ResizeObserver`) and cleans up after each test.
 
+## Dependency audit
+
+`npm audit` (last checked 2026-11-02):
+- **Server** (repo root): 0 vulnerabilities.
+- **Frontend production dependencies** (`npm audit --omit=dev` in `my-react-app`): 0 vulnerabilities.
+- **Frontend dev tooling**: 6 moderate advisories, all from `minimatch < 11.0.1` inside ESLint ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249), DoS through crafted glob patterns). There is no fix: even ESLint 10 depends on `minimatch` 10. Only ESLint reads those patterns, and they come from our own config, so the risk is accepted. Check again when ESLint moves to `minimatch` 11.
+
+To re-check:
+
+```bash
+cd my-react-app && npm audit && npm audit --omit=dev
+cd .. && npm audit
+```
+
 ## How the statistics work
 
 - **Volume** = Σ sets × reps × weight. Missing, negative or non-numeric values count as 0.

@@ -1,5 +1,23 @@
 # Progress log
 
+## 2026-11-02 (8th run): Dependency audit
+
+Before: frontend 24 advisories (1 critical, 12 high), server 7 (2 critical, 3 high).
+
+Done:
+- **Sorted the advisories by what they affect.**
+  - Frontend production code had 1: `ws` through `@supabase/supabase-js`.
+  - The server (`server.js`, Express) had 5, incl. the critical `proxy-addr` IP spoofing.
+  - Everything else was dev tooling (Vite dev server, ESLint, the Supabase CLI).
+- **Removed `express` from the frontend package.** It was listed in both `dependencies` and `devDependencies`, but no frontend code imports it. Also removed the frontend `start` script, which pointed to a `server.js` that doesn't exist there. The real static server is `server.js` at the repo root.
+- **Ran `npm audit fix` (without `--force`) in both packages.** It only applies updates within the existing version ranges, e.g. Vite 7.3.1 → 7.3.7, esbuild, ws, express's dependencies, and tar in the Supabase CLI.
+- **After:**
+  - Server: 0.
+  - Frontend production: 0.
+  - Frontend dev: 6 moderate, all `minimatch < 11.0.1` inside ESLint. There's no fix, because ESLint 10 also uses `minimatch` 10. It's accepted and documented in the README: only ESLint reads those glob patterns, and they come from our own config.
+
+Verified (Node 22.23, npm 11): `npm test` 151/151, `npm run lint` clean, `vite build` passes (no demo code in the bundle), server `npm test` 12/12. `npm run demo` starts on Vite 7.3.7 and the app loads with no console errors.
+
 ## 2026-11-02 (7th run): Rest timer
 
 Done:
@@ -200,10 +218,10 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 ## Next steps (in order)
 
 1. **CSV export** of all workouts (later: import from Strong / Hevy).
-2. Review `npm audit` (24 advisories in existing dependencies, 1 critical).
+2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
 3. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-4. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
+4. Dependabot (or a monthly `npm audit` reminder) so advisories don't pile up again.
 5. Per-exercise rep ranges for the overload suggestion.
 6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
 7. Store plan history so adherence for past weeks uses the plan that applied then.
-8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`). Check with the owner first.
+8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`, which only `app.js` uses. Check with the owner first.
