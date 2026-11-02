@@ -1,5 +1,17 @@
 # Progress log
 
+## 2026-11-02 (13th run): Weekly plan before personal records
+
+Requested by the owner: the plan matters more than the records, so it should come first.
+- Desktop: the side card's tabs are now *Týdenní plán* (first, open by default) and *Osobní rekordy*.
+- Mobile overview: a *Týdenní plán* card right after the summary, above the 1RM chart, recent workouts and records. It shows this week, the last 8 weeks and the streak, and *Upravit* opens the Plan tab for editing.
+- CSS: when the adherence block stands alone (the mobile card), it has no divider below it.
+- 1 new test (163 in total): the plan tab is first and selected.
+
+Verified: `npm test` 163/163, `npm run lint` clean. In the browser:
+- 1366×768: the plan tab is selected and the dashboard still fits one screen.
+- Mobile: the card order is Dnes, Souhrn, Týdenní plán, 1RM, Poslední tréninky, Osobní rekordy; no overflow; *Upravit* opens the Plan tab.
+
 ## 2026-11-02 (12th run): Settings redesign, more colours, game-style fonts
 
 Requested by the owner: a nicer Settings page (the cards had different heights), more colours, and font styles inspired by games for more personality.

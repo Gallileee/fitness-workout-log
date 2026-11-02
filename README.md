@@ -25,8 +25,8 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 ## Layout
 
-- **Desktop** (wide windows): a top bar with navigation, the rest timer, *Dnes* and *Nový trénink* (the account email and logout are in Settings), then one dashboard with summary tiles, the filterable workout list, the 1RM chart, and tabs for records and the weekly plan. On windows at least 900×700 px it fits exactly one screen and only the lists scroll inside their cards. On shorter or zoomed-in windows the page scrolls normally instead of squeezing the content.
-- **Mobile** (≤ 760 px, or chosen in Settings): an app bar, one section per tab (Overview, Workouts, Plan, Settings) and a bottom tab bar with a central + button. Touch targets are at least 44 px, and the workout form opens as a full-screen sheet.
+- **Desktop** (wide windows): a top bar with navigation, the rest timer, *Dnes* and *Nový trénink* (the account email and logout are in Settings), then one dashboard with summary tiles, the filterable workout list, the 1RM chart, and tabs for the weekly plan (first, open by default) and records. On windows at least 900×700 px it fits exactly one screen and only the lists scroll inside their cards. On shorter or zoomed-in windows the page scrolls normally instead of squeezing the content.
+- **Mobile** (≤ 760 px, or chosen in Settings): an app bar, one section per tab (Overview with today's workout, summary and the weekly plan's progress above the chart and records; Workouts; Plan; Settings) and a bottom tab bar with a central + button. Touch targets are at least 44 px, and the workout form opens as a full-screen sheet.
 - *Auto* picks the layout from the viewport width. A manual choice always keeps the navigation reachable: the desktop layout wraps on a phone, and the mobile layout is a centred column on a monitor.
 
 ## Tech stack
