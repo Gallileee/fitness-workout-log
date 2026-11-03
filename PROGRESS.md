@@ -1,5 +1,27 @@
 # Progress log
 
+## 2026-11-03 (17th run): Keep the screen on during a workout
+
+Next step 1 from the list. Hevy has *Keep screen awake* in its settings: between sets the phone otherwise locks and the lifter has to unlock it to log the next set or watch the rest timer.
+
+Done:
+- New `src/lib/wakeLock.js`: a `useWakeLock(enabled)` hook over the Screen Wake Lock API, returning `unsupported | off | pending | active | error`.
+  - The browser releases the lock when the tab is hidden, so it is requested again on `visibilitychange` once the page is visible.
+  - Never holds or requests two locks at once (a guard for an in-flight request and a held sentinel).
+  - Releases the lock when the setting goes off or the app unmounts; a request that resolves after that is released straight away.
+  - Refusals (`NotAllowedError`, e.g. battery saver) become the `error` status instead of an alert.
+  - The status is derived during render rather than set in the effect, which keeps the `react-hooks/set-state-in-effect` lint rule happy.
+- New preference `keepAwake` (`off` / `on`, off by default because it costs battery), sanitized like the others.
+- Settings → Trénink: a *Nechat obrazovku zapnutou* row (Vyp. / Zap.). Its hint follows the status; it's disabled with an explanation where the API is missing. Disabled segmented options are dimmed (CSS `:has()`).
+- Fixed two App tests that only passed on push days: they chose Bench Press without picking the type, and the form now starts as today's planned type. They failed on main today (Tuesday); they now select *push* first, like `fillNewWorkout` does.
+- 12 new tests (197 in total): 9 for the hook with a fake `navigator.wakeLock` and document, 3 for the Settings row; the preferences tests cover the new key.
+
+Verified (Node 22.23): `npm test` 197/197, `npm run lint` clean, `vite build` passes. In the browser (`npm run demo`): the row is in Trénink, switching it on saves `keepAwake: "on"`, no console errors. The built-in preview browser refuses wake locks (`NotAllowedError: Wake Lock permission request denied`), so there the hint showed the error message as designed.
+
+Not verified: the lock actually keeping a real phone awake. To check: open the deployed app on a phone, Nastavení → Trénink → *Zap.*, the hint should say *Obrazovka teď zůstane svítit*, then leave the phone idle past its auto-lock time.
+
+Trade-off: the lock is held whenever the app is open with the setting on, not only during an "active workout", because the app has no workout-session state yet. Off by default for that reason.
+
 ## 2026-11-02 (16th run): CSV export of all workouts
 
 Next step 1 from the list. Lifters expect to own their data: Strong and Hevy both export CSV from Settings, and an export is the first half of a later Strong / Hevy import.
@@ -397,9 +419,9 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Keep screen on during a workout** (Screen Wake Lock API), as a Settings toggle like Hevy's.
-2. **Plate calculator** with the available plates and bar weight in Settings.
-3. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
+1. **Plate calculator** with the available plates and bar weight in Settings.
+2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
+3. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
 4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
 5. Per-exercise rep ranges for the overload suggestion.
 6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.

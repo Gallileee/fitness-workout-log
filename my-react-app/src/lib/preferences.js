@@ -1,5 +1,5 @@
 // src/lib/preferences.js
-// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer), stored in localStorage
+// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer, screen on), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
 export const STORAGE_KEY = "preferences"
@@ -15,6 +15,8 @@ export const OPTIONS = {
   repRange: ["4-6", "6-10", "8-12", "12-15"],
   // Rest timer started after adding an exercise, in seconds (src/lib/restTimer.js).
   restTimer: ["off", "60", "90", "120", "180"],
+  // Keep the screen on while the app is open (src/lib/wakeLock.js).
+  keepAwake: ["off", "on"],
 }
 
 export const DEFAULT_PREFERENCES = {
@@ -25,6 +27,7 @@ export const DEFAULT_PREFERENCES = {
   units: "metric",
   repRange: "6-10",
   restTimer: "90",
+  keepAwake: "off",
 }
 
 // Keeps only known keys with allowed values, so a stale or hand-edited

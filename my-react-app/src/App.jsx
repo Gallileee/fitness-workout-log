@@ -23,6 +23,7 @@ import { loadFontTheme } from "./lib/fonts"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
 import { browserStorage, loadPreferences, savePreferences, resolveLayout } from "./lib/preferences"
+import { useWakeLock } from "./lib/wakeLock"
 import { useMediaQuery } from "./lib/useMediaQuery"
 
 // Below this width "auto" layout switches to the mobile layout.
@@ -84,6 +85,7 @@ function App() {
   const units = preferences.units
   const restTimer = useRestTimer({ onDone: signalRestDone })
   const restSeconds = restSecondsFromPreference(preferences.restTimer)
+  const wakeLockStatus = useWakeLock(preferences.keepAwake === "on")
 
   const filteredWorkouts = filterWorkouts(workouts, filters)
   const filtersActive = filters.type !== "all" || Boolean(filters.from || filters.to)
@@ -387,6 +389,7 @@ function App() {
       user={user}
       onLogout={handleLogout}
       workouts={workouts}
+      wakeLockStatus={wakeLockStatus}
     />
   )
 

@@ -87,6 +87,8 @@ describe("App", () => {
     const user = await renderApp()
     await user.click(screen.getByRole("button", { name: "Nový trénink" }))
     const form = within(screen.getByRole("dialog"))
+    // The form starts as today's planned type, which depends on the weekday.
+    await user.selectOptions(form.getByLabelText("Typ tréninku"), "push")
     await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
     await user.click(form.getByRole("button", { name: "Přidat cvik" }))
 
@@ -190,6 +192,8 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Nový trénink" }))
     const form = within(screen.getByRole("dialog"))
+    // The form starts as today's planned type, which depends on the weekday.
+    await user.selectOptions(form.getByLabelText("Typ tréninku"), "push")
     await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
 
     // The demo account's last bench was 4×6 · 87,5 kg: the top of 4–6, so add weight.

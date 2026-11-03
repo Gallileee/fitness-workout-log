@@ -1,5 +1,5 @@
 // src/components/Settings.jsx
-// Settings grouped into sections (Vzhled, Trénink, Účet with the CSV export). Every choice is one
+// Settings grouped into sections (Vzhled, Trénink with keep-screen-on, Účet with the CSV export). Every choice is one
 // row with the same structure: title and hint on the left, the control on the
 // right. Wide controls (colours, font styles) go full width under the title.
 import { useEffect } from "react"
@@ -77,7 +77,25 @@ const TRAINING_ROWS = [
   },
 ]
 
-function Settings({ preferences, onChange, user, onLogout, workouts = [] }) {
+const KEEP_AWAKE_ROW = {
+  key: "keepAwake",
+  title: "Nechat obrazovku zapnutou",
+  options: [
+    { value: "off", label: "Vyp." },
+    { value: "on", label: "Zap." },
+  ],
+}
+
+// Hint for the keep-awake row, by the status from useWakeLock.
+const KEEP_AWAKE_HINTS = {
+  unsupported: "Tento prohlížeč to neumí. Funguje v Chrome, Safari 16.4+ a Firefoxu 126+ přes https.",
+  off: "Telefon se mezi sériemi nezamkne, dokud je aplikace otevřená. Spotřebuje víc baterie.",
+  pending: "Zapnuto. Obrazovka zůstane svítit, až se k aplikaci vrátíš.",
+  active: "Zapnuto. Obrazovka teď zůstane svítit.",
+  error: "Prohlížeč to teď nepovolil (třeba kvůli úspoře baterie). Zkusí se to znovu po návratu do aplikace.",
+}
+
+function Settings({ preferences, onChange, user, onLogout, workouts = [], wakeLockStatus = "off" }) {
   const set = (key, value) => onChange({ ...preferences, [key]: value })
 
   // The font cards preview every style, so load them all while Settings is open.
@@ -146,6 +164,12 @@ function Settings({ preferences, onChange, user, onLogout, workouts = [] }) {
             {TRAINING_ROWS.map((row) => (
               <ChoiceRow key={row.key} row={row} value={preferences[row.key]} onSelect={set} />
             ))}
+            <ChoiceRow
+              row={{ ...KEEP_AWAKE_ROW, hint: KEEP_AWAKE_HINTS[wakeLockStatus] }}
+              value={preferences.keepAwake}
+              onSelect={set}
+              disabled={wakeLockStatus === "unsupported"}
+            />
           </SettingsSection>
 
           <SettingsSection title="Účet" icon="settings">
@@ -219,7 +243,7 @@ function SettingRow({ title, hint, wide = false, children }) {
 }
 
 // A setting with a few exclusive choices, shown as a segmented control.
-function ChoiceRow({ row, value, onSelect }) {
+function ChoiceRow({ row, value, onSelect, disabled = false }) {
   return (
     <SettingRow title={row.title} hint={row.hint}>
       <div className="segmented" role="radiogroup" aria-label={row.title}>
@@ -231,6 +255,7 @@ function ChoiceRow({ row, value, onSelect }) {
               value={opt.value}
               checked={value === opt.value}
               onChange={() => onSelect(row.key, opt.value)}
+              disabled={disabled}
             />
             <span>{opt.label}</span>
           </label>

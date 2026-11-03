@@ -20,7 +20,8 @@ It exists because most workout apps are either paid or bloated. This one does th
 - Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
 - **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
-- **Settings** (saved in the browser), in three sections (Vzhled, Trénink, Účet) of equal-height rows: 10 accent colours, 7 **font styles** for headings and numbers in the mood of game genres (arcade, terminal, sci-fi, fantasy, comic, tactical, or the default), comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length
+- **Settings** (saved in the browser), in three sections (Vzhled, Trénink, Účet) of equal-height rows: 10 accent colours, 7 **font styles** for headings and numbers in the mood of game genres (arcade, terminal, sci-fi, fantasy, comic, tactical, or the default), comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length, keep screen on
+- **Keep screen on** (Settings → Trénink, off by default): while the app is open, the phone doesn't lock between sets. It uses the [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API); the hint under the toggle says whether the lock is held, refused (e.g. battery saver) or not supported, and the toggle is disabled in browsers without the API
 - **CSV export** (Settings → Účet → *Stáhnout CSV*): every workout as `workouts-YYYY-MM-DD.csv`, one row per exercise (`date, workout_type, exercise, sets, reps, weight_kg, note`), UTF-8 with a BOM so Excel shows Czech characters. Exercise names and notes that start with `=`, `+`, `-` or `@` get a leading apostrophe, so a spreadsheet won't run them as formulas (CSV injection)
 - **Demo mode** (`npm run demo`): the full app with sample data and no Supabase project
 
@@ -143,6 +144,7 @@ cd .. && npm audit
 - **Rest timer** (`src/lib/restTimer.js`): it stores the time it ends, not a tick count, so it stays right when the browser slows down timers in a background tab or on a locked phone. Vibration needs a phone browser that supports it (not iOS Safari); the beep uses the Web Audio API.
 - **Weekly plan saving**: each change is saved with an upsert on `user_id`. At most one save runs at a time; changes made meanwhile are merged and only the newest plan is sent next, so a slow request can't overwrite a newer plan. The card shows *Ukládám… / Plán uložen.* or the error.
 - **Plan adherence**: weeks run Monday to Sunday. This week, a planned day is *done* when a workout of the planned type was logged that date. For the 8-week bars, days may move within the week: for each type, completed = min(planned sessions, logged workouts of that type), so three legs days don't make up for a missed push day. The streak counts fully completed weeks back from last week; the current week joins it once it's complete, so the streak doesn't reset every Monday.
+- **Keep screen on** (`src/lib/wakeLock.js`): browsers drop a wake lock whenever the tab is hidden, so the `useWakeLock` hook requests it again on every `visibilitychange` to visible, never holds two at once, and releases it when the setting is turned off or the app closes.
 - **1RM chart** shows one point per training day: the best estimate from any set that day. Points are evenly spaced, so the x axis shows the order of sessions, not the time between them.
 
 ## Limitations
@@ -151,6 +153,7 @@ cd .. && npm audit
 - The overload suggestion uses one rep range for all exercises, and can't tell a failed set from a completed one.
 - Plan adherence measures past weeks against the *current* plan, because older versions of the plan aren't stored.
 - The CSV export is comma separated. Czech Excel expects semicolons, so there it has to be opened through *Data → Z textu/CSV*; Google Sheets and LibreOffice open it directly. There is no import yet.
+- Keep screen on needs Chrome/Edge 84+, Safari 16.4+ or Firefox 126+ over https (or localhost). On iOS before 18.4 it doesn't work in an app added to the Home Screen. Embedded browsers may refuse it, which the hint then shows.
 - The UI text is Czech only.
 - The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.
