@@ -630,6 +630,15 @@ textarea.input {
   outline-offset: 1px;
 }
 
+.segmented-option:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.segmented-option:has(input:disabled):hover span {
+  color: inherit;
+}
+
 .segmented-small .segmented-option span {
   min-height: 28px;
   padding: 0 var(--space-2);

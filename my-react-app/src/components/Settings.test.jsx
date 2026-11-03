@@ -5,7 +5,7 @@ import Settings from "./Settings"
 import { DEFAULT_PREFERENCES, OPTIONS } from "../lib/preferences"
 import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
 
-function setup(preferences = DEFAULT_PREFERENCES, workouts) {
+function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus) {
   const onChange = vi.fn()
   const onLogout = vi.fn()
   const user = userEvent.setup()
@@ -16,6 +16,7 @@ function setup(preferences = DEFAULT_PREFERENCES, workouts) {
       user={{ email: "lifter@example.com" }}
       onLogout={onLogout}
       workouts={workouts}
+      wakeLockStatus={wakeLockStatus}
     />,
   )
   return { user, onChange, onLogout }
@@ -55,6 +56,29 @@ describe("Settings", () => {
     expect(screen.getByText("lifter@example.com")).toBeTruthy()
     await user.click(screen.getByRole("button", { name: "Odhlásit se" }))
     expect(onLogout).toHaveBeenCalledOnce()
+  })
+})
+
+describe("Keep screen on", () => {
+  test("is off by default and can be switched on", async () => {
+    const { user, onChange } = setup()
+    const group = screen.getByRole("radiogroup", { name: "Nechat obrazovku zapnutou" })
+    expect(within(group).getByRole("radio", { name: "Vyp." }).checked).toBe(true)
+
+    await user.click(within(group).getByRole("radio", { name: "Zap." }))
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_PREFERENCES, keepAwake: "on" })
+  })
+
+  test("says when the screen is being kept on", () => {
+    setup({ ...DEFAULT_PREFERENCES, keepAwake: "on" }, [], "active")
+    expect(screen.getByText("Zapnuto. Obrazovka teď zůstane svítit.")).toBeTruthy()
+  })
+
+  test("is disabled with an explanation where the browser lacks the API", () => {
+    setup(DEFAULT_PREFERENCES, [], "unsupported")
+    const group = screen.getByRole("radiogroup", { name: "Nechat obrazovku zapnutou" })
+    for (const radio of within(group).getAllByRole("radio")) expect(radio.disabled).toBe(true)
+    expect(screen.getByText(/^Tento prohlížeč to neumí/)).toBeTruthy()
   })
 })
 
