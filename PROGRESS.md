@@ -1,5 +1,13 @@
 # Progress log
 
+## 2026-11-08: CI, actions pinned to commit SHAs
+
+Why: after PR #31 (least-privilege token), [workflow-guard](https://github.com/Gallileee/workflow-guard) still reported four low WG001 findings: `actions/checkout@v7` and `actions/setup-node@v7` are tags, which can be moved to other code; a commit SHA can't.
+
+Done: `workflow-guard --fix` pinned them in `frontend.yml` and `server.yml` to the commits the `v7` tags point to, keeping `# v7` in a comment, so the existing Dependabot `github-actions` entry keeps updating them. Only the four `uses:` lines changed.
+
+Verified: `workflow-guard` reports 0 findings; CI runs on the PR.
+
 ## 2026-11-03 (17th run): Keep the screen on during a workout
 
 Next step 1 from the list. Hevy has *Keep screen awake* in its settings: between sets the phone otherwise locks and the lifter has to unlock it to log the next set or watch the rest timer.
