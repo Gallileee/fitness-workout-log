@@ -44,7 +44,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Styling | Plain CSS with design tokens (custom properties) for colours, spacing and accent themes; media and container queries for layout. No UI or icon library |
 | Tests | Frontend: Vitest + React Testing Library in jsdom (unit, component and whole-app tests). Server: built-in `node:test` |
 | Static server | Express (`server.js`): serves `my-react-app/dist` only, no API |
-| CI | GitHub Actions: install, test, lint, build |
+| CI | GitHub Actions: install, test, lint, build; [workflow-guard](https://github.com/Gallileee/workflow-guard) checks the workflows themselves |
 
 ## Setup
 
