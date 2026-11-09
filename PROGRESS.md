@@ -1,5 +1,13 @@
 # Progress log
 
+## 2026-11-09: CI, workflow-guard checks the workflows
+
+Why: workflow-guard 0.4.0 can now be used as a GitHub Action. With the pins from PR #32 the workflows have no findings left, so a check keeps them that way.
+
+Done: `.github/workflows/workflow-guard.yml` runs `Gallileee/workflow-guard` on pushes to main and on PRs that change `.github/workflows/**`, with a read-only token. The action is pinned to the v0.4.0 commit (by `workflow-guard --fix` itself) with `# v0.4.0` in a comment, so Dependabot's `github-actions` entry updates it. Built on top of the `ci/pin-actions` branch (PR #32): on today's main the unpinned `@v7` actions would make the check fail.
+
+Verified: `workflow-guard` locally reports 0 findings in all three workflow files; the new check runs on the PR itself.
+
 ## 2026-11-08: CI, actions pinned to commit SHAs
 
 Why: after PR #31 (least-privilege token), [workflow-guard](https://github.com/Gallileee/workflow-guard) still reported four low WG001 findings: `actions/checkout@v7` and `actions/setup-node@v7` are tags, which can be moved to other code; a commit SHA can't.
