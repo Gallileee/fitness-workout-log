@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-11-13 (18th run): Plate calculator
+
+Next step 1 from the list. Loading the bar is mental arithmetic every set ("100 kg is 40 a side, so 25 + 15"), and with an incomplete plate set the obvious answer is sometimes wrong. Strong and Hevy both have a plate calculator.
+
+Done:
+- New `src/lib/plates.js` (pure, tested):
+  - `loadBar(target, { bar, plates })` returns the plates for one side (heaviest first), the loaded weight, what is missing and a status (`exact`, `under`, `belowBar`).
+  - Not greedy: with only 15s and 10s, 20 a side is 10 + 10, but greedy takes a 15 and gets stuck. It's an unbounded-knapsack DP over the weight per side, counted in hundredths divided by the plates' gcd (1.25 kg stays exact; 1000 kg is a few thousand steps). Ties go to fewer plates, then heavier ones.
+  - `BARS` (20 / 15 / 10 kg, 45 / 35 / 15 lb), `PLATES`, `DEFAULT_PLATES` (0.5 kg off by default), `isBarbellExercise(name)` by name (the exercise list has no equipment field).
+  - Works in the display unit: plates are labelled in one unit, so 20 kg is not 44.09 lb on the bar.
+- Preferences: `bar` (enum) and two list preferences, `platesMetric` / `platesImperial`, so switching units keeps both lists. `sanitizePreferences` got a `LIST_OPTIONS` table: only allowed values, no duplicates, canonical order; an empty list is valid (only the bar).
+- Settings → Trénink: *Osa* (labels in the current unit) and *Dostupné kotouče* (checkbox chips in the segmented style, wrapping on narrow screens).
+- Workout form: new `PlateLoad` component under sets/reps/weight for barbell exercises: *Kotouče: Na každou stranu: 25 + 15 kg (osa 20 kg).*, with a drawing of one sleeve (plate height by weight), or *přesně to nejde, naloženo 82,5 kg, o 0,5 kg méně*, or *Lehčí než prázdná osa*.
+- 28 new tests (225 in total): 20 for `plates.js` (incl. two cases where greedy is wrong, float drift with 1.25 / 0.5, a 1000 kg timing check), 2 for the preferences, 3 for Settings, 3 for the form.
+
+Verified (Node 26.13): `npm test` 225/225, `npm run lint` clean, `vite build` passes. Mutation check: with the DP turned off, 6 `plates.js` tests fail.
+
+Not verified: the look in a real browser (the plate drawing, chip wrapping at phone width, dark theme). Starting the demo server didn't get approval in this unattended run. To check: `npm run demo`, Nastavení → Trénink (Osa, kotouče), then Nový trénink → *Bench Press (Barbell)*, weight 100 / 83 / 15, at 375 px.
+
 ## 2026-11-09: CI, workflow-guard checks the workflows
 
 Why: workflow-guard 0.4.0 can now be used as a GitHub Action. With the pins from PR #32 the workflows have no findings left, so a check keeps them that way.
@@ -435,7 +454,7 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. **Plate calculator** with the available plates and bar weight in Settings.
+1. Browser check of the plate calculator (see the 18th run), then: a per-exercise "no bar" option for machines loaded with plates (leg press, T-bar row).
 2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
 3. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
 4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.

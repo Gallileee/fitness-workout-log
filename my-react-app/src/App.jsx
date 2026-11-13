@@ -22,7 +22,7 @@ import { useRestTimer, restSecondsFromPreference, signalRestDone, DEFAULT_REST_S
 import { loadFontTheme } from "./lib/fonts"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
-import { browserStorage, loadPreferences, savePreferences, resolveLayout } from "./lib/preferences"
+import { browserStorage, loadPreferences, savePreferences, resolveLayout, platesKey } from "./lib/preferences"
 import { useWakeLock } from "./lib/wakeLock"
 import { useMediaQuery } from "./lib/useMediaQuery"
 
@@ -408,6 +408,8 @@ function App() {
         plannedExercises={plannedExercises}
         restTimer={restTimer}
         restSeconds={restSeconds}
+        bar={preferences.bar}
+        plates={preferences[platesKey(units)]}
         onSave={async (values) => {
           if (await handleSave(values)) setView("dashboard")
         }}

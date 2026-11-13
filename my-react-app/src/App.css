@@ -1793,6 +1793,70 @@ textarea.input {
   font-weight: 600;
 }
 
+/* Plate calculator under the weight of barbell exercises: one sleeve, collar on the left */
+.plate-load {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.plate-load-text {
+  margin: 0;
+  min-width: 0;
+}
+
+.plate-sleeve {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 3rem;
+  gap: 2px;
+}
+
+.plate-collar,
+.plate-sleeve-end {
+  width: 6px;
+  height: 40%;
+  border-radius: 2px;
+  background: var(--text-muted);
+  opacity: 0.6;
+}
+
+.plate-sleeve-end {
+  width: 10px;
+  height: 18%;
+}
+
+.plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--accent-solid);
+  color: var(--on-accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.plate-load-under .plate-load-text,
+.plate-load-belowBar .plate-load-text {
+  color: var(--text-muted);
+}
+
+/* The plate picker wraps on narrow screens instead of overflowing */
+.plate-picker {
+  flex-wrap: wrap;
+}
+
 /* Rest timer: in the dialog footer, and compact in the top bar / app bar */
 .dialog-footer-start {
   margin-right: auto;

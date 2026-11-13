@@ -298,6 +298,40 @@ describe("WorkoutForm: rest timer", () => {
     expect(restTimer.start).toHaveBeenCalledWith(90)
   })
 
+  test("barbell exercises show the plates for each side of the bar", async () => {
+    const { user } = setup({ initialType: "push" })
+    expect(screen.queryByText("Kotouče:")).toBeNull()
+
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    const weight = screen.getByLabelText("Váha (kg)")
+    await user.clear(weight)
+    await user.type(weight, "100")
+    expect(screen.getByText(/^Na každou stranu: 25 \+ 15 kg \(osa 20 kg\)\.$/)).toBeTruthy()
+
+    await user.clear(weight)
+    await user.type(weight, "83")
+    expect(screen.getByText(/přesně to nejde, naloženo 82,5 kg, o 0,5 kg méně/)).toBeTruthy()
+
+    await user.clear(weight)
+    await user.type(weight, "15")
+    expect(screen.getByText("Lehčí než prázdná osa (20 kg).", { exact: false })).toBeTruthy()
+  })
+
+  test("the plate calculator uses the bar and plates from the settings", async () => {
+    const { user } = setup({ initialType: "push", units: "imperial", bar: "light", plates: [25, 10] })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Overhead Press (Barbell)")
+    const weight = screen.getByLabelText("Váha (lb)")
+    await user.clear(weight)
+    await user.type(weight, "105")
+    expect(screen.getByText(/Na každou stranu: 25 \+ 10 lb \(osa 35 lb\)/)).toBeTruthy()
+  })
+
+  test("no plate calculator for dumbbell or machine exercises", async () => {
+    const { user } = setup({ initialType: "push" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Dumbbell Shoulder Press")
+    expect(screen.queryByText("Kotouče:")).toBeNull()
+  })
+
   test("an invalid exercise doesn't start the timer", async () => {
     const restTimer = idleTimer()
     const { user } = setup({ restTimer, restSeconds: 90 })

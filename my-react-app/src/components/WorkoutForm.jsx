@@ -5,12 +5,14 @@ import DatePicker from "./DatePicker.jsx"
 import NumberStepper from "./NumberStepper"
 import RestTimer from "./RestTimer"
 import Icon from "./Icon"
+import PlateLoad from "./PlateLoad"
 import { WORKOUT_TYPES } from "../lib/workoutTypes"
 import { formatWeight, fromDisplayWeight, toDisplayWeight, weightUnit } from "../lib/preferences"
 import { lastPerformance } from "../lib/history"
 import { parseRepRange, suggestProgression, WEIGHT_STEP } from "../lib/progression"
 import { DEFAULT_REST_SECONDS } from "../lib/restTimer"
 import { formatWorkoutDate } from "../lib/format"
+import { DEFAULT_PLATES, isBarbellExercise } from "../lib/plates"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
 const MAX_SETS_REPS = 100
@@ -43,6 +45,7 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // plannedExercises: names to offer as one-tap choices ("Dnešní cviky"), e.g. from today's plan.
 // restTimer: from useRestTimer() in the parent, so it keeps running when the dialog closes.
 // restSeconds: started automatically after adding an exercise; null = don't.
+// bar, plates: for the plate calculator under the weight of barbell exercises (plates in the display unit).
 function WorkoutForm({
   initialDate,
   initialType,
@@ -58,6 +61,8 @@ function WorkoutForm({
   plannedExercises = [],
   restTimer = null,
   restSeconds = null,
+  bar = "standard",
+  plates,
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -314,6 +319,10 @@ function WorkoutForm({
               inputMode="decimal"
             />
           </div>
+
+          {isBarbellExercise(currentName) && (
+            <PlateLoad weight={weight} units={units} bar={bar} plates={plates ?? DEFAULT_PLATES[units] ?? DEFAULT_PLATES.metric} />
+          )}
 
           <button type="button" className="btn btn-secondary btn-block" onClick={handleAddExercise}>
             <Icon name="plus" size={18} />
