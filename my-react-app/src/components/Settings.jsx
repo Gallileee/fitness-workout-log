@@ -1,11 +1,16 @@
 // src/components/Settings.jsx
-// Settings grouped into sections (Vzhled, Trénink with keep-screen-on, Účet with the CSV export). Every choice is one
+// Settings grouped into sections (Vzhled, Trénink with keep-screen-on and the plate calculator, Účet with the CSV export). Every choice is one
 // row with the same structure: title and hint on the left, the control on the
 // right. Wide controls (colours, font styles) go full width under the title.
 import { useEffect } from "react"
 import Icon from "./Icon"
 import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
 import { workoutsToCsv, csvBlob, exportFileName } from "../lib/csvExport"
+import { BARS, PLATES } from "../lib/plates"
+import { platesKey } from "../lib/preferences"
+
+const BAR_LABELS = { standard: "Olympijská", light: "Lehká", technique: "Technická" }
+const formatNumber = (value) => value.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })
 
 const ACCENTS = [
   { value: "purple", label: "Fialová" },
@@ -170,6 +175,8 @@ function Settings({ preferences, onChange, user, onLogout, workouts = [], wakeLo
               onSelect={set}
               disabled={wakeLockStatus === "unsupported"}
             />
+            <BarRow preferences={preferences} onSelect={set} />
+            <PlatesRow preferences={preferences} onSelect={set} />
           </SettingsSection>
 
           <SettingsSection title="Účet" icon="settings">
@@ -194,6 +201,56 @@ function Settings({ preferences, onChange, user, onLogout, workouts = [], wakeLo
         </div>
       </div>
     </section>
+  )
+}
+
+// The bar for the plate calculator; the labels show its weight in the chosen unit.
+function BarRow({ preferences, onSelect }) {
+  const unit = preferences.units === "imperial" ? "lb" : "kg"
+  const units = preferences.units === "imperial" ? "imperial" : "metric"
+  const row = {
+    key: "bar",
+    title: "Osa",
+    hint: "Pro kalkulačku kotoučů u cviků s velkou činkou.",
+    options: Object.entries(BARS).map(([value, weights]) => ({
+      value,
+      label: `${formatNumber(weights[units])} ${unit}`,
+      title: BAR_LABELS[value],
+    })),
+  }
+  return <ChoiceRow row={row} value={preferences.bar} onSelect={onSelect} />
+}
+
+// Plates the gym has, as toggles. Each unit keeps its own list, so switching units
+// doesn't lose the other one.
+function PlatesRow({ preferences, onSelect }) {
+  const units = preferences.units === "imperial" ? "imperial" : "metric"
+  const unit = units === "imperial" ? "lb" : "kg"
+  const key = platesKey(units)
+  const selected = preferences[key] ?? []
+  const toggle = (plate) =>
+    onSelect(key, selected.includes(plate) ? selected.filter((p) => p !== plate) : [...selected, plate])
+
+  return (
+    <SettingRow
+      title={`Dostupné kotouče (${unit})`}
+      hint="Kalkulačka počítá s páry těchto kotoučů. Bez žádného ukáže jen osu."
+      wide
+    >
+      <div className="segmented plate-picker" role="group" aria-label="Dostupné kotouče">
+        {PLATES[units].map((plate) => (
+          <label key={plate} className="segmented-option">
+            <input
+              type="checkbox"
+              checked={selected.includes(plate)}
+              onChange={() => toggle(plate)}
+              aria-label={`${formatNumber(plate)} ${unit}`}
+            />
+            <span>{formatNumber(plate)}</span>
+          </label>
+        ))}
+      </div>
+    </SettingRow>
   )
 }
 
@@ -248,7 +305,7 @@ function ChoiceRow({ row, value, onSelect, disabled = false }) {
     <SettingRow title={row.title} hint={row.hint}>
       <div className="segmented" role="radiogroup" aria-label={row.title}>
         {row.options.map((opt) => (
-          <label key={opt.value} className="segmented-option">
+          <label key={opt.value} className="segmented-option" title={opt.title}>
             <input
               type="radio"
               name={row.key}

@@ -123,6 +123,38 @@ describe("CSV export", () => {
   })
 })
 
+describe("plate calculator settings", () => {
+  test("the bar options show their weight in the chosen unit", async () => {
+    const { user, onChange } = setup()
+    const group = screen.getByRole("radiogroup", { name: "Osa" })
+    expect(within(group).getAllByRole("radio").map((r) => r.parentElement.textContent)).toEqual(["20 kg", "15 kg", "10 kg"])
+    await user.click(within(group).getByRole("radio", { name: "15 kg" }))
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_PREFERENCES, bar: "light" })
+
+    setup({ ...DEFAULT_PREFERENCES, units: "imperial" })
+    expect(screen.getAllByRole("radiogroup", { name: "Osa" })[1].textContent).toBe("45 lb35 lb15 lb")
+  })
+
+  test("plates are toggled in the list of the current unit", async () => {
+    const { user, onChange } = setup()
+    const group = screen.getByRole("group", { name: "Dostupné kotouče" })
+    expect(within(group).getByRole("checkbox", { name: "0,5 kg" }).checked).toBe(false)
+    expect(within(group).getByRole("checkbox", { name: "25 kg" }).checked).toBe(true)
+
+    await user.click(within(group).getByRole("checkbox", { name: "25 kg" }))
+    expect(onChange).toHaveBeenLastCalledWith({ ...DEFAULT_PREFERENCES, platesMetric: [20, 15, 10, 5, 2.5, 1.25] })
+    await user.click(within(group).getByRole("checkbox", { name: "0,5 kg" }))
+    expect(onChange).toHaveBeenLastCalledWith({ ...DEFAULT_PREFERENCES, platesMetric: [...DEFAULT_PREFERENCES.platesMetric, 0.5] })
+  })
+
+  test("imperial units edit the pound plates and leave the kilo plates alone", async () => {
+    const preferences = { ...DEFAULT_PREFERENCES, units: "imperial" }
+    const { user, onChange } = setup(preferences)
+    await user.click(screen.getByRole("checkbox", { name: "45 lb" }))
+    expect(onChange).toHaveBeenCalledWith({ ...preferences, platesImperial: [35, 25, 10, 5, 2.5] })
+  })
+})
+
 describe("font styles", () => {
   test("every font preference has a theme, and every theme is a valid preference", () => {
     expect(FONT_THEMES.map((t) => t.value)).toEqual(OPTIONS.font)

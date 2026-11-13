@@ -1,6 +1,9 @@
 // src/lib/preferences.js
-// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer, screen on), stored in localStorage
+// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer, screen on,
+// bar and plates), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
+
+import { DEFAULT_PLATES, PLATES } from "./plates.js"
 
 export const STORAGE_KEY = "preferences"
 
@@ -17,6 +20,14 @@ export const OPTIONS = {
   restTimer: ["off", "60", "90", "120", "180"],
   // Keep the screen on while the app is open (src/lib/wakeLock.js).
   keepAwake: ["off", "on"],
+  // Bar for the plate calculator (src/lib/plates.js).
+  bar: ["standard", "light", "technique"],
+}
+
+// Preferences holding a list: the plates the gym has, one list per unit.
+export const LIST_OPTIONS = {
+  platesMetric: PLATES.metric,
+  platesImperial: PLATES.imperial,
 }
 
 export const DEFAULT_PREFERENCES = {
@@ -28,6 +39,9 @@ export const DEFAULT_PREFERENCES = {
   repRange: "6-10",
   restTimer: "90",
   keepAwake: "off",
+  bar: "standard",
+  platesMetric: DEFAULT_PLATES.metric,
+  platesImperial: DEFAULT_PLATES.imperial,
 }
 
 // Keeps only known keys with allowed values, so a stale or hand-edited
@@ -38,7 +52,17 @@ export function sanitizePreferences(value) {
   for (const [key, allowed] of Object.entries(OPTIONS)) {
     if (allowed.includes(value[key])) result[key] = value[key]
   }
+  // Lists keep only allowed values, without duplicates, in the canonical order.
+  // An empty list is valid (no plates: the calculator only shows the bar).
+  for (const [key, allowed] of Object.entries(LIST_OPTIONS)) {
+    if (Array.isArray(value[key])) result[key] = allowed.filter((option) => value[key].includes(option))
+  }
   return result
+}
+
+// The preference key that holds the plates for a unit system.
+export function platesKey(units) {
+  return units === "imperial" ? "platesImperial" : "platesMetric"
 }
 
 // window.localStorage, or undefined where even reading the property throws

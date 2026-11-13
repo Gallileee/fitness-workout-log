@@ -7,6 +7,7 @@ import {
   loadPreferences,
   savePreferences,
   resolveLayout,
+  platesKey,
   toDisplayWeight,
   fromDisplayWeight,
   formatWeight,
@@ -44,12 +45,25 @@ describe("sanitizePreferences", () => {
     assert.deepEqual(sanitizePreferences(null), DEFAULT_PREFERENCES)
     assert.deepEqual(sanitizePreferences("compact"), DEFAULT_PREFERENCES)
   })
+
+  test("bar and plate lists keep only known values, in order, without duplicates", () => {
+    assert.equal(sanitizePreferences({ bar: "technique" }).bar, "technique")
+    assert.equal(sanitizePreferences({ bar: "heavy" }).bar, "standard")
+    assert.deepEqual(sanitizePreferences({ platesMetric: [5, 25, 7, "20", 5, 0.5] }).platesMetric, [25, 5, 0.5])
+    assert.deepEqual(sanitizePreferences({ platesImperial: [] }).platesImperial, [])
+    assert.deepEqual(sanitizePreferences({ platesImperial: "45" }).platesImperial, DEFAULT_PREFERENCES.platesImperial)
+  })
+
+  test("platesKey picks the list for the unit", () => {
+    assert.equal(platesKey("metric"), "platesMetric")
+    assert.equal(platesKey("imperial"), "platesImperial")
+  })
 })
 
 describe("loadPreferences / savePreferences", () => {
   test("round-trips through storage", () => {
     const storage = memoryStorage()
-    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on" }
+    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [] }
     assert.equal(savePreferences(storage, prefs), true)
     assert.deepEqual(loadPreferences(storage), prefs)
   })
