@@ -25,6 +25,10 @@ Done:
 Verified (Node 26.13): `npx vitest run` 253/253, ESLint clean, `vite build` passes. Mutations, 4 of 4 caught
 (sides ignored, overrides looked up without the key, no landmine detection, default choices kept).
 
+CI: the first App test failed twice on this branch (never locally, also not on Node 22 with 2 workers): its
+`renderApp` waited the default 1 s for the demo data, and that runner was about twice as slow as main's
+(Settings tests 2.0 s vs 1.0 s; main's whole first test took 0.97 s). `renderApp` now waits up to 5 s.
+
 Not verified: the look in a real browser. Starting `fitness-demo` was declined in this unattended run, so both
 this and the 18th run's check are open. To check: `npm run demo`, Nový trénink -> legs -> *Leg Press* 180 kg,
 switch the select to *Osa* and *Nezobrazovat*, reload (the choice should stay), at 375 px and in dark theme.
