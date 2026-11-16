@@ -1793,7 +1793,7 @@ textarea.input {
   font-weight: 600;
 }
 
-/* Plate calculator under the weight of barbell exercises: one sleeve, collar on the left */
+/* Plate calculator under the weight of plate-loaded exercises: one sleeve, collar on the left */
 .plate-load {
   display: flex;
   align-items: center;
@@ -1848,8 +1848,26 @@ textarea.input {
 }
 
 .plate-load-under .plate-load-text,
-.plate-load-belowBar .plate-load-text {
+.plate-load-belowBar .plate-load-text,
+.plate-load-off .plate-load-text {
   color: var(--text-muted);
+}
+
+/* Barbell / machine / one end / hidden, per exercise; wraps under the text on narrow screens */
+.plate-load {
+  flex-wrap: wrap;
+}
+
+.plate-loading-picker {
+  margin-left: auto;
+}
+
+.plate-loading-picker .input-select {
+  width: auto;
+  min-height: 32px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  font-size: var(--fs-sm);
 }
 
 /* The plate picker wraps on narrow screens instead of overflowing */

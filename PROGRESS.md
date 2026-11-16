@@ -1,5 +1,38 @@
 # Progress log
 
+## 2026-11-16 (19th run): plate calculator for machines and landmines
+
+Next step 1 from the list. A leg press or hack squat has no bar to count, and a T-bar row is loaded on one end only,
+so the barbell maths gave wrong answers (or no answer) for the most common plate-loaded exercises.
+
+Done:
+- `src/lib/plates.js`: `LOADINGS` (`barbell`, `machine`, `landmine`, `none`), `defaultLoading(name)` by name
+  (landmine and machine names are checked before barbell, so *T-Bar Row (Barbell)* is a landmine),
+  `loadingFor(name, overrides)` and `exerciseKey` (trimmed, lowercase). `loadBar` takes `sides` (1 or 2).
+  Machines and landmines use a bar of 0: the logged weight is the plates, because sleds weigh differently.
+- Preferences: `plateLoading`, a map from exercise key to loading. Sanitized: allowed values only, keys up to
+  100 characters, at most 200 entries, and a choice equal to the default is dropped, so choosing the default
+  again removes the entry (`withPlateLoading`).
+- `PlateLoad`: *Na jeden konec: ...* for landmines, *(váha stroje se nepočítá)* for machines, and a select
+  (*Naložení kotoučů*, visually hidden label) to change the loading for this exercise. *Nezobrazovat* keeps a
+  short line with the select, so the calculator can be turned back on.
+- `WorkoutForm` shows the calculator for exercises whose default or saved loading isn't `none`; App saves the
+  choice in preferences.
+- 28 new tests (253 in total): `loadBar` on one / two sides without a bar, `defaultLoading` for 14 names,
+  overrides, the preference sanitizer (cap, key length, default dropped), 6 form tests (machine, custom T-bar
+  row, picker, saved choices, no picker without a handler).
+
+Verified (Node 26.13): `npx vitest run` 253/253, ESLint clean, `vite build` passes. Mutations, 4 of 4 caught
+(sides ignored, overrides looked up without the key, no landmine detection, default choices kept).
+
+CI: the first App test failed twice on this branch (never locally, also not on Node 22 with 2 workers): its
+`renderApp` waited the default 1 s for the demo data, and that runner was about twice as slow as main's
+(Settings tests 2.0 s vs 1.0 s; main's whole first test took 0.97 s). `renderApp` now waits up to 5 s.
+
+Not verified: the look in a real browser. Starting `fitness-demo` was declined in this unattended run, so both
+this and the 18th run's check are open. To check: `npm run demo`, Nový trénink -> legs -> *Leg Press* 180 kg,
+switch the select to *Osa* and *Nezobrazovat*, reload (the choice should stay), at 375 px and in dark theme.
+
 ## 2026-11-13 (18th run): Plate calculator
 
 Next step 1 from the list. Loading the bar is mental arithmetic every set ("100 kg is 40 a side, so 25 + 15"), and with an incomplete plate set the obvious answer is sometimes wrong. Strong and Hevy both have a plate calculator.
@@ -454,7 +487,7 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Browser check of the plate calculator (see the 18th run), then: a per-exercise "no bar" option for machines loaded with plates (leg press, T-bar row).
+1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
 2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
 3. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
 4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.

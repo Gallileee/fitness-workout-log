@@ -27,8 +27,9 @@ function failTable(table, message) {
 async function renderApp() {
   const user = userEvent.setup()
   render(<App />)
-  // The demo account has sample workouts; wait until they are loaded.
-  await screen.findAllByText("Squat (Barbell Back)")
+  // The demo account has sample workouts; wait until they are loaded. The first render in a
+  // cold test worker can take over the default 1 s on a slow CI runner, so allow 5 s.
+  await screen.findAllByText("Squat (Barbell Back)", {}, { timeout: 5000 })
   return user
 }
 

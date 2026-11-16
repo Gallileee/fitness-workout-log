@@ -30,6 +30,39 @@ export function isBarbellExercise(name) {
   return BARBELL_NAME.test(String(name || ""))
 }
 
+// How an exercise is loaded with plates:
+//   "barbell"   on both sleeves of a bar; the bar counts (bench press, squat)
+//   "machine"   on both sides of a plate-loaded machine; only the plates count, because
+//               the sled's own weight differs between machines (leg press, hack squat)
+//   "landmine"  on one end of a bar fixed at the other; only the plates count (T-bar row)
+//   "none"      no plate calculator (dumbbells, cables, bodyweight)
+export const LOADINGS = ["barbell", "machine", "landmine", "none"]
+
+const MACHINE_NAME = /leg press|hack squat|belt squat|pendulum squat|\bsled\b|plate[- ]loaded|na kotouče/i
+const LANDMINE_NAME = /t-bar|landmine|meadows row/i
+
+// The loading the exercise's name suggests. Landmine and machine names are checked first:
+// "T-Bar Row (Barbell)" is loaded on one end even though its name says barbell.
+export function defaultLoading(name) {
+  const text = String(name || "")
+  if (LANDMINE_NAME.test(text)) return "landmine"
+  if (MACHINE_NAME.test(text)) return "machine"
+  if (isBarbellExercise(text)) return "barbell"
+  return "none"
+}
+
+// The user's choice for this exercise (Settings keep one per name, case-insensitive),
+// else the default by name.
+export function loadingFor(name, overrides = {}) {
+  const chosen = overrides?.[exerciseKey(name)]
+  return LOADINGS.includes(chosen) ? chosen : defaultLoading(name)
+}
+
+// Key for per-exercise choices: "Leg Press" and "leg press " are the same exercise.
+export function exerciseKey(name) {
+  return String(name || "").trim().toLowerCase()
+}
+
 export function barWeight(bar, units) {
   const weights = BARS[bar] ?? BARS.standard
   return weights[units] ?? weights.metric
@@ -53,16 +86,18 @@ const MAX_TARGET = 1000
 //            "under"     it can't; perSide is the heaviest load below it
 //            "belowBar"  the target is lighter than the empty bar
 //   perSide: plates for ONE side, heaviest first
-//   loaded:  bar + both sides
+//   loaded:  bar + every side
 //   missing: target - loaded (0 when exact)
 // }
 // Plain greedy ("take the heaviest plate that fits") fails with some plate sets: with
 // only 15s and 10s, 20 a side is 10 + 10, not 15 + nothing. So this is a small
 // unbounded-knapsack DP over the per-side weight: the reachable weight closest to the
 // target, then the fewest plates, then the heaviest plates first.
-export function loadBar(target, { bar, plates }) {
+// sides: 2 for a bar or a machine with two sleeves, 1 for a landmine (all plates on one end).
+export function loadBar(target, { bar, plates, sides = 2 }) {
   const total = Number(target)
   const barKg = Number(bar)
+  const sideCount = sides === 1 ? 1 : 2
   if (!Number.isFinite(total) || !Number.isFinite(barKg) || total < barKg) {
     return { status: "belowBar", perSide: [], loaded: barKg, missing: 0 }
   }
@@ -70,7 +105,7 @@ export function loadBar(target, { bar, plates }) {
   const available = [...new Set(plates.map(Number).filter((p) => Number.isFinite(p) && p > 0))]
     .map(toCents)
     .sort((a, b) => b - a)
-  const sideCents = Math.floor((toCents(Math.min(total, MAX_TARGET)) - toCents(barKg)) / 2)
+  const sideCents = Math.floor((toCents(Math.min(total, MAX_TARGET)) - toCents(barKg)) / sideCount)
 
   let perSideCents = []
   if (available.length > 0 && sideCents > 0) {
@@ -101,7 +136,7 @@ export function loadBar(target, { bar, plates }) {
   }
 
   const perSide = perSideCents.map((c) => c / 100)
-  const loadedCents = toCents(barKg) + 2 * perSideCents.reduce((sum, c) => sum + c, 0)
+  const loadedCents = toCents(barKg) + sideCount * perSideCents.reduce((sum, c) => sum + c, 0)
   const missingCents = toCents(total) - loadedCents
   return {
     status: missingCents === 0 ? "exact" : "under",
