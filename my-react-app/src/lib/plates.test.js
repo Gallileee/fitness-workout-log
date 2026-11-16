@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest"
-import { BARS, DEFAULT_PLATES, PLATES, barWeight, isBarbellExercise, loadBar } from "./plates.js"
+import { BARS, DEFAULT_PLATES, PLATES, barWeight, defaultLoading, exerciseKey, isBarbellExercise, loadBar, loadingFor } from "./plates.js"
 
 const KG = { bar: 20, plates: DEFAULT_PLATES.metric }
 const LB = { bar: 45, plates: DEFAULT_PLATES.imperial }
@@ -78,5 +78,62 @@ describe("isBarbellExercise", () => {
     ["", false],
   ])("%s -> %s", (name, expected) => {
     expect(isBarbellExercise(name)).toBe(expected)
+  })
+})
+
+describe("loadBar without a bar, on one or two sides", () => {
+  test("a plate-loaded machine counts only the plates, on both sides", () => {
+    expect(loadBar(100, { bar: 0, plates: DEFAULT_PLATES.metric })).toEqual({ status: "exact", perSide: [25, 25], loaded: 100, missing: 0 })
+    expect(loadBar(180, { bar: 0, plates: DEFAULT_PLATES.metric }).perSide).toEqual([25, 25, 25, 15])
+  })
+
+  test("a landmine takes every plate on its one end", () => {
+    expect(loadBar(45, { bar: 0, plates: DEFAULT_PLATES.metric, sides: 1 })).toEqual({ status: "exact", perSide: [25, 20], loaded: 45, missing: 0 })
+    expect(loadBar(7.5, { bar: 0, plates: DEFAULT_PLATES.metric, sides: 1 }).perSide).toEqual([5, 2.5])
+    expect(loadBar(3, { bar: 0, plates: [2.5, 1.25], sides: 1 })).toEqual({ status: "under", perSide: [2.5], loaded: 2.5, missing: 0.5 })
+  })
+
+  test("an odd one-end weight is exact where two sides would fall short", () => {
+    // 25 kg on one end; on two sides it would need 12.5 a side, which [25, 20, 10] can't make.
+    expect(loadBar(25, { bar: 0, plates: [25, 20, 10], sides: 1 }).status).toBe("exact")
+    expect(loadBar(25, { bar: 0, plates: [25, 20, 10] })).toMatchObject({ status: "under", loaded: 20, missing: 5 })
+  })
+
+  test("weights too small for any plate load nothing", () => {
+    expect(loadBar(1, { bar: 0, plates: DEFAULT_PLATES.metric })).toEqual({ status: "under", perSide: [], loaded: 0, missing: 1 })
+  })
+})
+
+describe("defaultLoading / loadingFor", () => {
+  test.each([
+    ["Bench Press (Barbell)", "barbell"],
+    ["Romanian Deadlift", "barbell"],
+    ["Leg Press", "machine"],
+    ["Hack Squat", "machine"],
+    ["Chest Press (Plate Loaded)", "machine"],
+    ["Prowler sled push", "machine"],
+    ["Bench press na kotouče", "machine"],
+    ["T-Bar Row", "landmine"],
+    ["T-Bar Row (Barbell)", "landmine"],
+    ["Landmine Press", "landmine"],
+    ["Meadows Row", "landmine"],
+    ["Dumbbell Shoulder Press", "none"],
+    ["Seated Cable Row", "none"],
+    ["", "none"],
+  ])("%s -> %s", (name, expected) => {
+    expect(defaultLoading(name)).toBe(expected)
+  })
+
+  test("the user's choice for an exercise wins, matched without case or spaces", () => {
+    expect(loadingFor("Leg Press", { "leg press": "barbell" })).toBe("barbell")
+    expect(loadingFor("  LEG PRESS ", { "leg press": "none" })).toBe("none")
+    expect(loadingFor("Leg Press", { "hack squat": "barbell" })).toBe("machine")
+    expect(loadingFor("Leg Press", { "leg press": "rocket" })).toBe("machine")
+    expect(loadingFor("Leg Press", null)).toBe("machine")
+  })
+
+  test("exerciseKey trims and lowercases", () => {
+    expect(exerciseKey("  Leg Press ")).toBe("leg press")
+    expect(exerciseKey(undefined)).toBe("")
   })
 })

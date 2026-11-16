@@ -12,7 +12,7 @@ import { lastPerformance } from "../lib/history"
 import { parseRepRange, suggestProgression, WEIGHT_STEP } from "../lib/progression"
 import { DEFAULT_REST_SECONDS } from "../lib/restTimer"
 import { formatWorkoutDate } from "../lib/format"
-import { DEFAULT_PLATES, isBarbellExercise } from "../lib/plates"
+import { DEFAULT_PLATES, defaultLoading, loadingFor } from "../lib/plates"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
 const MAX_SETS_REPS = 100
@@ -45,7 +45,9 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // plannedExercises: names to offer as one-tap choices ("Dnešní cviky"), e.g. from today's plan.
 // restTimer: from useRestTimer() in the parent, so it keeps running when the dialog closes.
 // restSeconds: started automatically after adding an exercise; null = don't.
-// bar, plates: for the plate calculator under the weight of barbell exercises (plates in the display unit).
+// bar, plates: for the plate calculator under the weight of plate-loaded exercises (plates in the display unit).
+// plateLoading: per-exercise loading chosen by the user ({ "leg press": "barbell" }); onPlateLoadingChange(name, loading)
+// saves a new choice (without it, the loading follows the exercise's name and can't be changed).
 function WorkoutForm({
   initialDate,
   initialType,
@@ -63,6 +65,8 @@ function WorkoutForm({
   restSeconds = null,
   bar = "standard",
   plates,
+  plateLoading = {},
+  onPlateLoadingChange,
 }) {
   const id = useId()
   const unit = weightUnit(units)
@@ -98,6 +102,10 @@ function WorkoutForm({
   const findLast = (name) => lastPerformance(history, name, { onOrBefore: date })
   const currentName = useCustomExercise ? customExerciseName.trim() : exerciseName
   const last = findLast(currentName)
+  // The plate calculator shows for exercises loaded with plates; one hidden by the user keeps
+  // its picker, so it can be shown again.
+  const loading = loadingFor(currentName, plateLoading)
+  const showPlates = Boolean(currentName) && (loading !== "none" || defaultLoading(currentName) !== "none")
 
   // Next step from the first entry of last time (usually the working sets).
   const suggestion = last ? suggestProgression(last.entries[0], { repRange, units }) : null
@@ -320,8 +328,15 @@ function WorkoutForm({
             />
           </div>
 
-          {isBarbellExercise(currentName) && (
-            <PlateLoad weight={weight} units={units} bar={bar} plates={plates ?? DEFAULT_PLATES[units] ?? DEFAULT_PLATES.metric} />
+          {showPlates && (
+            <PlateLoad
+              weight={weight}
+              units={units}
+              bar={bar}
+              plates={plates ?? DEFAULT_PLATES[units] ?? DEFAULT_PLATES.metric}
+              loading={loading}
+              onLoadingChange={onPlateLoadingChange && ((value) => onPlateLoadingChange(currentName, value))}
+            />
           )}
 
           <button type="button" className="btn btn-secondary btn-block" onClick={handleAddExercise}>

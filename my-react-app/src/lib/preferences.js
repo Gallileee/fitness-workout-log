@@ -3,7 +3,7 @@
 // bar and plates), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
-import { DEFAULT_PLATES, PLATES } from "./plates.js"
+import { DEFAULT_PLATES, LOADINGS, PLATES, defaultLoading, exerciseKey } from "./plates.js"
 
 export const STORAGE_KEY = "preferences"
 
@@ -42,6 +42,31 @@ export const DEFAULT_PREFERENCES = {
   bar: "standard",
   platesMetric: DEFAULT_PLATES.metric,
   platesImperial: DEFAULT_PLATES.imperial,
+  // Per-exercise plate loading chosen in the workout form, { "leg press": "barbell" }.
+  plateLoading: {},
+}
+
+// Limits for the per-exercise map, so a hand-edited entry can't grow localStorage without end.
+const MAX_PLATE_LOADING = 200
+const MAX_EXERCISE_KEY = 100
+
+// Keeps only choices that differ from the default by name, under normalised keys.
+export function sanitizePlateLoading(value) {
+  const result = {}
+  if (!value || typeof value !== "object" || Array.isArray(value)) return result
+  for (const [name, loading] of Object.entries(value)) {
+    const key = exerciseKey(name)
+    if (!key || key.length > MAX_EXERCISE_KEY || !LOADINGS.includes(loading)) continue
+    if (loading === defaultLoading(key)) continue
+    if (Object.keys(result).length >= MAX_PLATE_LOADING) break
+    result[key] = loading
+  }
+  return result
+}
+
+// Returns the map with the choice for one exercise set (or removed, when it is the default).
+export function withPlateLoading(map, name, loading) {
+  return sanitizePlateLoading({ ...map, [exerciseKey(name)]: loading })
 }
 
 // Keeps only known keys with allowed values, so a stale or hand-edited
@@ -57,6 +82,7 @@ export function sanitizePreferences(value) {
   for (const [key, allowed] of Object.entries(LIST_OPTIONS)) {
     if (Array.isArray(value[key])) result[key] = allowed.filter((option) => value[key].includes(option))
   }
+  result.plateLoading = sanitizePlateLoading(value.plateLoading)
   return result
 }
 

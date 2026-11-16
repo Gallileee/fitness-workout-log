@@ -326,10 +326,64 @@ describe("WorkoutForm: rest timer", () => {
     expect(screen.getByText(/Na každou stranu: 25 \+ 10 lb \(osa 35 lb\)/)).toBeTruthy()
   })
 
-  test("no plate calculator for dumbbell or machine exercises", async () => {
-    const { user } = setup({ initialType: "push" })
+  test("no plate calculator for dumbbell or cable exercises", async () => {
+    const { user } = setup({ initialType: "push", onPlateLoadingChange: vi.fn() })
     await user.selectOptions(screen.getByLabelText("Cvik"), "Dumbbell Shoulder Press")
     expect(screen.queryByText("Kotouče:")).toBeNull()
+    expect(screen.queryByLabelText("Naložení kotoučů")).toBeNull()
+  })
+
+  test("a plate-loaded machine counts only the plates", async () => {
+    const { user } = setup({ initialType: "legs" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Leg Press")
+    const weight = screen.getByLabelText("Váha (kg)")
+    await user.clear(weight)
+    await user.type(weight, "180")
+    expect(screen.getByText(/^Na každou stranu: 25 \+ 25 \+ 25 \+ 15 kg \(váha stroje se nepočítá\)\.$/)).toBeTruthy()
+  })
+
+  test("a custom T-bar row puts every plate on one end", async () => {
+    const { user } = setup({ initialType: "pull" })
+    await user.click(screen.getByLabelText("Vlastní název cviku"))
+    await user.type(screen.getByLabelText("Cvik"), "T-Bar Row")
+    const weight = screen.getByLabelText("Váha (kg)")
+    await user.clear(weight)
+    await user.type(weight, "45")
+    expect(screen.getByText(/^Na jeden konec: 25 \+ 20 kg/)).toBeTruthy()
+  })
+
+  test("the loading can be changed per exercise, and hidden without losing the picker", async () => {
+    const onPlateLoadingChange = vi.fn()
+    const { user } = setup({ initialType: "legs", onPlateLoadingChange })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Leg Press")
+    const picker = screen.getByLabelText("Naložení kotoučů")
+    expect(picker.value).toBe("machine")
+
+    await user.selectOptions(picker, "barbell")
+    expect(onPlateLoadingChange).toHaveBeenCalledWith("Leg Press", "barbell")
+  })
+
+  test("a saved choice is used: a leg press with a bar, a hidden squat calculator", async () => {
+    const { user } = setup({
+      initialType: "legs",
+      plateLoading: { "leg press": "barbell", "squat (barbell back)": "none" },
+      onPlateLoadingChange: vi.fn(),
+    })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Leg Press")
+    const weight = screen.getByLabelText("Váha (kg)")
+    await user.clear(weight)
+    await user.type(weight, "100")
+    expect(screen.getByText(/^Na každou stranu: 25 \+ 15 kg \(osa 20 kg\)\.$/)).toBeTruthy()
+
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Squat (Barbell Back)")
+    expect(screen.getByText("nezobrazují se.", { exact: false })).toBeTruthy()
+    expect(screen.getByLabelText("Naložení kotoučů").value).toBe("none")
+  })
+
+  test("without a change handler there is no picker", async () => {
+    const { user } = setup({ initialType: "legs" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Leg Press")
+    expect(screen.queryByLabelText("Naložení kotoučů")).toBeNull()
   })
 
   test("an invalid exercise doesn't start the timer", async () => {

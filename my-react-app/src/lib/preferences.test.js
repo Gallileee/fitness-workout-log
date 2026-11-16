@@ -8,6 +8,8 @@ import {
   savePreferences,
   resolveLayout,
   platesKey,
+  sanitizePlateLoading,
+  withPlateLoading,
   toDisplayWeight,
   fromDisplayWeight,
   formatWeight,
@@ -54,6 +56,30 @@ describe("sanitizePreferences", () => {
     assert.deepEqual(sanitizePreferences({ platesImperial: "45" }).platesImperial, DEFAULT_PREFERENCES.platesImperial)
   })
 
+  test("per-exercise plate loading keeps valid choices that differ from the default", () => {
+    assert.deepEqual(
+      sanitizePlateLoading({ "Leg Press ": "barbell", "T-Bar Row": "landmine", "Bench Press (Barbell)": "machine", Curl: "jetpack", "": "machine" }),
+      { "leg press": "barbell", "bench press (barbell)": "machine" },
+    )
+    assert.deepEqual(sanitizePlateLoading(["machine"]), {})
+    assert.deepEqual(sanitizePlateLoading("machine"), {})
+    assert.deepEqual(sanitizePreferences({ plateLoading: { "leg press": "none" } }).plateLoading, { "leg press": "none" })
+    assert.deepEqual(sanitizePreferences({}).plateLoading, {})
+  })
+
+  test("per-exercise plate loading is capped in size and key length", () => {
+    const many = Object.fromEntries(Array.from({ length: 250 }, (_, i) => [`curl ${i}`, "barbell"]))
+    assert.equal(Object.keys(sanitizePlateLoading(many)).length, 200)
+    assert.deepEqual(sanitizePlateLoading({ ["x".repeat(101)]: "barbell" }), {})
+  })
+
+  test("withPlateLoading sets one choice and drops it again when back to the default", () => {
+    const once = withPlateLoading({}, "Leg Press", "barbell")
+    assert.deepEqual(once, { "leg press": "barbell" })
+    assert.deepEqual(withPlateLoading(once, "LEG PRESS", "machine"), {})
+    assert.deepEqual(withPlateLoading(once, "Curl", "barbell"), { "leg press": "barbell", curl: "barbell" })
+  })
+
   test("platesKey picks the list for the unit", () => {
     assert.equal(platesKey("metric"), "platesMetric")
     assert.equal(platesKey("imperial"), "platesImperial")
@@ -63,7 +89,7 @@ describe("sanitizePreferences", () => {
 describe("loadPreferences / savePreferences", () => {
   test("round-trips through storage", () => {
     const storage = memoryStorage()
-    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [] }
+    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [], plateLoading: { "leg press": "none", "squat (barbell back)": "machine" } }
     assert.equal(savePreferences(storage, prefs), true)
     assert.deepEqual(loadPreferences(storage), prefs)
   })
