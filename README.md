@@ -8,6 +8,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 
 - Sign up / log in (Supabase Auth); every user sees only their own workouts
 - Create, edit and delete workouts (date, type, exercises, note), choosing exercises from a built-in list or entering custom ones
+- **No browser pop-ups**: deleting asks inside the workout card (*Smazat celý trénink?* with *Zrušit* focused; Escape cancels), and a failed delete or load shows its error in the page, with *Zkusit znovu* when the workouts couldn't be loaded
 - **New workouts start as today's**: *Nový trénink* (or + on a phone) opens the form with today's date and, on a training day, the planned type and the exercises from your last workout of that type as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
 - **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings

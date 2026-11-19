@@ -1,7 +1,7 @@
 // Whole-app tests: the real App and components, with the in-memory demo
 // client (the same one `npm run demo` uses) instead of Supabase.
 import { describe, test, expect, vi, beforeEach } from "vitest"
-import { render, screen, within } from "@testing-library/react"
+import { render, screen, within, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { supabase } from "./supabaseClient"
 import App from "./App"
@@ -171,6 +171,60 @@ describe("App", () => {
     await user.click(form.getByRole("button", { name: "Uložit trénink" }))
     expect(screen.queryByRole("dialog")).toBeNull()
     expect(await screen.findByText("Must not get lost")).toBeTruthy()
+  })
+
+  test("deleting asks inside the card, not with confirm()", async () => {
+    vi.spyOn(window, "confirm").mockImplementation(() => {
+      throw new Error("confirm() should not be used")
+    })
+    const user = await renderApp()
+    const form = await fillNewWorkout(user, "Delete me")
+    await user.click(form.getByRole("button", { name: "Uložit trénink" }))
+    const card = (await screen.findByText("Delete me")).closest("li")
+
+    await user.click(within(card).getByRole("button", { name: /^Smazat trénink/ }))
+    await user.click(within(card).getByRole("button", { name: "Zrušit" }))
+    expect(screen.getByText("Delete me")).toBeTruthy()
+
+    await user.click(within(card).getByRole("button", { name: /^Smazat trénink/ }))
+    await user.click(within(card).getByRole("button", { name: "Smazat" }))
+    await waitFor(() => expect(screen.queryByText("Delete me")).toBeNull())
+  })
+
+  test("when deleting fails, the workout stays with the error in its card", async () => {
+    const user = await renderApp()
+    const form = await fillNewWorkout(user, "Cannot delete me")
+    await user.click(form.getByRole("button", { name: "Uložit trénink" }))
+    const card = (await screen.findByText("Cannot delete me")).closest("li")
+
+    failTable("workouts", "Failed to fetch")
+    await user.click(within(card).getByRole("button", { name: /^Smazat trénink/ }))
+    await user.click(within(card).getByRole("button", { name: "Smazat" }))
+
+    expect((await within(card).findByRole("alert")).textContent).toBe("Nepovedlo se smazat trénink: Failed to fetch")
+    expect(screen.getByText("Cannot delete me")).toBeTruthy()
+
+    // Once the connection is back, deleting works.
+    vi.mocked(supabase.from).mockRestore()
+    await user.click(within(card).getByRole("button", { name: /^Smazat trénink/ }))
+    await user.click(within(card).getByRole("button", { name: "Smazat" }))
+    await waitFor(() => expect(screen.queryByText("Cannot delete me")).toBeNull())
+  })
+
+  test("when loading fails, the list says so and 'Zkusit znovu' loads again", async () => {
+    failTable("workouts", "Failed to fetch")
+    const user = userEvent.setup()
+    render(<App />)
+
+    const error = await screen.findByText("Nepovedlo se načíst tréninky: Failed to fetch", {}, { timeout: 5000 })
+    expect(error.closest('[role="alert"]')).toBeTruthy()
+    expect(screen.getByText("Tréninky se nenačetly.")).toBeTruthy()
+    expect(screen.queryByText(/Přidej první/)).toBeNull()
+
+    vi.mocked(supabase.from).mockRestore()
+    await user.click(screen.getByRole("button", { name: "Zkusit znovu" }))
+    expect((await screen.findAllByText("Squat (Barbell Back)", {}, { timeout: 5000 })).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Nepovedlo se načíst/)).toBeNull()
   })
 
   test("the workout form shows last time's numbers from the user's history", async () => {
