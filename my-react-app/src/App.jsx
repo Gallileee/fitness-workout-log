@@ -57,6 +57,9 @@ function App() {
   const [workouts, setWorkouts] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState("")
+  // Bumped by "Zkusit znovu" to load the workouts again.
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [user, setUser] = useState(loadStoredUser)
 
   const [currentDate, setCurrentDate] = useState("")
@@ -140,6 +143,7 @@ function App() {
     await supabase.auth.signOut()
     setUser(null)
     setWorkouts([])
+    setLoadError("")
     setWeeklyPlan(createDefaultWeeklyPlan())
     setPlanStatus({ state: "idle" })
     setPage("overview")
@@ -149,10 +153,13 @@ function App() {
   // LOAD WORKOUTS
   useEffect(() => {
     if (!user) return
+    // A slow answer for an earlier user or attempt must not overwrite a newer one.
+    let cancelled = false
 
     const fetchWorkouts = async () => {
       try {
         setLoading(true)
+        setLoadError("")
         const { data, error } = await supabase
           .from("workouts")
           .select("*")
@@ -160,17 +167,20 @@ function App() {
           .order("date", { ascending: false })
 
         if (error) throw error
-        setWorkouts(data || [])
+        if (!cancelled) setWorkouts(data || [])
       } catch (err) {
         console.error("Chyba při načítání:", err)
-        alert("Nepovedlo se načíst tréninky: " + err.message)
+        if (!cancelled) setLoadError("Nepovedlo se načíst tréninky: " + (err?.message || "neznámá chyba"))
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchWorkouts()
-  }, [user])
+    return () => {
+      cancelled = true
+    }
+  }, [user, loadAttempt])
 
   // LOAD WEEKLY PLAN, and set up saving it for this user
   useEffect(() => {
@@ -307,9 +317,9 @@ function App() {
     setView("editWorkout")
   }
 
+  // WorkoutList asks for confirmation in the card and shows the error there, so this only
+  // deletes, and rethrows a failure for the list to show.
   const handleDeleteWorkout = async (id) => {
-    if (!confirm("Opravdu smazat celý trénink?")) return
-
     try {
       const { error } = await supabase
         .from("workouts")
@@ -317,13 +327,13 @@ function App() {
         .eq("id", id)
         .eq("user_id", user.userId)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
       setWorkouts((prev) => prev.filter((w) => w.id !== id))
       if (editingId === id) resetEditing()
     } catch (err) {
-      console.error(err)
-      alert("Nepovedlo se smazat trénink: " + err.message)
+      console.error("Chyba při mazání:", err)
+      throw err
     }
   }
 
@@ -357,14 +367,35 @@ function App() {
     />
   )
 
+  const emptyText = loadError
+    ? "Tréninky se nenačetly."
+    : filtersActive
+      ? "Filtru neodpovídá žádný trénink."
+      : "Zatím žádné tréninky. Přidej první!"
+
   const workoutList = (
-    <WorkoutList
-      workouts={filteredWorkouts}
-      units={units}
-      onEdit={handleEditWorkout}
-      onDelete={handleDeleteWorkout}
-      emptyText={filtersActive ? "Filtru neodpovídá žádný trénink." : "Zatím žádné tréninky. Přidej první!"}
-    />
+    <>
+      {loadError && (
+        <div className="alert alert-error load-error" role="alert">
+          <span>{loadError}</span>
+          <button
+            className="btn btn-secondary btn-small"
+            type="button"
+            onClick={() => setLoadAttempt((n) => n + 1)}
+            disabled={loading}
+          >
+            Zkusit znovu
+          </button>
+        </div>
+      )}
+      <WorkoutList
+        workouts={filteredWorkouts}
+        units={units}
+        onEdit={handleEditWorkout}
+        onDelete={handleDeleteWorkout}
+        emptyText={emptyText}
+      />
+    </>
   )
 
   const chart = <ProgressChart workouts={statsWorkouts} units={units} />

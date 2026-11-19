@@ -1,5 +1,33 @@
 # Progress log
 
+## 2026-11-19 (20th run): inline delete confirmation and error messages
+
+Next step 4 from the list (step 1, the browser check, needs the demo server, and starting it was declined again).
+`confirm()` and `alert()` block the page, can't be styled, look different in every browser, and some in-app
+browsers suppress them, so a delete could go through without asking, or an error could be lost.
+
+Done:
+- `WorkoutList`: the trash button opens a row in the same card, *Smazat celý trénink? Nejde to vrátit.* with
+  *Zrušit* (focused, the safe choice) and *Smazat*. Escape or *Zrušit* closes it and puts focus back on the
+  trash button. Only one card asks at a time. While deleting, the card says *Mažu…* and its buttons are
+  disabled. If `onDelete` rejects, the error stays in that card (`role="alert"`) and focus returns to the
+  trash button; asking again clears it.
+- `App`: `handleDeleteWorkout` no longer asks or alerts, it rethrows for the list. Loading errors go to
+  `loadError`, shown above the list with *Zkusit znovu* (bumps `loadAttempt`, which re-runs the load effect).
+  The empty text says *Tréninky se nenačetly.* instead of *Přidej první!*. A load answer that arrives after
+  logout or a newer attempt is ignored (`cancelled` flag).
+- CSS: `.btn-danger`, `.delete-confirm`, `.load-error`, 44 px buttons in the mobile layout.
+- 10 new tests (263 in total): 7 for `WorkoutList` (ask/cancel/Escape/focus, one card at a time, busy state,
+  failure, rejection without a message) and 3 App tests on the demo client (delete with cancel, failed delete
+  then retry, failed load then *Zkusit znovu*). `confirm()` and `alert()` throw in these tests.
+
+Verified (Node 22): `vitest run` 263/263, ESLint clean, `vite build` passes. Mutations, 4 of 4 caught (no
+rethrow in App, trash deletes without asking, retry does nothing, no focus return).
+
+Not verified: the look in a real browser (the confirm row on a narrow card, the danger button colours). The
+`fitness-demo` start was declined in this unattended run. To check: `npm run demo`, delete a workout on desktop
+and at 375 px.
+
 ## 2026-11-16 (19th run): plate calculator for machines and landmines
 
 Next step 1 from the list. A leg press or hack squat has no bar to count, and a T-bar row is loaded on one end only,
@@ -487,11 +515,10 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
+1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), and of the inline delete confirmation (20th run). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
 2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
 3. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
-4. Replace the remaining `alert()`/`confirm()` calls (loading and deleting workouts) with inline messages, with tests.
-5. Per-exercise rep ranges for the overload suggestion.
-6. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-7. Store plan history so adherence for past weeks uses the plan that applied then.
-8. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
+4. Per-exercise rep ranges for the overload suggestion.
+5. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+6. Store plan history so adherence for past weeks uses the plan that applied then.
+7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
