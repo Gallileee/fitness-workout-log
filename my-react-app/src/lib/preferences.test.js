@@ -122,7 +122,7 @@ describe("sanitizePreferences", () => {
 describe("loadPreferences / savePreferences", () => {
   test("round-trips through storage", () => {
     const storage = memoryStorage()
-    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [], plateLoading: { "leg press": "none", "squat (barbell back)": "machine" }, exerciseRepRanges: { "lateral raise": "12-15" } }
+    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", restNotify: "on", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [], plateLoading: { "leg press": "none", "squat (barbell back)": "machine" }, exerciseRepRanges: { "lateral raise": "12-15" } }
     assert.equal(savePreferences(storage, prefs), true)
     assert.deepEqual(loadPreferences(storage), prefs)
   })

@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import "./App.css"
 import WorkoutForm from "./components/WorkoutForm"
 import WorkoutList from "./components/WorkoutList"
@@ -24,6 +24,7 @@ import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
 import { browserStorage, loadPreferences, savePreferences, resolveLayout, platesKey, withExerciseRepRange, withPlateLoading } from "./lib/preferences"
 import { useWakeLock } from "./lib/wakeLock"
+import { useRestNotifications, showRestDoneNotification, closeRestNotifications } from "./lib/restNotification"
 import { useMediaQuery } from "./lib/useMediaQuery"
 
 // Below this width "auto" layout switches to the mobile layout.
@@ -86,7 +87,13 @@ function App() {
   const isNarrow = useMediaQuery(NARROW_VIEWPORT)
   const layout = resolveLayout(preferences.layout, isNarrow)
   const units = preferences.units
-  const restTimer = useRestTimer({ onDone: signalRestDone })
+  const restNotify = useRestNotifications(preferences.restNotify === "on")
+  const notifyOnRestDone = restNotify.status === "on"
+  const handleRestDone = useCallback(() => {
+    signalRestDone()
+    if (notifyOnRestDone) showRestDoneNotification()
+  }, [notifyOnRestDone])
+  const restTimer = useRestTimer({ onDone: handleRestDone })
   const restSeconds = restSecondsFromPreference(preferences.restTimer)
   const wakeLockStatus = useWakeLock(preferences.keepAwake === "on")
 
@@ -100,6 +107,11 @@ function App() {
   useEffect(() => {
     savePreferences(browserStorage(), preferences)
   }, [preferences])
+
+  // "OK" / "Jdu na sérii" or a new pause: the system notification is stale too.
+  useEffect(() => {
+    if (!restTimer.finished && notifyOnRestDone) closeRestNotifications()
+  }, [restTimer.finished, notifyOnRestDone])
 
   // Download the chosen heading font (only that one; Settings loads the rest for its previews).
   useEffect(() => {
@@ -421,6 +433,8 @@ function App() {
       onLogout={handleLogout}
       workouts={workouts}
       wakeLockStatus={wakeLockStatus}
+      notifyStatus={restNotify.status}
+      onEnableNotify={restNotify.enable}
     />
   )
 

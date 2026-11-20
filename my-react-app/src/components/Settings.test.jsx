@@ -5,8 +5,9 @@ import Settings from "./Settings"
 import { DEFAULT_PREFERENCES, OPTIONS } from "../lib/preferences"
 import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
 
-function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus) {
+function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus, notifyStatus) {
   const onChange = vi.fn()
+  const onEnableNotify = vi.fn()
   const onLogout = vi.fn()
   const user = userEvent.setup()
   render(
@@ -17,9 +18,11 @@ function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus) {
       onLogout={onLogout}
       workouts={workouts}
       wakeLockStatus={wakeLockStatus}
+      notifyStatus={notifyStatus}
+      onEnableNotify={onEnableNotify}
     />,
   )
-  return { user, onChange, onLogout }
+  return { user, onChange, onLogout, onEnableNotify }
 }
 
 describe("Settings", () => {
@@ -168,5 +171,44 @@ describe("font styles", () => {
     await expect(loadFontTheme("default")).resolves.toBeUndefined()
     await expect(loadFontTheme("nope")).resolves.toBeUndefined()
     await expect(loadFontTheme("arcade")).resolves.toBeUndefined()
+  })
+})
+
+describe("Rest notification", () => {
+  const group = () => screen.getByRole("radiogroup", { name: "Upozornit na konec pauzy" })
+
+  test("is off by default; switching it on saves it and asks for permission", async () => {
+    const { user, onChange, onEnableNotify } = setup()
+    expect(within(group()).getByRole("radio", { name: "Vyp." }).checked).toBe(true)
+    expect(screen.getByText(/Prohlížeč se zeptá na povolení/)).toBeTruthy()
+
+    await user.click(within(group()).getByRole("radio", { name: "Zap." }))
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_PREFERENCES, restNotify: "on" })
+    expect(onEnableNotify).toHaveBeenCalledOnce()
+  })
+
+  test("switching it off doesn't ask", async () => {
+    const { user, onChange, onEnableNotify } = setup({ ...DEFAULT_PREFERENCES, restNotify: "on" }, [], "off", "on")
+    await user.click(within(group()).getByRole("radio", { name: "Vyp." }))
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_PREFERENCES, restNotify: "off" })
+    expect(onEnableNotify).not.toHaveBeenCalled()
+  })
+
+  test("offers to ask again while the browser has no answer", async () => {
+    const { user, onEnableNotify } = setup({ ...DEFAULT_PREFERENCES, restNotify: "on" }, [], "off", "ask")
+    await user.click(screen.getByRole("button", { name: "Povolit oznámení" }))
+    expect(onEnableNotify).toHaveBeenCalledOnce()
+  })
+
+  test("explains a block and when it works", () => {
+    setup({ ...DEFAULT_PREFERENCES, restNotify: "on" }, [], "off", "blocked")
+    expect(screen.getByText(/Prohlížeč oznámení blokuje/)).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Povolit oznámení" })).toBeNull()
+  })
+
+  test("is disabled with an explanation where the browser lacks the API", () => {
+    setup(DEFAULT_PREFERENCES, [], "off", "unsupported")
+    for (const radio of within(group()).getAllByRole("radio")) expect(radio.disabled).toBe(true)
+    expect(screen.getByText(/Tento prohlížeč oznámení neumí/)).toBeTruthy()
   })
 })

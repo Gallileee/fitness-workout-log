@@ -121,6 +121,27 @@ describe("useRestTimer + RestTimer", () => {
     expect(onDone).not.toHaveBeenCalled()
   })
 
+  test("ends on time even if the repeating check never runs (long-hidden tab)", () => {
+    // Chrome may run repeating timers in a long-hidden tab only once a minute;
+    // a one-off timer for the end itself still fires on time.
+    vi.spyOn(globalThis, "setInterval").mockImplementation(() => 0)
+    const { onDone } = setup()
+    click("Pauza 1:30")
+    click("Prodloužit pauzu o 30 sekund") // moves the end, so the one-off timer too
+    advance(119_000)
+    expect(onDone).not.toHaveBeenCalled()
+    advance(1_100)
+    expect(onDone).toHaveBeenCalledOnce()
+    expect(screen.getByRole("status").textContent).toContain("Pauza skončila")
+  })
+
+  test("signals once when the repeating check and the end timer both fire", () => {
+    const { onDone } = setup()
+    click("Pauza 1:30")
+    advance(95_000)
+    expect(onDone).toHaveBeenCalledOnce()
+  })
+
   test("stays correct when the browser delays the interval", () => {
     setup()
     click("Pauza 1:30")

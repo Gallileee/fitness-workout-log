@@ -1419,6 +1419,14 @@ textarea.input {
   justify-self: end;
 }
 
+/* A row's choices with a button under them, both aligned to the control's edge. */
+.setting-control-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
 /* Narrow screens: control under the text, full width. */
 @media (max-width: 640px) {
   .setting-row {
@@ -1432,6 +1440,10 @@ textarea.input {
   .setting-control .segmented {
     display: flex;
     width: 100%;
+  }
+
+  .setting-control-stack {
+    align-items: stretch;
   }
 }
 
