@@ -1,5 +1,5 @@
 // src/lib/preferences.js
-// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer, screen on,
+// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer and its notification, screen on,
 // bar and plates), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
@@ -18,6 +18,8 @@ export const OPTIONS = {
   repRange: ["4-6", "6-10", "8-12", "12-15"],
   // Rest timer started after adding an exercise, in seconds (src/lib/restTimer.js).
   restTimer: ["off", "60", "90", "120", "180"],
+  // System notification when the rest ends while the app is in the background (src/lib/restNotification.js).
+  restNotify: ["off", "on"],
   // Keep the screen on while the app is open (src/lib/wakeLock.js).
   keepAwake: ["off", "on"],
   // Bar for the plate calculator (src/lib/plates.js).
@@ -38,6 +40,7 @@ export const DEFAULT_PREFERENCES = {
   units: "metric",
   repRange: "6-10",
   restTimer: "90",
+  restNotify: "off",
   keepAwake: "off",
   bar: "standard",
   platesMetric: DEFAULT_PLATES.metric,

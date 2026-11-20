@@ -1,5 +1,41 @@
 # Progress log
 
+## 2026-11-20 (21st run): rest timer notification in the background
+
+Next step 2 from the list. The beep and *Pauza skončila* are easy to miss when the lifter switched to music or
+a chat between sets, which is exactly when the rest ends.
+
+Acceptance criteria:
+- Settings → Trénink has *Upozornit na konec pauzy* (off by default). Switching it on asks for permission from
+  that click; the hint says whether it works, is blocked (also while off), still needs an answer (with a
+  *Povolit oznámení* button) or isn't supported (row disabled).
+- A rest that ends while the page is hidden shows *Pauza skončila / Čas na další sérii.*; on screen, none.
+- Coming back to the app or starting / dismissing the next rest closes it.
+- Works on Android Chrome (needs a service worker) and desktop browsers; never throws where APIs are missing.
+
+Done:
+- `src/lib/restNotification.js`: `permissionOf`, `requestPermission` (promise and old callback form),
+  `restWorker` (reuse or register `rest-sw.js`), `showRestDoneNotification` (worker first, page notification as
+  the fallback), `closeRestNotifications`, and the `useRestNotifications(enabled)` hook (status + `enable()`,
+  re-reads the permission on return to the page).
+- `public/rest-sw.js`: no caching or fetch handler; `notificationclick` focuses the app or opens it.
+- `useRestTimer`: a one-off timeout for the end besides the 250 ms interval (Chrome's intensive throttling slows
+  repeating timers in long-hidden tabs to once a minute); a `done` flag keeps the signal to one.
+- `restNotify` preference; `ChoiceRow` takes an optional `action` under the choices (`.setting-control-stack`).
+- 27 new tests (290 in total): 18 for the module and hook, 2 for the end timeout, 5 Settings, 2 App (on: shown
+  once in the background; off: none), 1 changed preference round trip.
+
+Verified (Node 22): `vitest run` 290/290, ESLint clean, `vite build` passes (copies `rest-sw.js` to `dist/`).
+Mutations, 5 of 5 caught (no end timeout, shown while visible, shown with the setting off, no permission
+request from Settings, not closed on return). Browser (demo, own worktree): the pane reports `denied`, and the
+row says it's blocked; with a stand-in `Notification` the *ask* state shows a full-width *Povolit oznámení* at
+375 px, and a 1:00 rest run past its end with the page marked hidden showed one notification (title, body,
+tag) while the panel said *Pauza skončila*. `rest-sw.js` registered at `/`.
+
+Not verified: a real system notification (the pane blocks them), Android Chrome's worker path, iOS.
+Another scheduled session was editing the main clone (per-exercise rep ranges) at the same time, so this run
+worked in a separate git worktree; the two PRs both touch `preferences.js`, `App.jsx` and this file.
+
 ## 2026-11-19 (20th run): inline delete confirmation and error messages
 
 Next step 4 from the list (step 1, the browser check, needs the demo server, and starting it was declined again).
@@ -515,10 +551,9 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), and of the inline delete confirmation (20th run). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
-2. Rest timer: a system notification when the tab is in the background (Notification API, needs permission).
-3. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
-4. Per-exercise rep ranges for the overload suggestion.
-5. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-6. Store plan history so adherence for past weeks uses the plan that applied then.
-7. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
+1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), and of the inline delete confirmation (20th run). A real notification on an Android phone (21st run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
+2. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
+3. Per-exercise rep ranges for the overload suggestion.
+4. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+5. Store plan history so adherence for past weeks uses the plan that applied then.
+6. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.

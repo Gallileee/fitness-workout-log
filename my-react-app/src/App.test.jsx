@@ -125,6 +125,57 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeTruthy()
   })
 
+  test("with the notification on, a rest that ends in the background shows one", async () => {
+    const shown = []
+    function Notification(title, options) {
+      shown.push({ title, options })
+      this.close = () => {}
+    }
+    Notification.permission = "default"
+    Notification.requestPermission = vi.fn(async () => (Notification.permission = "granted"))
+    vi.stubGlobal("Notification", Notification)
+    try {
+      const user = await renderApp()
+      await user.click(screen.getByRole("button", { name: "Nastavení" }))
+      const group = screen.getByRole("radiogroup", { name: "Upozornit na konec pauzy" })
+      await user.click(within(group).getByRole("radio", { name: "Zap." }))
+      expect(Notification.requestPermission).toHaveBeenCalledOnce()
+      await screen.findByText(/Zapnuto. Když budeš v jiné aplikaci/)
+      expect(JSON.parse(localStorage.getItem("preferences")).restNotify).toBe("on")
+
+      await user.click(screen.getByRole("button", { name: "Pauza 1:30" }))
+      Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true })
+      const now = Date.now()
+      vi.spyOn(Date, "now").mockReturnValue(now + 91_000)
+      await waitFor(() => expect(shown).toHaveLength(1))
+      expect(shown[0]).toMatchObject({ title: "Pauza skončila", options: { tag: "rest-timer" } })
+    } finally {
+      delete document.visibilityState
+      vi.unstubAllGlobals()
+    }
+  })
+
+  test("without the notification setting, a rest that ends in the background shows none", async () => {
+    const shown = []
+    function Notification(title) {
+      shown.push(title)
+    }
+    Notification.permission = "granted"
+    vi.stubGlobal("Notification", Notification)
+    try {
+      const user = await renderApp()
+      await user.click(screen.getByRole("button", { name: "Pauza 1:30" }))
+      Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true })
+      const now = Date.now()
+      vi.spyOn(Date, "now").mockReturnValue(now + 91_000)
+      await screen.findByText("Pauza skončila")
+      expect(shown).toHaveLength(0)
+    } finally {
+      delete document.visibilityState
+      vi.unstubAllGlobals()
+    }
+  })
+
   test("a font style and colour from Settings apply to the whole app", async () => {
     const user = await renderApp()
     await user.click(screen.getByRole("button", { name: "Nastavení" }))

@@ -91,6 +91,24 @@ const KEEP_AWAKE_ROW = {
   ],
 }
 
+const REST_NOTIFY_ROW = {
+  key: "restNotify",
+  title: "Upozornit na konec pauzy",
+  options: [
+    { value: "off", label: "Vyp." },
+    { value: "on", label: "Zap." },
+  ],
+}
+
+// Hint for the rest-notification row, by the status from useRestNotifications.
+const REST_NOTIFY_HINTS = {
+  unsupported: "Tento prohlížeč oznámení neumí. Funguje v Chrome, Edge, Firefoxu a Safari (na iPhonu jen z plochy).",
+  off: "Oznámení systému, když pauza skončí a aplikace je na pozadí. Prohlížeč se zeptá na povolení.",
+  ask: "Zapnuto, ale oznámení zatím nejsou povolená. Povol je, až se prohlížeč zeptá.",
+  on: "Zapnuto. Když budeš v jiné aplikaci, ozve se oznámení. Se zamčeným telefonem může přijít později.",
+  blocked: "Prohlížeč oznámení blokuje. Povol je v nastavení webu (ikona vedle adresy) a vrať se sem.",
+}
+
 // Hint for the keep-awake row, by the status from useWakeLock.
 const KEEP_AWAKE_HINTS = {
   unsupported: "Tento prohlížeč to neumí. Funguje v Chrome, Safari 16.4+ a Firefoxu 126+ přes https.",
@@ -100,8 +118,23 @@ const KEEP_AWAKE_HINTS = {
   error: "Prohlížeč to teď nepovolil (třeba kvůli úspoře baterie). Zkusí se to znovu po návratu do aplikace.",
 }
 
-function Settings({ preferences, onChange, user, onLogout, workouts = [], wakeLockStatus = "off" }) {
+function Settings({
+  preferences,
+  onChange,
+  user,
+  onLogout,
+  workouts = [],
+  wakeLockStatus = "off",
+  notifyStatus = "off",
+  onEnableNotify,
+}) {
   const set = (key, value) => onChange({ ...preferences, [key]: value })
+  // Turning the notification on asks for permission from this click; the
+  // setting stays on even if the answer is no, and the hint says what to do.
+  const setNotify = (key, value) => {
+    set(key, value)
+    if (value === "on") onEnableNotify?.()
+  }
 
   // The font cards preview every style, so load them all while Settings is open.
   useEffect(() => {
@@ -169,6 +202,19 @@ function Settings({ preferences, onChange, user, onLogout, workouts = [], wakeLo
             {TRAINING_ROWS.map((row) => (
               <ChoiceRow key={row.key} row={row} value={preferences[row.key]} onSelect={set} />
             ))}
+            <ChoiceRow
+              row={{ ...REST_NOTIFY_ROW, hint: REST_NOTIFY_HINTS[notifyStatus] }}
+              value={preferences.restNotify}
+              onSelect={setNotify}
+              disabled={notifyStatus === "unsupported"}
+              action={
+                notifyStatus === "ask" && (
+                  <button type="button" className="btn btn-secondary btn-small" onClick={() => onEnableNotify?.()}>
+                    Povolit oznámení
+                  </button>
+                )
+              }
+            />
             <ChoiceRow
               row={{ ...KEEP_AWAKE_ROW, hint: KEEP_AWAKE_HINTS[wakeLockStatus] }}
               value={preferences.keepAwake}
@@ -300,24 +346,35 @@ function SettingRow({ title, hint, wide = false, children }) {
 }
 
 // A setting with a few exclusive choices, shown as a segmented control.
-function ChoiceRow({ row, value, onSelect, disabled = false }) {
+// action: an optional button shown under the choices (e.g. to ask for a permission again).
+function ChoiceRow({ row, value, onSelect, disabled = false, action }) {
+  const choices = (
+    <div className="segmented" role="radiogroup" aria-label={row.title}>
+      {row.options.map((opt) => (
+        <label key={opt.value} className="segmented-option" title={opt.title}>
+          <input
+            type="radio"
+            name={row.key}
+            value={opt.value}
+            checked={value === opt.value}
+            onChange={() => onSelect(row.key, opt.value)}
+            disabled={disabled}
+          />
+          <span>{opt.label}</span>
+        </label>
+      ))}
+    </div>
+  )
   return (
     <SettingRow title={row.title} hint={row.hint}>
-      <div className="segmented" role="radiogroup" aria-label={row.title}>
-        {row.options.map((opt) => (
-          <label key={opt.value} className="segmented-option" title={opt.title}>
-            <input
-              type="radio"
-              name={row.key}
-              value={opt.value}
-              checked={value === opt.value}
-              onChange={() => onSelect(row.key, opt.value)}
-              disabled={disabled}
-            />
-            <span>{opt.label}</span>
-          </label>
-        ))}
-      </div>
+      {action ? (
+        <div className="setting-control-stack">
+          {choices}
+          {action}
+        </div>
+      ) : (
+        choices
+      )}
     </SettingRow>
   )
 }

@@ -67,16 +67,27 @@ export function useRestTimer({ onDone } = {}) {
 
   useEffect(() => {
     if (endsAt === null) return
-    const id = setInterval(() => {
+    let done = false
+    const check = () => {
+      if (done) return
       const left = remainingSeconds(endsAt, Date.now())
       setRemaining(left)
       if (left === 0) {
+        done = true
         setEndsAt(null)
         setFinished(true)
         onDoneRef.current?.()
       }
-    }, 250)
-    return () => clearInterval(id)
+    }
+    const id = setInterval(check, 250)
+    // A single timeout for the end itself: in a tab hidden for a few minutes Chrome can
+    // run repeating timers only once a minute, while a one-off timer stays on time,
+    // so the end (and its notification) isn't late.
+    const end = setTimeout(check, Math.max(0, endsAt - Date.now()) + 10)
+    return () => {
+      clearInterval(id)
+      clearTimeout(end)
+    }
   }, [endsAt])
 
   const start = useCallback((seconds) => {
