@@ -24,6 +24,7 @@ import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
 import { browserStorage, loadPreferences, savePreferences, resolveLayout, platesKey, withExerciseRepRange, withPlateLoading } from "./lib/preferences"
 import { useWakeLock } from "./lib/wakeLock"
+import { useWorkoutInProgress } from "./lib/workoutSession"
 import { useRestNotifications, showRestDoneNotification, closeRestNotifications } from "./lib/restNotification"
 import { useMediaQuery } from "./lib/useMediaQuery"
 
@@ -95,7 +96,11 @@ function App() {
   }, [notifyOnRestDone])
   const restTimer = useRestTimer({ onDone: handleRestDone })
   const restSeconds = restSecondsFromPreference(preferences.restTimer)
-  const wakeLockStatus = useWakeLock(preferences.keepAwake === "on")
+  // A workout is in progress while the workout form is open or a rest is running / just ended.
+  const workout = useWorkoutInProgress(view !== "dashboard" || restTimer.running || restTimer.finished)
+  const wakeLockStatus = useWakeLock(
+    preferences.keepAwake === "on" || (preferences.keepAwake === "workout" && workout.active)
+  )
 
   const filteredWorkouts = filterWorkouts(workouts, filters)
   const filtersActive = filters.type !== "all" || Boolean(filters.from || filters.to)
@@ -433,6 +438,7 @@ function App() {
       onLogout={handleLogout}
       workouts={workouts}
       wakeLockStatus={wakeLockStatus}
+      workoutActive={workout.active}
       notifyStatus={restNotify.status}
       onEnableNotify={restNotify.enable}
     />
@@ -464,7 +470,10 @@ function App() {
           setPreferences((p) => ({ ...p, plateLoading: withPlateLoading(p.plateLoading, name, loading) }))
         }
         onSave={async (values) => {
-          if (await handleSave(values)) setView("dashboard")
+          if (await handleSave(values)) {
+            workout.finish()
+            setView("dashboard")
+          }
         }}
         onCancel={closeForm}
         isEditing={view === "editWorkout" && editingId !== null}

@@ -87,7 +87,8 @@ const KEEP_AWAKE_ROW = {
   title: "Nechat obrazovku zapnutou",
   options: [
     { value: "off", label: "Vyp." },
-    { value: "on", label: "Zap." },
+    { value: "workout", label: "Při tréninku" },
+    { value: "on", label: "Vždy" },
   ],
 }
 
@@ -109,13 +110,22 @@ const REST_NOTIFY_HINTS = {
   blocked: "Prohlížeč oznámení blokuje. Povol je v nastavení webu (ikona vedle adresy) a vrať se sem.",
 }
 
-// Hint for the keep-awake row, by the status from useWakeLock.
+// Hint for the keep-awake row, by the choice and the status from useWakeLock.
 const KEEP_AWAKE_HINTS = {
   unsupported: "Tento prohlížeč to neumí. Funguje v Chrome, Safari 16.4+ a Firefoxu 126+ přes https.",
-  off: "Telefon se mezi sériemi nezamkne, dokud je aplikace otevřená. Spotřebuje víc baterie.",
+  off: "Při tréninku: od otevření tréninku nebo spuštění pauzy do uložení. Vždy: kdykoli je aplikace otevřená (víc baterie).",
   pending: "Zapnuto. Obrazovka zůstane svítit, až se k aplikaci vrátíš.",
   active: "Zapnuto. Obrazovka teď zůstane svítit.",
   error: "Prohlížeč to teď nepovolil (třeba kvůli úspoře baterie). Zkusí se to znovu po návratu do aplikace.",
+  // "Při tréninku" and no workout going on.
+  waiting: "Obrazovka zůstane svítit, až otevřeš trénink nebo spustíš pauzu, a do 5 minut po poslední pauze.",
+}
+
+function keepAwakeHint(choice, wakeLockStatus, workoutActive) {
+  if (wakeLockStatus === "unsupported") return KEEP_AWAKE_HINTS.unsupported
+  if (choice === "off") return KEEP_AWAKE_HINTS.off
+  if (choice === "workout" && !workoutActive) return KEEP_AWAKE_HINTS.waiting
+  return KEEP_AWAKE_HINTS[wakeLockStatus]
 }
 
 function Settings({
@@ -125,6 +135,7 @@ function Settings({
   onLogout,
   workouts = [],
   wakeLockStatus = "off",
+  workoutActive = false,
   notifyStatus = "off",
   onEnableNotify,
 }) {
@@ -216,7 +227,7 @@ function Settings({
               }
             />
             <ChoiceRow
-              row={{ ...KEEP_AWAKE_ROW, hint: KEEP_AWAKE_HINTS[wakeLockStatus] }}
+              row={{ ...KEEP_AWAKE_ROW, hint: keepAwakeHint(preferences.keepAwake, wakeLockStatus, workoutActive) }}
               value={preferences.keepAwake}
               onSelect={set}
               disabled={wakeLockStatus === "unsupported"}

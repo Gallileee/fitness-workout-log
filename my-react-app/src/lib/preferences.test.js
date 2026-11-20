@@ -47,6 +47,7 @@ describe("sanitizePreferences", () => {
     assert.equal(sanitizePreferences({ restTimer: "off" }).restTimer, "off")
     assert.equal(sanitizePreferences({ keepAwake: true }).keepAwake, "off")
     assert.equal(sanitizePreferences({ keepAwake: "on" }).keepAwake, "on")
+    assert.equal(sanitizePreferences({ keepAwake: "workout" }).keepAwake, "workout")
     assert.deepEqual(sanitizePreferences(null), DEFAULT_PREFERENCES)
     assert.deepEqual(sanitizePreferences("compact"), DEFAULT_PREFERENCES)
   })

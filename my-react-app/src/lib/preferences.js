@@ -20,8 +20,9 @@ export const OPTIONS = {
   restTimer: ["off", "60", "90", "120", "180"],
   // System notification when the rest ends while the app is in the background (src/lib/restNotification.js).
   restNotify: ["off", "on"],
-  // Keep the screen on while the app is open (src/lib/wakeLock.js).
-  keepAwake: ["off", "on"],
+  // Keep the screen on (src/lib/wakeLock.js): never, during a workout (src/lib/workoutSession.js),
+  // or whenever the app is open ("on", the older choice, kept under its name).
+  keepAwake: ["off", "workout", "on"],
   // Bar for the plate calculator (src/lib/plates.js).
   bar: ["standard", "light", "technique"],
 }
