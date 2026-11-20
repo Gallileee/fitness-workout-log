@@ -1,5 +1,40 @@
 # Progress log
 
+## 2026-11-20 (23rd run, interactive): keep the screen on only during a workout
+
+Next step 2 (the owner said to continue the plan). "Keep screen on" was all or nothing: on, it held the screen
+whenever the app was open, e.g. while browsing history at home, which costs battery; off, the phone locked between
+sets.
+
+Acceptance criteria:
+- *Nechat obrazovku zapnutou* has *Vyp.* / *Při tréninku* / *Vždy*. A stored `on` stays *Vždy*; the default stays off.
+- *Při tréninku*: the lock is held while the workout form is open or a rest is running or has just ended, and for
+  5 minutes after that (a set between rests); saving the workout ends it without the 5 minutes, once the rest
+  started by the last exercise is over. The lock is never dropped and taken again between a rest and the grace period.
+- The hint says it waits for a workout, or that the screen is being kept on.
+
+Done:
+- `src/lib/workoutSession.js`: `useWorkoutInProgress(busy)` → `{ active, finish }`, `WORKOUT_GRACE_MS`. The
+  busy-to-idle switch is handled while rendering (React's "adjust state when a prop changes" pattern), so `active`
+  has no false gap; a timeout ends the grace period.
+- `App`: busy = form open (`view !== "dashboard"`) or `restTimer.running || restTimer.finished`; `workout.finish()`
+  after a successful save; `useWakeLock(keepAwake === "on" || (keepAwake === "workout" && workout.active))`.
+- `keepAwake` options `off` / `workout` / `on`; Settings labels and a `waiting` hint.
+- 18 new tests (308 in total): 7 for the hook (grace period without a gap, a new rest within the grace period,
+  save with and without a running rest, the next workout after a save, finish during the grace period), 2 Settings,
+  1 preference, 3 App with a fake `navigator.wakeLock` (held from opening the form until the saved workout's rest is
+  stopped, kept after closing without saving and requested once only, nothing with *Vyp.*); the old Settings test
+  now picks *Vždy*.
+
+Verified (Node 22): `vitest run` 308/308, ESLint clean, `vite build` passes. Mutations, 6 of 6 caught (no grace
+period, grace after a save, `finished` never reset, form not counted, no `finish()` on save, a gap in the render).
+Browser (`fitness-demo`, the pane was hidden, so a stand-in `wakeLock` and `visibilityState`): with *Při tréninku*,
+starting a rest took the lock and stopping it kept it (hint *Zapnuto…*); a new workout saved and its rest stopped
+went back to the *waiting* hint. A screenshot at 375 px shows the three choices fit, and also the rest notification
+row from the 22nd run.
+
+Not verified: a real lock on a phone; the 5-minute timeout in a real browser (covered by fake timers).
+
 ## 2026-11-20 (22nd run): rest timer notification in the background
 
 Next step 2 from the list (step 4, per-exercise rep ranges, was done in parallel as the 21st run). The beep and *Pauza skončila* are easy to miss when the lifter switched to music or
@@ -584,7 +619,6 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 ## Next steps (in order)
 
 1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), of the inline delete confirmation (20th run) and of the rep range picker (21st run). A real notification on an Android phone (22nd run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
-2. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
-3. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-4. Store plan history so adherence for past weeks uses the plan that applied then.
-5. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
+2. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+3. Store plan history so adherence for past weeks uses the plan that applied then.
+4. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.

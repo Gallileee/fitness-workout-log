@@ -1,11 +1,11 @@
 import { describe, test, expect, vi, afterEach } from "vitest"
-import { render, screen, within } from "@testing-library/react"
+import { cleanup, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import Settings from "./Settings"
 import { DEFAULT_PREFERENCES, OPTIONS } from "../lib/preferences"
 import { FONT_THEMES, loadFontTheme } from "../lib/fonts"
 
-function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus, notifyStatus) {
+function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus, notifyStatus, workoutActive) {
   const onChange = vi.fn()
   const onEnableNotify = vi.fn()
   const onLogout = vi.fn()
@@ -18,6 +18,7 @@ function setup(preferences = DEFAULT_PREFERENCES, workouts, wakeLockStatus, noti
       onLogout={onLogout}
       workouts={workouts}
       wakeLockStatus={wakeLockStatus}
+      workoutActive={workoutActive}
       notifyStatus={notifyStatus}
       onEnableNotify={onEnableNotify}
     />,
@@ -63,13 +64,25 @@ describe("Settings", () => {
 })
 
 describe("Keep screen on", () => {
-  test("is off by default and can be switched on", async () => {
+  test("is off by default; during a workout or always can be chosen", async () => {
     const { user, onChange } = setup()
     const group = screen.getByRole("radiogroup", { name: "Nechat obrazovku zapnutou" })
+    expect(within(group).getAllByRole("radio").map((r) => r.labels[0].textContent)).toEqual(["Vyp.", "Při tréninku", "Vždy"])
     expect(within(group).getByRole("radio", { name: "Vyp." }).checked).toBe(true)
+    expect(screen.getByText(/^Při tréninku: od otevření tréninku/)).toBeTruthy()
 
-    await user.click(within(group).getByRole("radio", { name: "Zap." }))
-    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_PREFERENCES, keepAwake: "on" })
+    await user.click(within(group).getByRole("radio", { name: "Při tréninku" }))
+    expect(onChange).toHaveBeenLastCalledWith({ ...DEFAULT_PREFERENCES, keepAwake: "workout" })
+    await user.click(within(group).getByRole("radio", { name: "Vždy" }))
+    expect(onChange).toHaveBeenLastCalledWith({ ...DEFAULT_PREFERENCES, keepAwake: "on" })
+  })
+
+  test("during a workout: says it waits for a workout, then that it's on", () => {
+    setup({ ...DEFAULT_PREFERENCES, keepAwake: "workout" }, [], "off", "off", false)
+    expect(screen.getByText(/^Obrazovka zůstane svítit, až otevřeš trénink/)).toBeTruthy()
+    cleanup()
+    setup({ ...DEFAULT_PREFERENCES, keepAwake: "workout" }, [], "active", "off", true)
+    expect(screen.getByText("Zapnuto. Obrazovka teď zůstane svítit.")).toBeTruthy()
   })
 
   test("says when the screen is being kept on", () => {

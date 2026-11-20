@@ -1,6 +1,6 @@
 // Whole-app tests: the real App and components, with the in-memory demo
 // client (the same one `npm run demo` uses) instead of Supabase.
-import { describe, test, expect, vi, beforeEach } from "vitest"
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, within, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { supabase } from "./supabaseClient"
@@ -212,6 +212,74 @@ describe("App", () => {
     expect(tabs.map((t) => t.textContent)).toEqual(["Týdenní plán", "Osobní rekordy"])
     expect(tabs[0].getAttribute("aria-selected")).toBe("true")
     expect(screen.getByLabelText("Plán na Pondělí")).toBeTruthy()
+  })
+
+  describe("keeping the screen on during a workout", () => {
+    // A fake navigator.wakeLock that tracks whether a lock is held.
+    function stubWakeLock() {
+      const state = { held: 0, requests: 0 }
+      const wakeLock = {
+        request: vi.fn(async () => {
+          state.requests++
+          state.held++
+          const sentinel = Object.assign(new EventTarget(), {
+            released: false,
+            release: async () => {
+              if (sentinel.released) return
+              sentinel.released = true
+              state.held--
+              sentinel.dispatchEvent(new Event("release"))
+            },
+          })
+          return sentinel
+        }),
+      }
+      Object.defineProperty(navigator, "wakeLock", { value: wakeLock, configurable: true })
+      return state
+    }
+
+    afterEach(() => {
+      delete navigator.wakeLock
+    })
+
+    test("holds the lock from opening the form until the saved workout's rest is over", async () => {
+      localStorage.setItem("preferences", JSON.stringify({ keepAwake: "workout" }))
+      const lock = stubWakeLock()
+      const user = await renderApp()
+      expect(lock.requests).toBe(0)
+
+      const form = await fillNewWorkout(user, "Wake lock test") // adding the exercise starts a rest
+      await waitFor(() => expect(lock.held).toBe(1))
+      await user.click(form.getByRole("button", { name: "Uložit trénink" }))
+      await screen.findByText("Wake lock test")
+      expect(lock.held).toBe(1) // the rest is still running
+
+      await user.click(screen.getByRole("button", { name: "Zastavit pauzu" }))
+      await waitFor(() => expect(lock.held).toBe(0)) // saved: no grace period
+      expect(lock.requests).toBe(1)
+    })
+
+    test("keeps the lock for a while after the form is closed without saving", async () => {
+      localStorage.setItem("preferences", JSON.stringify({ keepAwake: "workout", restTimer: "off" }))
+      const lock = stubWakeLock()
+      const user = await renderApp()
+
+      await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+      await waitFor(() => expect(lock.held).toBe(1))
+      await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Zavřít" }))
+      expect(screen.queryByRole("dialog")).toBeNull()
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      expect(lock.held).toBe(1)
+      expect(lock.requests).toBe(1) // never dropped and requested again
+    })
+
+    test("with 'Vyp.', opening a workout doesn't request a lock", async () => {
+      const lock = stubWakeLock()
+      const user = await renderApp()
+      await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      expect(lock.requests).toBe(0)
+    })
   })
 
   test("a new workout appears in the list", async () => {
