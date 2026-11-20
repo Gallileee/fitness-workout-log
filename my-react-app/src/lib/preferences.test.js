@@ -10,6 +10,9 @@ import {
   platesKey,
   sanitizePlateLoading,
   withPlateLoading,
+  sanitizeExerciseRepRanges,
+  withExerciseRepRange,
+  repRangeFor,
   toDisplayWeight,
   fromDisplayWeight,
   formatWeight,
@@ -80,6 +83,36 @@ describe("sanitizePreferences", () => {
     assert.deepEqual(withPlateLoading(once, "Curl", "barbell"), { "leg press": "barbell", curl: "barbell" })
   })
 
+  test("per-exercise rep ranges keep allowed ranges under normalised keys, also one equal to the general range", () => {
+    assert.deepEqual(
+      sanitizeExerciseRepRanges({ " Lateral Raise ": "12-15", Squat: "6-10", Curl: "3-30", "": "8-12", Dip: 8 }),
+      { "lateral raise": "12-15", squat: "6-10" },
+    )
+    assert.deepEqual(sanitizeExerciseRepRanges(["12-15"]), {})
+    assert.deepEqual(sanitizeExerciseRepRanges(null), {})
+    const many = Object.fromEntries(Array.from({ length: 250 }, (_, i) => [`cvik ${i}`, "8-12"]))
+    assert.equal(Object.keys(sanitizeExerciseRepRanges(many)).length, 200)
+    assert.deepEqual(sanitizeExerciseRepRanges({ ["x".repeat(101)]: "8-12" }), {})
+    assert.deepEqual(sanitizePreferences({ exerciseRepRanges: { squat: "4-6" } }).exerciseRepRanges, { squat: "4-6" })
+    assert.deepEqual(sanitizePreferences({}).exerciseRepRanges, {})
+  })
+
+  test("withExerciseRepRange sets a range and removes it with an empty value", () => {
+    const once = withExerciseRepRange({}, "Lateral Raise", "12-15")
+    assert.deepEqual(once, { "lateral raise": "12-15" })
+    assert.deepEqual(withExerciseRepRange(once, "LATERAL RAISE", "8-12"), { "lateral raise": "8-12" })
+    assert.deepEqual(withExerciseRepRange(once, "Lateral Raise", ""), {})
+    assert.deepEqual(withExerciseRepRange(once, "Squat", "4-6"), { "lateral raise": "12-15", squat: "4-6" })
+    assert.deepEqual(withExerciseRepRange(undefined, "Squat", "4-6"), { squat: "4-6" })
+  })
+
+  test("repRangeFor uses the exercise's own range, else the general one", () => {
+    const map = { "lateral raise": "12-15" }
+    assert.equal(repRangeFor("Lateral Raise ", map, "6-10"), "12-15")
+    assert.equal(repRangeFor("Squat", map, "6-10"), "6-10")
+    assert.equal(repRangeFor("Squat", undefined, "4-6"), "4-6")
+  })
+
   test("platesKey picks the list for the unit", () => {
     assert.equal(platesKey("metric"), "platesMetric")
     assert.equal(platesKey("imperial"), "platesImperial")
@@ -89,7 +122,7 @@ describe("sanitizePreferences", () => {
 describe("loadPreferences / savePreferences", () => {
   test("round-trips through storage", () => {
     const storage = memoryStorage()
-    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [], plateLoading: { "leg press": "none", "squat (barbell back)": "machine" } }
+    const prefs = { accent: "blue", density: "compact", layout: "mobile", units: "imperial", repRange: "12-15", restTimer: "off", font: "arcade", keepAwake: "on", bar: "light", platesMetric: [20, 10, 5], platesImperial: [], plateLoading: { "leg press": "none", "squat (barbell back)": "machine" }, exerciseRepRanges: { "lateral raise": "12-15" } }
     assert.equal(savePreferences(storage, prefs), true)
     assert.deepEqual(loadPreferences(storage), prefs)
   })
