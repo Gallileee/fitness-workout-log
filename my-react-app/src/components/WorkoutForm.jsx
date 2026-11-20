@@ -7,14 +7,17 @@ import RestTimer from "./RestTimer"
 import Icon from "./Icon"
 import PlateLoad from "./PlateLoad"
 import { WORKOUT_TYPES } from "../lib/workoutTypes"
-import { formatWeight, fromDisplayWeight, toDisplayWeight, weightUnit } from "../lib/preferences"
+import { OPTIONS, formatWeight, fromDisplayWeight, repRangeFor, toDisplayWeight, weightUnit } from "../lib/preferences"
 import { lastPerformance } from "../lib/history"
 import { parseRepRange, suggestProgression, WEIGHT_STEP } from "../lib/progression"
 import { DEFAULT_REST_SECONDS } from "../lib/restTimer"
 import { formatWorkoutDate } from "../lib/format"
-import { DEFAULT_PLATES, defaultLoading, loadingFor } from "../lib/plates"
+import { DEFAULT_PLATES, defaultLoading, exerciseKey, loadingFor } from "../lib/plates"
 
 const DEFAULT_WEIGHT = { metric: 60, imperial: 135 }
+
+// "6-10" -> "6–10"
+const rangeLabel = (range) => parseRepRange(range).join("–")
 const MAX_SETS_REPS = 100
 const MAX_WEIGHT = 1000
 
@@ -42,6 +45,8 @@ function exerciseError({ name, sets, reps, weight, unit }) {
 // saveError: message from the parent when saving failed; the form stays filled in.
 // history: the user's other workouts, for the "Minule" (last time) hint and prefill.
 // repRange: "6-10" etc., for the progressive overload suggestion.
+// exerciseRepRanges: per-exercise ranges ({ "lateral raise": "12-15" }) that replace repRange for that exercise;
+// onRepRangeChange(name, range) saves one ("" = follow repRange again). Without it there is no picker.
 // plannedExercises: names to offer as one-tap choices ("Dnešní cviky"), e.g. from today's plan.
 // restTimer: from useRestTimer() in the parent, so it keeps running when the dialog closes.
 // restSeconds: started automatically after adding an exercise; null = don't.
@@ -60,6 +65,8 @@ function WorkoutForm({
   saveError = "",
   history = [],
   repRange = "6-10",
+  exerciseRepRanges = {},
+  onRepRangeChange,
   plannedExercises = [],
   restTimer = null,
   restSeconds = null,
@@ -107,11 +114,13 @@ function WorkoutForm({
   const loading = loadingFor(currentName, plateLoading)
   const showPlates = Boolean(currentName) && (loading !== "none" || defaultLoading(currentName) !== "none")
 
-  // Next step from the first entry of last time (usually the working sets).
-  const suggestion = last ? suggestProgression(last.entries[0], { repRange, units }) : null
+  // Next step from the first entry of last time (usually the working sets), in this exercise's rep range.
+  const exerciseRange = repRangeFor(currentName, exerciseRepRanges, repRange)
+  const ownRange = exerciseRepRanges[exerciseKey(currentName)] ?? ""
+  const suggestion = last ? suggestProgression(last.entries[0], { repRange: exerciseRange, units }) : null
   const suggestionReason = {
     reps: "+1 opakování",
-    weight: `horní hranice ${parseRepRange(repRange).join("–")} → přidej váhu`,
+    weight: `horní hranice ${rangeLabel(exerciseRange)} → přidej váhu`,
     bodyweight: "+1 opakování",
   }[suggestion?.reason]
 
@@ -310,6 +319,26 @@ function WorkoutForm({
                   <button type="button" className="btn btn-secondary btn-small" onClick={() => fillIn(suggestion)}>
                     Použít návrh
                   </button>
+                </p>
+              )}
+              {suggestion && suggestion.reason !== "bodyweight" && onRepRangeChange && (
+                <p className="last-time-row">
+                  <label className="last-time-label" htmlFor={`${id}-rep-range`}>
+                    Rozsah pro tento cvik
+                  </label>
+                  <select
+                    id={`${id}-rep-range`}
+                    className="input input-select input-compact"
+                    value={ownRange}
+                    onChange={(e) => onRepRangeChange(currentName, e.target.value)}
+                  >
+                    <option value="">Obecný ({rangeLabel(repRange)})</option>
+                    {OPTIONS.repRange.map((range) => (
+                      <option key={range} value={range}>
+                        {rangeLabel(range)}
+                      </option>
+                    ))}
+                  </select>
                 </p>
               )}
             </div>

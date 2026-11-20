@@ -1,5 +1,5 @@
 // src/lib/preferences.js
-// User preferences (accent colour, font style, spacing, layout, units, rep range, rest timer, screen on,
+// User preferences (accent colour, font style, spacing, layout, units, rep ranges, rest timer, screen on,
 // bar and plates), stored in localStorage
 // like the logged-in user. Pure helpers, so they can be tested with `node --test`.
 
@@ -44,29 +44,52 @@ export const DEFAULT_PREFERENCES = {
   platesImperial: DEFAULT_PLATES.imperial,
   // Per-exercise plate loading chosen in the workout form, { "leg press": "barbell" }.
   plateLoading: {},
+  // Per-exercise rep range for the suggestion, { "lateral raise": "12-15" }; others use repRange.
+  exerciseRepRanges: {},
 }
 
-// Limits for the per-exercise map, so a hand-edited entry can't grow localStorage without end.
-const MAX_PLATE_LOADING = 200
+// Limits for the per-exercise maps, so a hand-edited entry can't grow localStorage without end.
+const MAX_EXERCISE_ENTRIES = 200
 const MAX_EXERCISE_KEY = 100
+
+// A per-exercise map with normalised keys, keeping only entries for which keep(key, value) is true.
+function sanitizeExerciseMap(value, keep) {
+  const result = {}
+  if (!value || typeof value !== "object" || Array.isArray(value)) return result
+  for (const [name, choice] of Object.entries(value)) {
+    const key = exerciseKey(name)
+    if (!key || key.length > MAX_EXERCISE_KEY || !keep(key, choice)) continue
+    if (Object.keys(result).length >= MAX_EXERCISE_ENTRIES) break
+    result[key] = choice
+  }
+  return result
+}
 
 // Keeps only choices that differ from the default by name, under normalised keys.
 export function sanitizePlateLoading(value) {
-  const result = {}
-  if (!value || typeof value !== "object" || Array.isArray(value)) return result
-  for (const [name, loading] of Object.entries(value)) {
-    const key = exerciseKey(name)
-    if (!key || key.length > MAX_EXERCISE_KEY || !LOADINGS.includes(loading)) continue
-    if (loading === defaultLoading(key)) continue
-    if (Object.keys(result).length >= MAX_PLATE_LOADING) break
-    result[key] = loading
-  }
-  return result
+  return sanitizeExerciseMap(value, (key, loading) => LOADINGS.includes(loading) && loading !== defaultLoading(key))
 }
 
 // Returns the map with the choice for one exercise set (or removed, when it is the default).
 export function withPlateLoading(map, name, loading) {
   return sanitizePlateLoading({ ...map, [exerciseKey(name)]: loading })
+}
+
+// Keeps only allowed rep ranges. A range equal to the general one is kept on purpose:
+// it was chosen for this exercise and shouldn't move when the general range changes.
+export function sanitizeExerciseRepRanges(value) {
+  return sanitizeExerciseMap(value, (_key, range) => OPTIONS.repRange.includes(range))
+}
+
+// Returns the map with the range for one exercise set; "" (or any unknown value) is dropped by the
+// sanitizer, so the exercise follows the general range again.
+export function withExerciseRepRange(map, name, range) {
+  return sanitizeExerciseRepRanges({ ...map, [exerciseKey(name)]: range })
+}
+
+// The rep range that applies to an exercise: its own one, or the general one.
+export function repRangeFor(name, map, generalRange) {
+  return map?.[exerciseKey(name)] ?? generalRange
 }
 
 // Keeps only known keys with allowed values, so a stale or hand-edited
@@ -83,6 +106,7 @@ export function sanitizePreferences(value) {
     if (Array.isArray(value[key])) result[key] = allowed.filter((option) => value[key].includes(option))
   }
   result.plateLoading = sanitizePlateLoading(value.plateLoading)
+  result.exerciseRepRanges = sanitizeExerciseRepRanges(value.exerciseRepRanges)
   return result
 }
 
