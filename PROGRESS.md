@@ -1,8 +1,8 @@
 # Progress log
 
-## 2026-11-20 (21st run): rest timer notification in the background
+## 2026-11-20 (22nd run): rest timer notification in the background
 
-Next step 2 from the list. The beep and *Pauza skončila* are easy to miss when the lifter switched to music or
+Next step 2 from the list (step 4, per-exercise rep ranges, was done in parallel as the 21st run). The beep and *Pauza skončila* are easy to miss when the lifter switched to music or
 a chat between sets, which is exactly when the rest ends.
 
 Acceptance criteria:
@@ -25,7 +25,7 @@ Done:
 - 27 new tests (290 in total): 18 for the module and hook, 2 for the end timeout, 5 Settings, 2 App (on: shown
   once in the background; off: none), 1 changed preference round trip.
 
-Verified (Node 22): `vitest run` 290/290, ESLint clean, `vite build` passes (copies `rest-sw.js` to `dist/`).
+Verified (Node 22): `vitest run` 290/290 (297/297 after merging main with #55), ESLint clean, `vite build` passes (copies `rest-sw.js` to `dist/`).
 Mutations, 5 of 5 caught (no end timeout, shown while visible, shown with the setting off, no permission
 request from Settings, not closed on return). Browser (demo, own worktree): the pane reports `denied`, and the
 row says it's blocked; with a stand-in `Notification` the *ask* state shows a full-width *Povolit oznámení* at
@@ -33,8 +33,40 @@ row says it's blocked; with a stand-in `Notification` the *ask* state shows a fu
 tag) while the panel said *Pauza skončila*. `rest-sw.js` registered at `/`.
 
 Not verified: a real system notification (the pane blocks them), Android Chrome's worker path, iOS.
-Another scheduled session was editing the main clone (per-exercise rep ranges) at the same time, so this run
-worked in a separate git worktree; the two PRs both touch `preferences.js`, `App.jsx` and this file.
+Another scheduled session was editing the main clone (per-exercise rep ranges, PR #55) at the same time, so
+this run worked in a separate git worktree and merged main in after #55 landed (conflicts only in docs, the
+preferences header comment and the round-trip test).
+
+## 2026-11-20 (21st run): rep range per exercise
+
+Next step 4 from the list (step 1, the browser check, needs the demo server, and starting it was declined again).
+One rep range for every exercise made the overload suggestion wrong for half of a workout: 6–10 is fine for a
+bench press, but lateral raises are usually done for 12–15 and heavy squats for 4–6, so the app suggested adding
+weight too early or too late.
+
+Done:
+- `preferences.js`: `exerciseRepRanges`, a map from exercise key (trimmed, lower case) to one of the allowed
+  ranges. It shares one sanitizer with `plateLoading` (`sanitizeExerciseMap`: normalised keys up to 100
+  characters, at most 200 entries). Unlike plate loading, a range equal to the general one is kept: it was
+  chosen for this exercise and shouldn't move when the general range changes. `withExerciseRepRange(map, name, "")`
+  removes it; `repRangeFor(name, map, general)` picks the one that applies.
+- `WorkoutForm`: the suggestion uses the exercise's range, and a compact select *Rozsah pro tento cvik* under
+  *Návrh* (first option *Obecný (6–10)*) changes it. Not shown for bodyweight entries (only +1 rep there) or
+  without a change handler. App saves the choice in preferences.
+- CSS: `.input-select.input-compact` (32 px, 44 px in the mobile layout).
+- 7 new tests (270 in total): 3 for the preferences (sanitizer, set/remove, lookup), 3 form tests (own range
+  wins, picker saves and goes back to *Obecný*, no picker without a handler or for bodyweight) and 1 App test
+  (the choice lands in localStorage and is used the next time the form opens).
+
+Verified (Node 22): `vitest run` 270/270, ESLint clean, `vite build` passes. Mutations, 2 of 2 caught (form
+uses the general range, App doesn't pass the map). A third one (set "" instead of removing) is equivalent,
+because the sanitizer drops it, so `withExerciseRepRange` was simplified to rely on that.
+
+Not verified: the look in a real browser. The demo server start was declined in this unattended run. To check:
+`npm run demo`, Nový trénink -> push -> Bench Press, change *Rozsah pro tento cvik*, at 375 px.
+
+Note: another session was working in the main checkout (`feat/rest-notification`, rest timer notifications) at
+the same time, so this run used a separate git worktree.
 
 ## 2026-11-19 (20th run): inline delete confirmation and error messages
 
@@ -551,9 +583,8 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), and of the inline delete confirmation (20th run). A real notification on an Android phone (21st run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
+1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), of the inline delete confirmation (20th run) and of the rep range picker (21st run). A real notification on an Android phone (22nd run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
 2. Hold the wake lock only while a workout is in progress (needs a "workout started" state, e.g. from the first logged set until *Uložit*).
-3. Per-exercise rep ranges for the overload suggestion.
-4. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-5. Store plan history so adherence for past weeks uses the plan that applied then.
-6. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
+3. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
+4. Store plan history so adherence for past weeks uses the plan that applied then.
+5. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.

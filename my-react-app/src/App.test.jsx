@@ -104,6 +104,24 @@ describe("App", () => {
     expect(screen.queryByRole("timer")).toBeNull()
   })
 
+  test("a rep range chosen for one exercise is saved and used the next time", async () => {
+    const user = await renderApp()
+    await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+    let form = within(screen.getByRole("dialog"))
+    await user.selectOptions(form.getByLabelText("Typ tréninku"), "push")
+    await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    await user.selectOptions(form.getByLabelText("Rozsah pro tento cvik"), "4-6")
+    expect(form.getByText("Návrh:").parentElement.textContent).toMatch(/horní hranice 4–6 → přidej váhu/)
+    expect(JSON.parse(localStorage.getItem("preferences")).exerciseRepRanges).toEqual({ "bench press (barbell)": "4-6" })
+
+    await user.click(form.getByRole("button", { name: "Zrušit" }))
+    await user.click(screen.getByRole("button", { name: "Nový trénink" }))
+    form = within(screen.getByRole("dialog"))
+    await user.selectOptions(form.getByLabelText("Typ tréninku"), "push")
+    await user.selectOptions(form.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    expect(form.getByLabelText("Rozsah pro tento cvik").value).toBe("4-6")
+  })
+
   test("a corrupt stored user doesn't crash the app", async () => {
     localStorage.setItem("user", "{not json")
     await renderApp() // the demo session signs the user in

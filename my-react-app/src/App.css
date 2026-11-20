@@ -1853,6 +1853,15 @@ textarea.input {
   font-weight: 600;
 }
 
+/* Small select inside a hint row (rep range per exercise) */
+.input-select.input-compact {
+  width: auto;
+  min-height: 32px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  font-size: var(--fs-sm);
+}
+
 /* Plate calculator under the weight of plate-loaded exercises: one sleeve, collar on the left */
 .plate-load {
   display: flex;
@@ -2324,7 +2333,8 @@ textarea.input {
 }
 
 .app-shell[data-layout="mobile"] .delete-confirm .btn,
-.app-shell[data-layout="mobile"] .load-error .btn {
+.app-shell[data-layout="mobile"] .load-error .btn,
+.app-shell[data-layout="mobile"] .input-select.input-compact {
   min-height: 44px;
 }
 

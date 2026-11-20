@@ -215,6 +215,44 @@ describe("WorkoutForm: last time", () => {
     expect(suggestionText()).toMatch(/3×16 \(\+1 opakování\)$/)
   })
 
+  test("an exercise's own rep range replaces the general one", async () => {
+    const { user } = setup({
+      history,
+      initialDate: "2026-11-02",
+      repRange: "8-12",
+      exerciseRepRanges: { "bench press (barbell)": "4-6" },
+      onRepRangeChange: vi.fn(),
+    })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    expect(suggestionText()).toMatch(/4×4 · 85 kg \(horní hranice 4–6 → přidej váhu\)/)
+    expect(screen.getByLabelText("Rozsah pro tento cvik").value).toBe("4-6")
+  })
+
+  test("choosing a range for the exercise saves it, and Obecný goes back to the general one", async () => {
+    const onRepRangeChange = vi.fn()
+    const { user } = setup({ history, initialDate: "2026-11-02", repRange: "6-10", onRepRangeChange })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    const picker = screen.getByLabelText("Rozsah pro tento cvik")
+    expect(picker.value).toBe("")
+    expect(screen.getByRole("option", { name: "Obecný (6–10)" })).toBeTruthy()
+
+    await user.selectOptions(picker, "4-6")
+    expect(onRepRangeChange).toHaveBeenLastCalledWith("Bench Press (Barbell)", "4-6")
+    await user.selectOptions(picker, "")
+    expect(onRepRangeChange).toHaveBeenLastCalledWith("Bench Press (Barbell)", "")
+  })
+
+  test("no range picker without a handler or for a bodyweight exercise", async () => {
+    const { user } = setup({ history, initialDate: "2026-11-02" })
+    await user.selectOptions(screen.getByLabelText("Cvik"), "Bench Press (Barbell)")
+    expect(screen.queryByLabelText("Rozsah pro tento cvik")).toBeNull()
+
+    const { user: user2 } = setup({ history, onRepRangeChange: vi.fn() })
+    await user2.click(screen.getAllByLabelText("Vlastní název cviku").at(-1))
+    await user2.type(screen.getAllByLabelText("Cvik").at(-1), "Cable Fly")
+    expect(screen.queryByLabelText("Rozsah pro tento cvik")).toBeNull()
+  })
+
   test("no hint for an exercise that was never logged", async () => {
     const { user } = setup({ history })
     await user.selectOptions(screen.getByLabelText("Cvik"), "Overhead Press (Barbell)")

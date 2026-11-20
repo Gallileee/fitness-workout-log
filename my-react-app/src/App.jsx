@@ -22,7 +22,7 @@ import { useRestTimer, restSecondsFromPreference, signalRestDone, DEFAULT_REST_S
 import { loadFontTheme } from "./lib/fonts"
 import { supabase } from "./supabaseClient"
 import { filterWorkouts, EMPTY_FILTERS } from "./lib/stats"
-import { browserStorage, loadPreferences, savePreferences, resolveLayout, platesKey, withPlateLoading } from "./lib/preferences"
+import { browserStorage, loadPreferences, savePreferences, resolveLayout, platesKey, withExerciseRepRange, withPlateLoading } from "./lib/preferences"
 import { useWakeLock } from "./lib/wakeLock"
 import { useRestNotifications, showRestDoneNotification, closeRestNotifications } from "./lib/restNotification"
 import { useMediaQuery } from "./lib/useMediaQuery"
@@ -450,6 +450,10 @@ function App() {
         saveError={saveError}
         history={workouts.filter((w) => w.id !== editingId)}
         repRange={preferences.repRange}
+        exerciseRepRanges={preferences.exerciseRepRanges}
+        onRepRangeChange={(name, range) =>
+          setPreferences((p) => ({ ...p, exerciseRepRanges: withExerciseRepRange(p.exerciseRepRanges, name, range) }))
+        }
         plannedExercises={plannedExercises}
         restTimer={restTimer}
         restSeconds={restSeconds}

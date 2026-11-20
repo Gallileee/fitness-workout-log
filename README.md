@@ -11,7 +11,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **No browser pop-ups**: deleting asks inside the workout card (*Smazat celý trénink?* with *Zrušit* focused; Escape cancels), and a failed delete or load shows its error in the page, with *Zkusit znovu* when the workouts couldn't be loaded
 - **New workouts start as today's**: *Nový trénink* (or + on a phone) opens the form with today's date and, on a training day, the planned type and the exercises from your last workout of that type as one-tap buttons (*Dnešní cviky*). Tapping one fills in last time's numbers; added ones get a ✓
 - **Last time** (*Minule*): choosing an exercise shows what you did the last time you logged it, for example *4×6 · 87,5 kg*, and fills in sets, reps and weight from it
-- **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the rep range is set in Settings
+- **Overload suggestion** (*Návrh*): the next step after last time, using double progression (e.g. *4×7 · 87,5 kg (+1 opakování)*), applied with one tap; the general rep range is set in Settings, and any exercise can have its own (*Rozsah pro tento cvik*, e.g. 12–15 for lateral raises, 4–6 for squats)
 - **Rest timer**: adding an exercise starts a countdown (1:30 by default; 1:00–3:00 or off in Settings), and *Pauza 1:30* starts one by hand, e.g. between sets. It's in the form and, on desktop, always in the top bar (on mobile the app bar shows it while it runs). It has +30 s and stop, keeps running when the form is closed, and vibrates and beeps when it ends. With *Upozornit na konec pauzy* on (Settings → Trénink), a rest that ends while the app is in the background also shows a system notification
 - **− / + buttons** for sets, reps and weight (steps of 1, and 2.5 kg or 5 lb), so common changes take one tap
 - Filter the history by workout type and date range (both dates inclusive)
@@ -139,7 +139,8 @@ cd .. && npm audit
 - **Today's workout** = the planned type for today's weekday. Its exercises come from the newest *earlier* workout of that type, with duplicates (case-insensitive) removed. The shortcut is hidden on rest days and once a workout of the planned type is logged today. An exercise that isn't in the built-in list for that type is filled in as a custom name.
 - **Last time** = the newest workout, on or before the date of the workout being entered, that contains the exercise (names matched case-insensitively). An edited workout never shows itself. If the exercise appears several times in that workout, all entries are shown and the first one is filled in. For a custom name the hint appears while typing, and *Použít* fills it in.
 - **Overload suggestion** (double progression, `src/lib/progression.js`), built from the first entry of last time:
-  - Below the top of the rep range (default 6–10): same weight, one more rep.
+  - The rep range is the exercise's own one if it has one (preference `exerciseRepRanges`, keyed by the trimmed, lower-case name, at most 200 entries), else the general one (default 6–10). An own range equal to the general one is kept, so it doesn't move when the general range changes; *Obecný* removes it.
+  - Below the top of the rep range: same weight, one more rep.
   - At or above the top: the next weight step (2.5 kg, or 5 lb in imperial mode), back to the bottom of the range. Odd weights snap up to the plate grid (83 → 85 kg).
   - Bodyweight entries (weight 0): one more rep.
   - It assumes every logged set was completed, because the app stores one row per exercise (e.g. 4×6), not each set.
@@ -154,7 +155,7 @@ cd .. && npm audit
 ## Limitations
 
 - Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
-- The overload suggestion uses one rep range for all exercises, and can't tell a failed set from a completed one.
+- The overload suggestion can't tell a failed set from a completed one, and per-exercise rep ranges can only be changed in the workout form (no list of them in Settings).
 - Plan adherence measures past weeks against the *current* plan, because older versions of the plan aren't stored.
 - The CSV export is comma separated. Czech Excel expects semicolons, so there it has to be opened through *Data → Z textu/CSV*; Google Sheets and LibreOffice open it directly. There is no import yet.
 - Keep screen on needs Chrome/Edge 84+, Safari 16.4+ or Firefox 126+ over https (or localhost). On iOS before 18.4 it doesn't work in an app added to the Home Screen. Embedded browsers may refuse it, which the hint then shows.
