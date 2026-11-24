@@ -38,7 +38,9 @@
   --control-h: 42px;
   --radius: 14px;
   --radius-sm: 10px;
+  --radius-xs: 6px; /* small marks: badges, bars, icon tiles */
 
+  --fs-2xs: 0.6875rem; /* only for dense labels: chart axes, week labels, tab bar */
   --fs-xs: 0.75rem;
   --fs-sm: 0.8125rem;
   --fs-md: 0.9375rem;
@@ -706,7 +708,7 @@ textarea.input {
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: var(--on-accent);
   background: linear-gradient(135deg, var(--accent-solid), var(--accent-hover));
   flex: none;
@@ -1072,7 +1074,7 @@ textarea.input {
   font-size: var(--fs-xs);
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1098,6 +1100,17 @@ textarea.input {
   fill: var(--surface);
   stroke: currentColor;
   stroke-width: 2;
+}
+
+.progress-axis line {
+  stroke: var(--border);
+  stroke-dasharray: 2 4;
+}
+
+.progress-axis text {
+  fill: var(--text-faint);
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-caption {
@@ -1284,7 +1297,7 @@ textarea.input {
   gap: 2px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: none;
 }
 
@@ -1294,7 +1307,7 @@ textarea.input {
   width: 100%;
   max-width: 28px;
   height: 44px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -1321,7 +1334,7 @@ textarea.input {
 }
 
 .adherence-week-label {
-  font-size: 0.6875rem;
+  font-size: var(--fs-2xs);
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1418,7 +1431,7 @@ textarea.input {
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -1982,7 +1995,7 @@ textarea.input {
   border-radius: 3px;
   background: var(--accent-solid);
   color: var(--on-accent);
-  font-size: 0.65rem;
+  font-size: 0.65rem; /* drawn to scale inside the plate, not UI text */
   font-weight: 700;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
@@ -2395,7 +2408,7 @@ textarea.input {
   gap: 3px;
   min-height: 56px;
   border-radius: var(--radius-sm);
-  font-size: 0.6875rem;
+  font-size: var(--fs-2xs);
   font-weight: 500;
   color: var(--text-faint);
 }
@@ -2417,7 +2430,7 @@ textarea.input {
   place-items: center;
   width: 56px;
   height: 56px;
-  border-radius: 18px;
+  border-radius: calc(var(--radius) + 4px);
   color: var(--on-accent);
   background: linear-gradient(135deg, var(--accent-solid), var(--accent-hover));
   box-shadow: 0 8px 22px var(--accent-glow);

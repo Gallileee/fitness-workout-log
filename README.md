@@ -169,7 +169,7 @@ cd .. && npm audit
 - The plate calculator assumes a pair of every enabled plate is always free, and guesses the loading from the exercise name. An exercise the name doesn't mark as plate-loaded (e.g. a custom *Chest Press*) has no calculator and no picker; naming it *... (Plate Loaded)* turns it on. The sled's own weight is never counted for machines.
 - The rest notification relies on the page still running: a phone that freezes the browser in the background (locked screen, battery saver) shows it when it wakes the page, which can be late. On iPhone, notifications only work in the app added to the Home Screen (iOS 16.4+). Embedded browsers may block them; the Settings hint then says so.
 - The UI text is Czech only.
-- The 1RM chart has no axis labels; exact values are in the point tooltips and the caption.
+- The 1RM chart labels only its highest and lowest value; exact values per workout are in the point tooltips.
 - `app.js`, `abl category/`, `controllers/` and `dao/` are leftover experiments and are not used by the app.
 
 ## Next steps
