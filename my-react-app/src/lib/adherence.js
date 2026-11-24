@@ -3,6 +3,7 @@
 // are tested with Vitest. Weeks run Monday to Sunday, in local time.
 import { parseLocalDate } from "./stats.js"
 import { normalizeWeeklyPlan } from "./weeklyPlan.js"
+import { planForWeek } from "./planHistory.js"
 
 function addDays(date, days) {
   // Via the calendar, not milliseconds, so daylight saving changes don't shift the day.
@@ -64,10 +65,9 @@ export function currentWeekStatus(plan, workouts, today = new Date()) {
 // current week last). Days can move within a week: a planned session counts
 // as completed when a workout of the same type was logged any day that week.
 // So for each type: completed = min(planned sessions, logged workouts).
-// Past weeks are measured against the current plan, since older plans aren't stored.
-export function weeklyAdherence(plan, workouts, { weeks = 8, today = new Date() } = {}) {
-  const plannedByType = countBy(normalizeWeeklyPlan(plan).map((d) => d.type).filter((t) => t !== "off"))
-  const planned = sum(plannedByType.values())
+// The current week is measured against `plan`; each past week against the plan
+// that applied then, from `history` (see planHistory.js), or `plan` without history.
+export function weeklyAdherence(plan, workouts, { weeks = 8, today = new Date(), history = [] } = {}) {
   const thisMonday = startOfWeek(today)
 
   const result = []
@@ -75,6 +75,9 @@ export function weeklyAdherence(plan, workouts, { weeks = 8, today = new Date() 
     const start = addDays(thisMonday, -7 * i)
     const from = toIsoDate(start)
     const to = toIsoDate(addDays(start, 6))
+    const weekPlan = i === 0 ? plan : planForWeek(history, from, plan)
+    const plannedByType = countBy(normalizeWeeklyPlan(weekPlan).map((d) => d.type).filter((t) => t !== "off"))
+    const planned = sum(plannedByType.values())
     const loggedByType = countBy(
       (workouts || []).filter((w) => parseLocalDate(w?.date) && w.date >= from && w.date <= to).map((w) => w.type)
     )
@@ -93,14 +96,16 @@ export function weeklyAdherence(plan, workouts, { weeks = 8, today = new Date() 
 
 // Consecutive fully completed weeks, counted back from the newest. The current
 // week only counts once it is complete; while it is still in progress the
-// streak starts from last week, so it doesn't drop to 0 every Monday.
+// streak starts from last week, so it doesn't drop to 0 every Monday. A past
+// week whose plan had only rest days (a holiday, a deload) is skipped: it
+// neither counts nor breaks the streak.
 export function completedWeekStreak(weeks) {
   let streak = 0
   for (let i = weeks.length - 1; i >= 0; i--) {
     const w = weeks[i]
     const complete = w.planned > 0 && w.completed >= w.planned
     if (complete) streak++
-    else if (w.current) continue
+    else if (w.current || w.planned === 0) continue
     else break
   }
   return streak

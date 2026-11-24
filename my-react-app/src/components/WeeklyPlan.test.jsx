@@ -5,6 +5,7 @@ import WeeklyPlan from "./WeeklyPlan"
 import PlanAdherence from "./PlanAdherence"
 import { createDefaultWeeklyPlan } from "../lib/weeklyPlan"
 import { toIsoDate } from "../lib/adherence"
+import { historyFromRows } from "../lib/planHistory"
 
 describe("WeeklyPlan", () => {
   const renderPlan = (props = {}) => {
@@ -78,6 +79,28 @@ describe("PlanAdherence", () => {
       expect(screen.getByText(text)).toBeTruthy()
       unmount()
     }
+  })
+
+  test("measures past weeks by their own plan when there is a history", () => {
+    const history = historyFromRows([
+      { week_start: "2026-10-19", days: ["push", "pull", "legs", "off", "off", "off", "off"] },
+      { week_start: "2026-10-26", days: ["off", "off", "off", "off", "off", "off", "off"] },
+    ])
+    const workouts = ["push", "pull", "legs"].map((type) => w("2026-10-19", type))
+    render(<PlanAdherence plan={createDefaultWeeklyPlan()} workouts={workouts} history={history} today={today} />)
+
+    const label = screen.getByRole("img").getAttribute("aria-label")
+    expect(label).toContain("od 19. 10. 3 z 3")
+    expect(label).toContain("od 26. 10. bez plánovaných tréninků")
+    // The rest week neither breaks nor extends the streak.
+    expect(screen.getByText("1 týden")).toBeTruthy()
+    expect(screen.getByText(/podle plánu, který tehdy platil/)).toBeTruthy()
+    expect(document.querySelectorAll(".adherence-week.is-unplanned")).toHaveLength(1)
+  })
+
+  test("without a history, says that older weeks use the current plan", () => {
+    render(<PlanAdherence plan={createDefaultWeeklyPlan()} workouts={[]} today={today} />)
+    expect(screen.getByText(/podle současného plánu/)).toBeTruthy()
   })
 
   test("a plan with only rest days shows a message instead of the chart", () => {

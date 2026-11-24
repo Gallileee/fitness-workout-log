@@ -16,7 +16,12 @@ import Settings from "./components/Settings"
 import Login from "./components/Login"
 import Icon from "./components/Icon"
 import { createDefaultWeeklyPlan } from "./lib/weeklyPlan"
-import { loadWeeklyPlan, saveWeeklyPlan, createLatestSaver } from "./lib/weeklyPlanStore"
+import {
+  loadWeeklyPlan,
+  loadPlanHistory,
+  saveWeeklyPlan,
+  createLatestSaver,
+} from "./lib/weeklyPlanStore"
 import { todaysWorkout } from "./lib/todaysWorkout"
 import { useRestTimer, restSecondsFromPreference, signalRestDone, DEFAULT_REST_SECONDS } from "./lib/restTimer"
 import { loadFontTheme } from "./lib/fonts"
@@ -80,6 +85,9 @@ function App() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [statsSource, setStatsSource] = useState("all")
   const [weeklyPlan, setWeeklyPlan] = useState(createDefaultWeeklyPlan)
+  // Plans of past weeks, for the adherence chart (lib/planHistory.js). Loaded once:
+  // a change made now only applies to this week, which uses weeklyPlan anyway.
+  const [planHistory, setPlanHistory] = useState([])
   // { state: "idle" | "loading" | "load-error" | "saving" | "saved" | "error", message? }
   const [planStatus, setPlanStatus] = useState({ state: "idle" })
   const planSaverRef = useRef(null)
@@ -162,6 +170,7 @@ function App() {
     setWorkouts([])
     setLoadError("")
     setWeeklyPlan(createDefaultWeeklyPlan())
+    setPlanHistory([])
     setPlanStatus({ state: "idle" })
     setPage("overview")
     localStorage.removeItem("user")
@@ -206,7 +215,10 @@ function App() {
     let cancelled = false
 
     planSaverRef.current = createLatestSaver(
-      (plan) => saveWeeklyPlan(supabase, userId, plan),
+      (plan) =>
+        saveWeeklyPlan(supabase, userId, plan, {
+          onHistoryError: (error) => console.warn("Historie plánu se neuložila:", error),
+        }),
       (state, error) => {
         if (error) console.error("Chyba při ukládání plánu:", error)
         if (!cancelled) setPlanStatus({ state, message: error?.message })
@@ -226,7 +238,19 @@ function App() {
       }
     }
 
+    // Without the history (e.g. its migration wasn't run) the chart measures
+    // every week by the current plan, so a failure here is only logged.
+    const fetchHistory = async () => {
+      try {
+        const history = await loadPlanHistory(supabase, userId)
+        if (!cancelled) setPlanHistory(history)
+      } catch (err) {
+        console.warn("Historii plánu se nepovedlo načíst:", err)
+      }
+    }
+
     fetchPlan()
+    fetchHistory()
     return () => {
       cancelled = true
       planSaverRef.current = null
@@ -419,7 +443,7 @@ function App() {
   const records = <PersonalRecords workouts={statsWorkouts} units={units} />
   const plan = (
     <>
-      <PlanAdherence plan={weeklyPlan} workouts={workouts} />
+      <PlanAdherence plan={weeklyPlan} workouts={workouts} history={planHistory} />
       <WeeklyPlan
         plan={weeklyPlan}
         onChange={handlePlanChange}

@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event"
 import { supabase } from "./supabaseClient"
 import App from "./App"
 import { toIsoDate } from "./lib/adherence"
+import { historyWeekOf } from "./lib/weeklyPlanStore"
 
 vi.mock("./supabaseClient", () => import("./demo/demoSupabaseClient.js"))
 
@@ -400,6 +401,36 @@ describe("App", () => {
     expect(await screen.findByText("Plán uložen.")).toBeTruthy()
     const { data } = await supabase.from("weekly_plans").select("days").eq("user_id", "demo-user").maybeSingle()
     expect(data.days[0]).toBe("core")
+  })
+
+  test("a plan change is also filed as this week's plan in the history", async () => {
+    const user = await renderApp()
+    await user.click(screen.getByRole("tab", { name: "Týdenní plán" }))
+    await user.selectOptions(screen.getByLabelText("Plán na Středa"), "fullbody")
+
+    expect(await screen.findByText("Plán uložen.")).toBeTruthy()
+    const { data } = await supabase
+      .from("weekly_plan_history")
+      .select("week_start, days")
+      .eq("user_id", "demo-user")
+      .eq("week_start", historyWeekOf())
+    expect(data).toHaveLength(1)
+    expect(data[0].days[2]).toBe("fullbody")
+    // The demo history's older weeks (a three-day plan) are still measured by it.
+    expect(screen.getByText(/podle plánu, který tehdy platil/)).toBeTruthy()
+  })
+
+  test("without the history table the plan still loads, saves and is measured", async () => {
+    failTable("weekly_plan_history", 'relation "public.weekly_plan_history" does not exist')
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const user = await renderApp()
+    await user.click(screen.getByRole("tab", { name: "Týdenní plán" }))
+    expect(screen.getByText(/podle současného plánu/)).toBeTruthy()
+
+    await user.selectOptions(screen.getByLabelText("Plán na Čtvrtek"), "core")
+    expect(await screen.findByText("Plán uložen.")).toBeTruthy()
+    expect(warn).toHaveBeenCalledWith("Historii plánu se nepovedlo načíst:", expect.anything())
+    expect(warn).toHaveBeenCalledWith("Historie plánu se neuložila:", expect.anything())
   })
 
   test("a failed plan save is shown in the plan card", async () => {

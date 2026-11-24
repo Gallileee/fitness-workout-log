@@ -3,8 +3,17 @@
 // (one row per user, see supabase/migrations). The client is passed in, so
 // the functions can be tested with a fake instead of a real Supabase project.
 import { createDefaultWeeklyPlan, normalizeWeeklyPlan, planToDays } from "./weeklyPlan.js"
+import { startOfWeek, toIsoDate } from "./adherence.js"
+import { historyFromRows } from "./planHistory.js"
 
 export const TABLE = "weekly_plans"
+// One row per user and week (week_start = Monday, local time): the plan that applied that week.
+export const HISTORY_TABLE = "weekly_plan_history"
+
+// The Monday (YYYY-MM-DD, local time) a plan saved at `now` is filed under.
+export function historyWeekOf(now = new Date()) {
+  return toIsoDate(startOfWeek(now))
+}
 
 // Returns the saved plan, or the default plan when the user has never saved one.
 // Throws on database errors (e.g. the migration was not run), so the caller
@@ -15,11 +24,37 @@ export async function loadWeeklyPlan(client, userId) {
   return data ? normalizeWeeklyPlan(data.days) : createDefaultWeeklyPlan()
 }
 
-// Insert-or-update by primary key, so the first save and later edits are the same call.
-export async function saveWeeklyPlan(client, userId, plan) {
-  const row = { user_id: userId, days: planToDays(plan), updated_at: new Date().toISOString() }
-  const { error } = await client.from(TABLE).upsert(row, { onConflict: "user_id" })
+// The user's plan history, oldest first (see planHistory.js). Throws on
+// database errors; the caller treats a missing history as "no history".
+export async function loadPlanHistory(client, userId) {
+  const { data, error } = await client
+    .from(HISTORY_TABLE)
+    .select("week_start, days")
+    .eq("user_id", userId)
+    .order("week_start", { ascending: true })
   if (error) throw error
+  return historyFromRows(data)
+}
+
+// Insert-or-update by primary key, so the first save and later edits are the same call.
+// The plan is then also filed as this week's plan in the history. If that second
+// write fails (e.g. its migration wasn't run), the plan itself is already saved and
+// the error is passed to onHistoryError instead of failing the save.
+export async function saveWeeklyPlan(client, userId, plan, { now = new Date(), onHistoryError = () => {} } = {}) {
+  const days = planToDays(plan)
+  const updatedAt = now.toISOString()
+  const { error } = await client
+    .from(TABLE)
+    .upsert({ user_id: userId, days, updated_at: updatedAt }, { onConflict: "user_id" })
+  if (error) throw error
+
+  const { error: historyError } = await client
+    .from(HISTORY_TABLE)
+    .upsert(
+      { user_id: userId, week_start: historyWeekOf(now), days, updated_at: updatedAt },
+      { onConflict: "user_id,week_start" }
+    )
+  if (historyError) onHistoryError(historyError)
 }
 
 // Wraps a save function so that at most one save runs at a time. Changes made

@@ -61,8 +61,24 @@ function sampleWorkouts() {
   return rows.sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
-// Rows per table. weekly_plans starts empty, like for a new account.
-const tables = { workouts: sampleWorkouts(), weekly_plans: [] }
+// Monday (YYYY-MM-DD) of the week `weeks` weeks before this one.
+function mondayWeeksAgo(weeks) {
+  const d = new Date()
+  return isoDaysAgo((d.getDay() + 6) % 7 + 7 * weeks)
+}
+
+// The plan history: three days a week (which the sample workouts follow) until
+// two weeks ago, then the default five-day plan. The adherence chart shows the
+// switch: full bars before it, 3 of 5 after.
+function samplePlanHistory() {
+  return [
+    { week: 7, days: ["push", "pull", "legs", "off", "off", "off", "off"] },
+    { week: 2, days: ["push", "pull", "legs", "off", "push", "pull", "off"] },
+  ].map(({ week, days }) => ({ user_id: DEMO_USER.id, week_start: mondayWeeksAgo(week), days }))
+}
+
+// Rows per table. weekly_plans starts empty, like for a new account that kept the default plan.
+const tables = { workouts: sampleWorkouts(), weekly_plans: [], weekly_plan_history: samplePlanHistory() }
 let session = { user: DEMO_USER }
 const listeners = new Set()
 
@@ -91,8 +107,9 @@ function query(table) {
       return ok(state.single ? row : [row])
     }
     if (state.action === "upsert") {
-      const key = state.onConflict ?? "id"
-      const existing = rows().find((r) => String(r[key]) === String(state.payload[key]))
+      // onConflict may name several columns ("user_id,week_start"), like a composite key.
+      const keys = (state.onConflict ?? "id").split(",").map((k) => k.trim())
+      const existing = rows().find((r) => keys.every((key) => String(r[key]) === String(state.payload[key])))
       const row = existing ? { ...existing, ...state.payload } : { ...state.payload }
       setRows(existing ? rows().map((r) => (r === existing ? row : r)) : [row, ...rows()])
       return ok(state.single ? row : [row])
