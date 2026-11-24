@@ -2306,9 +2306,9 @@ textarea.input {
   align-items: center;
   gap: var(--space-3);
   padding: calc(var(--space-3) + env(safe-area-inset-top)) var(--space-4) var(--space-3);
-  background: rgba(9, 9, 11, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* Solid, not a translucent blur: iOS Safari drew a stray white pixel in the
+     blurred bar (next to the title), and at 88 % opacity the blur barely showed. */
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
