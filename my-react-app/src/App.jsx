@@ -518,7 +518,10 @@ function App() {
           <span className="brand-mark" aria-hidden="true">
             <Icon name="brand" size={18} />
           </span>
-          <h1 className="m-title">{current.label}</h1>
+          {/* A new element per page, so Safari repaints the whole title, not just the changed text. */}
+          <h1 key={current.page} className="m-title">
+            {current.label}
+          </h1>
           {!dialogOpen && current.page !== "overview" && <RestTimer timer={restTimer} compact />}
           {loading && <span className="loading-dot" role="status" aria-label="Načítám tréninky" />}
         </header>
