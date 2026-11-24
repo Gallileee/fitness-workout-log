@@ -1,5 +1,44 @@
 # Progress log
 
+## 2026-11-24 (24th run): plan history for past weeks' adherence
+
+Next step 3 (step 1 needs the demo server, whose start was declined again; step 2 is a schema decision for the
+owner). The 8-week adherence bars measured every past week by today's plan, so changing the plan rewrote the past:
+switching from three to five days a week turned eight full bars into 3/5 and reset the streak.
+
+Acceptance criteria:
+- Saving the plan also files it as this week's plan (`weekly_plan_history`, one row per user and Monday, local
+  time); the last plan saved in a week is the one that week is measured by.
+- Each past week uses the newest plan saved in that week or before; weeks older than the history use the oldest
+  plan; no history means the current plan. The current week always uses the plan on screen.
+- A past week whose plan had only rest days shows an empty outline (*bez plánovaných tréninků*) and neither counts
+  nor breaks the streak.
+- Without the new table (migration not run) the plan still loads and saves, and the chart works as before; the
+  note under the chart says which way weeks are measured.
+
+Done:
+- `supabase/migrations/20261124000000_weekly_plan_history.sql`: table, `isodow = 1` check, the same three RLS
+  policies as `weekly_plans`, and a backfill of every saved plan into the week it was last saved in.
+- `src/lib/planHistory.js`: `historyFromRows` (sorted, bad dates dropped, days normalized), `planForWeek`.
+- `weeklyPlanStore`: `HISTORY_TABLE`, `historyWeekOf`, `loadPlanHistory`; `saveWeeklyPlan` upserts the history row
+  after the plan (`onConflict: "user_id,week_start"`); a failed history write goes to `onHistoryError` instead of
+  failing a save that already succeeded.
+- `weeklyAdherence(..., { history })` builds the planned counts per week; `completedWeekStreak` skips rest weeks.
+- `PlanAdherence` takes `history`, `.is-unplanned` bars, a note that depends on whether there is a history. `App`
+  loads the history beside the plan (a failure is only a console warning) and clears it on logout.
+- Demo client: composite `onConflict` keys; the demo history has a three-day plan until two weeks ago, then the
+  five-day one, so the demo chart shows the switch.
+- 18 new tests (326 in total): 11 for history parsing, plan lookup, the store (row, order of writes, error paths,
+  demo round trip), 3 adherence (per-week plans, current week, rest week in the streak), 2 component, 2 App (the
+  history row is written on a plan change; without the table the plan still saves and both warnings are logged).
+
+Verified (Node 22): `vitest run` 326/326, ESLint clean, `vite build` passes. Mutations, 8 of 8 caught (no oldest
+plan for earlier weeks, current week from the history, rest week breaks the streak, history error fails the
+save, wrong week key, history not passed to the chart, history not sorted, no unplanned class).
+
+Not verified: the migration against a real Supabase project (not applied to the live project yet; it needs the
+owner); the chart in a browser (demo start declined), which joins next step 1.
+
 ## 2026-11-20 (23rd run, interactive): keep the screen on only during a workout
 
 Next step 2 (the owner said to continue the plan). "Keep screen on" was all or nothing: on, it held the screen
@@ -618,7 +657,8 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), of the inline delete confirmation (20th run) and of the rep range picker (21st run). A real notification on an Android phone (22nd run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
+1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), of the inline delete confirmation (20th run) and of the rep range picker (21st run). The adherence chart with the demo plan history (24th run): the bars before the switch two weeks ago measured against three days, 3/5 after, at 375 px and desktop. A real notification on an Android phone (22nd run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
 2. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
-3. Store plan history so adherence for past weeks uses the plan that applied then.
+3. Apply `20261124000000_weekly_plan_history.sql` to the live Supabase project (owner; until then the app measures
+   every week by the current plan). Later, if wanted: show which plan a past week was measured by in the bar's tooltip.
 4. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.

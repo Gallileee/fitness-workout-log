@@ -1279,6 +1279,12 @@ textarea.input {
   background: var(--accent-solid);
 }
 
+/* A past week with only rest days planned: an empty outline, nothing to fill. */
+.adherence-week.is-unplanned .adherence-bar-track {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
 .adherence-week.is-current .adherence-bar-track {
   outline: 1px dashed var(--accent-border);
   outline-offset: 1px;

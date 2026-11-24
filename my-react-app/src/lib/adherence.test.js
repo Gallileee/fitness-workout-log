@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import process from "node:process"
 import { startOfWeek, toIsoDate, currentWeekStatus, weeklyAdherence, completedWeekStreak } from "./adherence.js"
 import { createDefaultWeeklyPlan } from "./weeklyPlan.js"
+import { historyFromRows } from "./planHistory.js"
 
 // Default plan: Mon push, Tue pull, Wed legs, Thu off, Fri push, Sat pull, Sun off (5 sessions).
 const PLAN = createDefaultWeeklyPlan()
@@ -144,5 +145,46 @@ describe("completedWeekStreak", () => {
     assert.equal(completedWeekStreak([week(5), week(4), week(0, true)]), 0)
     assert.equal(completedWeekStreak([{ planned: 0, completed: 0, current: true }]), 0)
     assert.equal(completedWeekStreak([]), 0)
+  })
+})
+
+describe("weeklyAdherence with plan history", () => {
+  const THREE_DAYS = ["push", "pull", "legs", "off", "off", "off", "off"]
+  const REST = ["off", "off", "off", "off", "off", "off", "off"]
+  // Three days a week from 12 Oct, a rest week from 19 Oct, the five-day plan from 26 Oct.
+  const history = historyFromRows([
+    { week_start: "2026-10-12", days: THREE_DAYS },
+    { week_start: "2026-10-19", days: REST },
+    { week_start: "2026-10-26", days: PLAN },
+  ])
+  const pplWeek = (monday) => ["push", "pull", "legs"].map((type) => w(monday, type))
+
+  test("measures each past week by the plan that applied then", () => {
+    const workouts = [...pplWeek("2026-10-05"), ...pplWeek("2026-10-12"), ...pplWeek("2026-10-26")]
+    const weeks = weeklyAdherence(PLAN, workouts, { weeks: 5, today: WEDNESDAY, history })
+    assert.deepEqual(
+      weeks.map((x) => [x.weekStart, x.completed, x.planned]),
+      [
+        ["2026-10-05", 3, 3], // before the first entry: the oldest plan
+        ["2026-10-12", 3, 3],
+        ["2026-10-19", 0, 0],
+        ["2026-10-26", 3, 5],
+        ["2026-11-02", 0, 5],
+      ]
+    )
+    assert.equal(weeks[2].ratio, null)
+  })
+
+  test("the current week always uses the current plan", () => {
+    const thisWeek = historyFromRows([{ week_start: "2026-11-02", days: THREE_DAYS }])
+    const [week] = weeklyAdherence(PLAN, [], { weeks: 1, today: WEDNESDAY, history: thisWeek })
+    assert.equal(week.planned, 5)
+  })
+
+  test("a rest week in the history neither counts nor breaks the streak", () => {
+    const workouts = [...pplWeek("2026-10-05"), ...pplWeek("2026-10-12")]
+    const weeks = weeklyAdherence(PLAN, workouts, { weeks: 4, today: new Date(2026, 9, 28, 12), history })
+    // 5 Oct 3/3, 12 Oct 3/3, 19 Oct rest, 26 Oct (current, 0/5).
+    assert.equal(completedWeekStreak(weeks), 2)
   })
 })

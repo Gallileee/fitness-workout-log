@@ -19,7 +19,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 - **Personal records**: the heaviest weight and the best estimated one-rep max for each exercise
 - **1RM progress chart**: pick an exercise and see its best estimated one-rep max per training day, with the change since the first logged day
 - Weekly PPL plan, **saved to your account** (Supabase table `weekly_plans`); clicking a day filters the history by that day's workout type
-- **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, and a streak of fully completed weeks
+- **Plan adherence**: this week day by day (done / different type / missed / upcoming), completion for each of the last 8 weeks, each measured by the plan that applied that week (plan history), and a streak of fully completed weeks
 - Summary statistics for all workouts or only the filtered ones (toggle above the tiles)
 - **Settings** (saved in the browser), in three sections (Vzhled, Trénink, Účet) of equal-height rows: 10 accent colours, 7 **font styles** for headings and numbers in the mood of game genres (arcade, terminal, sci-fi, fantasy, comic, tactical, or the default), comfortable/compact spacing, Auto/Desktop/Mobile layout, metric (kg) or imperial (lb) units, rep range for the overload suggestion (4–6, 6–10, 8–12, 12–15), rest timer length, rest notification, keep screen on
 - **Keep screen on** (Settings → Trénink, off by default): *Při tréninku* keeps the phone from locking while a workout is in progress (the workout form is open or a rest is running, plus 5 minutes after the last rest, so it doesn't lock mid-set; saving the workout ends it once its rest is over), *Vždy* whenever the app is open. It uses the [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API); the hint under the toggle says whether the lock is held, refused (e.g. battery saver) or not supported, and the toggle is disabled in browsers without the API
@@ -38,7 +38,7 @@ It exists because most workout apps are either paid or bloated. This one does th
 | Part | Choice |
 | --- | --- |
 | Frontend | React 19 + Vite 8 (`my-react-app/`) |
-| Auth + database | Supabase (Postgres tables `workouts` and `weekly_plans`, called directly from the browser) |
+| Auth + database | Supabase (Postgres tables `workouts`, `weekly_plans` and `weekly_plan_history`, called directly from the browser) |
 | Statistics | Pure functions in `my-react-app/src/lib/stats.js` |
 | Weekly plan | Model in `src/lib/weeklyPlan.js`, loading/saving in `src/lib/weeklyPlanStore.js` |
 | Fonts | Inter / system UI font for text; 6 OFL display fonts from Fontsource (Press Start 2P, VT323, Audiowide, Cinzel, Bangers, Black Ops One), bundled and each downloaded only when used |
@@ -65,23 +65,30 @@ To try the app without Supabase, run `npm run demo` instead. It swaps the Supaba
 
 ### Supabase tables
 
-The SQL for both tables is in [`supabase/migrations/`](supabase/migrations/). Run the files in name order in the Supabase SQL editor (or with `supabase db push`) to set up a new project:
+The SQL for the tables is in [`supabase/migrations/`](supabase/migrations/). Run the files in name order in the Supabase SQL editor (or with `supabase db push`) to set up a new project:
 
 | File | What it does |
 | --- | --- |
 | `20261101000000_workouts.sql` | The `workouts` table as it exists in the live project, with RLS. Don't run it on the live project; it already has the table. |
 | `20261102000000_weekly_plans.sql` | The `weekly_plans` table (see below). Already applied to the live project. |
 | `20261103000000_workouts_user_date_index.sql` | An index on `workouts (user_id, date desc)` for the app's main query. Already applied to the live project. |
+| `20261124000000_weekly_plan_history.sql` | The `weekly_plan_history` table (see below), filled with each user's current plan. **Not yet applied to the live project.** |
 
 `workouts` columns: `id` (uuid, primary key), `user_id` (uuid), `date` (date), `type` (text: `push`, `pull`, `legs`, `fullbody`, `core`, `other`), `exercises` (jsonb: `[{ id, name, sets, reps, weight }]`, weight in kg), `note` (text), `created_at` (timestamptz).
 
-Row Level Security is on for both tables, and users can only reach their own rows. The anon key ships to the browser, so RLS is what keeps users' data separate.
+Row Level Security is on for every table, and users can only reach their own rows. The anon key ships to the browser, so RLS is what keeps users' data separate.
 
 ### Weekly plan table
 
 Run [`supabase/migrations/20261102000000_weekly_plans.sql`](supabase/migrations/20261102000000_weekly_plans.sql) in the Supabase SQL editor. It creates `weekly_plans` (one row per user: `user_id` primary key, `days` = a JSON array of 7 workout types, Monday first, `updated_at`) with RLS policies that let users read, create and update only their own row.
 
 Without the table the app still works: the plan shows the default, edits stay in the page until reload, and the plan card says it couldn't be loaded or saved.
+
+### Plan history table
+
+Run [`supabase/migrations/20261124000000_weekly_plan_history.sql`](supabase/migrations/20261124000000_weekly_plan_history.sql) after the weekly plan migration. It creates `weekly_plan_history` (primary key `user_id` + `week_start`, a Monday; `days` like `weekly_plans.days`; `updated_at`) with the same RLS policies, and copies every saved plan in as the plan for the week it was last saved in. Each plan save then also upserts the row for the current week (the Monday in the user's local time), so the last plan saved in a week is the one that week is measured by.
+
+Without the table the app still works: the plan loads and saves, and the adherence chart measures every week by the current plan (the console shows a warning).
 
 ### Production build
 
@@ -103,7 +110,7 @@ npm test        # server tests: static files, SPA fallback, removed API returns 
 ```
 
 What the frontend tests cover:
-- `src/lib/*.test.js`: the pure logic (statistics, dates, units, weekly plan, adherence, the save queue).
+- `src/lib/*.test.js`: the pure logic (statistics, dates, units, weekly plan, plan history, adherence, the save queue).
 - `src/components/*.test.jsx`: components as a user sees them: found by their labels and roles, driven with `user-event` (typing, clicking, choosing options). Includes the workout form's validation.
 - `src/App.test.jsx`: the whole app on top of the in-memory demo client: adding a workout, saving the plan, and what happens when the server fails (the form stays open with the error and the entered data).
 
@@ -146,7 +153,7 @@ cd .. && npm audit
   - It assumes every logged set was completed, because the app stores one row per exercise (e.g. 4×6), not each set.
 - **Rest timer** (`src/lib/restTimer.js`): it stores the time it ends, not a tick count, so it stays right when the browser slows down timers in a background tab or on a locked phone. Vibration needs a phone browser that supports it (not iOS Safari); the beep uses the Web Audio API.
 - **Weekly plan saving**: each change is saved with an upsert on `user_id`. At most one save runs at a time; changes made meanwhile are merged and only the newest plan is sent next, so a slow request can't overwrite a newer plan. The card shows *Ukládám… / Plán uložen.* or the error.
-- **Plan adherence**: weeks run Monday to Sunday. This week, a planned day is *done* when a workout of the planned type was logged that date. For the 8-week bars, days may move within the week: for each type, completed = min(planned sessions, logged workouts of that type), so three legs days don't make up for a missed push day. The streak counts fully completed weeks back from last week; the current week joins it once it's complete, so the streak doesn't reset every Monday.
+- **Plan adherence**: weeks run Monday to Sunday. This week, a planned day is *done* when a workout of the planned type was logged that date. For the 8-week bars, each past week uses the newest plan saved in that week or before (a week older than the whole history uses the oldest plan; the current week always uses the plan on screen), and days may move within the week: for each type, completed = min(planned sessions, logged workouts of that type), so three legs days don't make up for a missed push day. The streak counts fully completed weeks back from last week; the current week joins it once it's complete, so the streak doesn't reset every Monday. A past week whose plan had only rest days (a holiday, a deload) shows an empty outline and neither counts nor breaks the streak.
 - **Rest notification** (`src/lib/restNotification.js`, `public/rest-sw.js`): turning the setting on asks for permission from that click. The notification is shown only when the page is hidden (on screen the app says *Pauza skončila* itself), replaces an older one (tag `rest-timer`) and is closed when you come back or start the next rest. Android Chrome allows page notifications only through a service worker, so a tiny worker is registered while the setting is on; it caches nothing and only brings the app back when the notification is tapped. Without a worker the page's `new Notification()` is used. The timer also sets a one-off timeout for the end, because Chrome may run repeating timers in a long-hidden tab only once a minute.
 - **Keep screen on** (`src/lib/wakeLock.js`): browsers drop a wake lock whenever the tab is hidden, so the `useWakeLock` hook requests it again on every `visibilitychange` to visible, never holds two at once, and releases it when the setting is turned off or the app closes. *Při tréninku* (`src/lib/workoutSession.js`): there's no "start workout" button, so `useWorkoutInProgress` goes by what the lifter does: busy while the form is open or the rest timer is running or says *Pauza skončila*, then a 5-minute grace period, skipped when the workout was saved. The state is adjusted during render, not in an effect, so the lock is never dropped and requested again between a rest and the grace period.
 - **Plate calculator** (`src/lib/plates.js`): "take the heaviest plate that fits" fails with some plate sets (with only 15s and 10s, 20 a side is 10 + 10, but greedy takes a 15 and gets stuck), so `loadBar` solves a small unbounded knapsack over the weight per side. It counts in hundredths divided by the plates' greatest common divisor, so 1.25 kg plates stay exact and 500 kg needs only a few thousand steps. It picks the heaviest reachable load not above the target, then the fewest plates, heaviest first. Weights are in the display unit, because a 20 kg plate is not 44.09 lb on the bar.
@@ -156,7 +163,7 @@ cd .. && npm audit
 
 - Settings are stored per browser (`localStorage`), not in the Supabase account, so they don't follow you to another device.
 - The overload suggestion can't tell a failed set from a completed one, and per-exercise rep ranges can only be changed in the workout form (no list of them in Settings).
-- Plan adherence measures past weeks against the *current* plan, because older versions of the plan aren't stored.
+- The plan history starts when its migration is run: weeks before that are measured by the plan saved then (the oldest known). Plan changes are filed by week, so a change on Thursday also counts for that Monday to Wednesday.
 - The CSV export is comma separated. Czech Excel expects semicolons, so there it has to be opened through *Data → Z textu/CSV*; Google Sheets and LibreOffice open it directly. There is no import yet.
 - Keep screen on needs Chrome/Edge 84+, Safari 16.4+ or Firefox 126+ over https (or localhost). On iOS before 18.4 it doesn't work in an app added to the Home Screen. Embedded browsers may refuse it, which the hint then shows.
 - The plate calculator assumes a pair of every enabled plate is always free, and guesses the loading from the exercise name. An exercise the name doesn't mark as plate-loaded (e.g. a custom *Chest Press*) has no calculator and no picker; naming it *... (Plate Loaded)* turns it on. The sled's own weight is never counted for machines.

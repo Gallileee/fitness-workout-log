@@ -32,10 +32,11 @@ function dayTitle(d) {
 }
 
 // This week day by day, the last weeks as bars, and the streak of complete weeks.
-// `workouts` should be all workouts, not the filtered list.
-function PlanAdherence({ plan, workouts, today = new Date() }) {
+// `workouts` should be all workouts, not the filtered list. `history` holds the
+// plans of past weeks (see lib/planHistory.js); without it every week uses `plan`.
+function PlanAdherence({ plan, workouts, history = [], today = new Date() }) {
   const days = currentWeekStatus(plan, workouts, today)
-  const weeks = weeklyAdherence(plan, workouts, { weeks: WEEKS, today })
+  const weeks = weeklyAdherence(plan, workouts, { weeks: WEEKS, today, history })
   const thisWeek = weeks[weeks.length - 1]
   const streak = completedWeekStreak(weeks)
 
@@ -76,27 +77,41 @@ function PlanAdherence({ plan, workouts, today = new Date() }) {
         {weeks.map((w) => (
           <div
             key={w.weekStart}
-            className={`adherence-week ${w.current ? "is-current" : ""} ${w.ratio === 1 ? "is-complete" : ""}`}
-            title={`Týden od ${shortDate(w.weekStart)}: ${w.completed} z ${w.planned}`}
+            className={weekClass(w)}
+            title={`Týden od ${shortDate(w.weekStart)}: ${weekResult(w)}`}
           >
             <div className="adherence-bar-track">
-              <div className="adherence-bar" style={{ height: `${Math.round(w.ratio * 100)}%` }} />
+              <div className="adherence-bar" style={{ height: `${Math.round((w.ratio ?? 0) * 100)}%` }} />
             </div>
             <span className="adherence-week-label">{shortDate(w.weekStart)}</span>
           </div>
         ))}
       </div>
       <p className="muted small adherence-note">
-        Trénink se počítá, když je v daném týdnu zapsaný stejný typ, i v jiný den. Starší týdny se měří podle
-        současného plánu.
+        Trénink se počítá, když je v daném týdnu zapsaný stejný typ, i v jiný den.{" "}
+        {history.length
+          ? "Každý týden se měří podle plánu, který tehdy platil."
+          : "Starší týdny se měří podle současného plánu."}
       </p>
     </div>
   )
 }
 
+function weekClass(w) {
+  const classes = ["adherence-week"]
+  if (w.current) classes.push("is-current")
+  if (w.ratio === 1) classes.push("is-complete")
+  if (w.planned === 0) classes.push("is-unplanned")
+  return classes.join(" ")
+}
+
+function weekResult(w) {
+  return w.planned === 0 ? "bez plánovaných tréninků" : `${w.completed} z ${w.planned}`
+}
+
 function weeksSummary(weeks) {
   return `Plnění plánu za posledních ${weeks.length} týdnů: ${weeks
-    .map((w) => `od ${shortDate(w.weekStart)} ${w.completed} z ${w.planned}`)
+    .map((w) => `od ${shortDate(w.weekStart)} ${weekResult(w)}`)
     .join(", ")}`
 }
 
