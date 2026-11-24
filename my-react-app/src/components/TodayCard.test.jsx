@@ -7,10 +7,32 @@ import RestTimerPanel from "./RestTimerPanel"
 describe("TodayCard", () => {
   const today = { date: "2026-11-02", type: "push" }
 
-  test("shows the planned type and that nothing is logged yet", () => {
-    render(<TodayCard today={today} workouts={[]} units="metric" onEdit={() => {}} />)
+  test("before anything is logged: last time's exercises and a button that starts the workout", async () => {
+    const onStart = vi.fn()
+    const planned = {
+      ...today,
+      exerciseNames: ["Bench Press (Barbell)", "Dips"],
+      sourceDate: "2026-10-30",
+    }
+    render(<TodayCard today={planned} workouts={[]} units="metric" onEdit={() => {}} onStart={onStart} />)
     expect(screen.getByText("Plán: Push")).toBeTruthy()
-    expect(screen.getByText(/Zatím nic zapsaného/)).toBeTruthy()
+    expect(screen.getByText(/^Minule \(/).textContent).toBe("Minule (pá 30. 10.)")
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Bench Press (Barbell)", "Dips"])
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Začít Push" }))
+    expect(onStart).toHaveBeenCalledTimes(1)
+  })
+
+  test("the first workout of a type still gets the start button", () => {
+    render(<TodayCard today={today} workouts={[]} units="metric" onEdit={() => {}} onStart={() => {}} />)
+    expect(screen.getByText(/Zatím žádný předchozí trénink/)).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Začít Push" })).toBeTruthy()
+  })
+
+  test("once something is logged, the card shows it instead of the start button", () => {
+    const workouts = [{ id: 1, date: "2026-11-02", type: "push", exercises: [{ id: 1, name: "Dips", sets: 3, reps: 10 }] }]
+    render(<TodayCard today={today} workouts={workouts} units="metric" onEdit={() => {}} onStart={() => {}} />)
+    expect(screen.queryByRole("button", { name: /^Začít/ })).toBeNull()
   })
 
   test("lists today's exercises and opens the workout for editing", async () => {
@@ -34,9 +56,14 @@ describe("TodayCard", () => {
     expect(onEdit).toHaveBeenCalledWith(7)
   })
 
-  test("a rest day says so", () => {
-    render(<TodayCard today={{ date: "2026-11-05", type: "off" }} workouts={[]} units="metric" onEdit={() => {}} />)
+  test("a rest day says so and still lets you log a workout", async () => {
+    const onStart = vi.fn()
+    render(
+      <TodayCard today={{ date: "2026-11-05", type: "off" }} workouts={[]} units="metric" onEdit={() => {}} onStart={onStart} />
+    )
     expect(screen.getByText("Plán: Volno")).toBeTruthy()
+    await userEvent.setup().click(screen.getByRole("button", { name: "Zapsat trénink" }))
+    expect(onStart).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -66,6 +93,14 @@ describe("RestTimerPanel", () => {
   test("with the automatic timer off, the start button still uses 1:30", () => {
     render(<RestTimerPanel timer={timer()} restSeconds={null} />)
     expect(screen.getByRole("button", { name: "Spustit 1:30" })).toBeTruthy()
+  })
+
+  test("not primary (nothing logged today yet): the start button steps back to secondary", () => {
+    const { unmount } = render(<RestTimerPanel timer={timer()} restSeconds={90} primary={false} />)
+    expect(screen.getByRole("button", { name: "Spustit 1:30" }).className).toContain("btn-secondary")
+    unmount()
+    render(<RestTimerPanel timer={timer()} restSeconds={90} />)
+    expect(screen.getByRole("button", { name: "Spustit 1:30" }).className).toContain("btn-primary")
   })
 
   test("running: a big clock with +30 s and stop", async () => {

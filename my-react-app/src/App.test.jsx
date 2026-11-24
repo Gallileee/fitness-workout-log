@@ -468,6 +468,29 @@ describe("App on a phone (gym mode)", () => {
     await user.click(screen.getByRole("button", { name: "Zastavit" }))
   })
 
+  test("before the first exercise, the Dnes card starts today's workout and the timer steps back", async () => {
+    // A Friday two weeks ahead (push in the default plan); no other test logs a workout then.
+    const friday = new Date()
+    friday.setDate(friday.getDate() + 14)
+    while (friday.getDay() !== 5) friday.setDate(friday.getDate() + 1)
+    friday.setHours(10, 0, 0, 0)
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(friday)
+    try {
+      const user = await renderAppMobile()
+      expect(screen.getByText(/^Minule \(/)).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Spustit 1:30" }).className).toContain("btn-secondary")
+
+      await user.click(screen.getByRole("button", { name: "Začít Push" }))
+      const form = within(screen.getByRole("dialog"))
+      expect(form.getByLabelText("Datum").value).toBe(toIsoDate(friday))
+      expect(form.getByLabelText("Typ tréninku").value).toBe("push")
+      expect(form.getByRole("button", { name: "Bench Press (Barbell)" })).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test("summary, 1RM and records are under Tréninky → Pokrok", async () => {
     const user = await renderAppMobile()
     await user.click(screen.getByRole("button", { name: "Tréninky" }))

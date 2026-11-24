@@ -1,5 +1,35 @@
 # Progress log
 
+## 2026-11-24 (25th run, interactive): fixes from the UI/UX review
+
+The owner asked for a review of the app against the UI guidelines in the daily task, then said to fix the top three
+findings. The review (demo at 1440×900 and 375×812, plus the CSS) found contrast, focus, reduced motion and the
+tokens fine, and these three problems:
+
+1. The adherence chart's numbers were only in `title` tooltips and screen reader text, so on a phone a bar was just
+   a height. Now every day and week is a button (`aria-pressed`); the line under the chart shows the tapped one
+   (*Týden od 9. 11.: 3 z 5*), or today's day by default; tapping it again goes back.
+2. On the mobile overview, *Dnes* only said "start with +" above an empty screen, while two filled purple buttons
+   (*Spustit 1:30* and +) competed. Before anything is logged, *Dnes* now lists last time's exercises of today's
+   type (*Minule (čt 19. 11.)*) with a full-width *Začít Pull* that opens the form like +; a rest day gets
+   *Zapsat trénink*. The idle *Spustit* is secondary until something is logged today (`RestTimerPanel primary`).
+3. The desktop dashboard was fixed to one screen with scroll areas inside the cards: at 1440×900 half of the
+   weekly plan was hidden and the mouse wheel scrolled a card, not the page. The one-screen mode and `.panel-scroll`
+   are gone, the page scrolls, columns align to the top, and `WorkoutList` takes `pageSize` (10 in the app;
+   *Zobrazit další (10 z 14)*), reset by a new filter.
+
+Tests: 7 new (333 in total): tapping days and weeks, the start button with and without a previous workout, the
+rest day, hidden once something is logged, the timer's secondary state, the mobile app flow on a Friday, and paging.
+
+Verified (Node 22): `vitest run` 333/333, ESLint clean, `vite build` passes. Browser (`fitness-demo`): 1440×900 has
+no element with its own scroll area, 10 workout cards and *Zobrazit další*; clicking the 9. 11. bar shows
+*Týden od 9. 11.: 3 z 5* with an outline; at 375 px *Začít Pull* spans the card under *Minule (čt 19. 11.)* and opens
+the form as Pull with last time's exercises; tapping the 2. 11. bar on *Plán* shows *3 z 3*. No console errors on a
+fresh load.
+
+Not changed (lower in the review): font sizes and radii off the scale (11 px labels, 6/8/18 px radii), English type
+names next to *Volno*, and the 1RM chart without axis labels.
+
 ## 2026-11-24 (24th run): plan history for past weeks' adherence
 
 Next step 3 (step 1 needs the demo server, whose start was declined again; step 2 is a schema decision for the
@@ -657,8 +687,9 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 
 ## Next steps (in order)
 
-1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), of the inline delete confirmation (20th run) and of the rep range picker (21st run). The adherence chart with the demo plan history (24th run): the bars before the switch two weeks ago measured against three days, 3/5 after, at 375 px and desktop. A real notification on an Android phone (22nd run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
+1. Browser check of the plate calculator, with the machine / landmine loading and its picker (see the 18th and 19th runs), of the inline delete confirmation (20th run) and of the rep range picker (21st run). A real notification on an Android phone (22nd run; the browser pane blocks notifications, so only a stand-in was checked). Later, if wanted: a sled weight per machine (some lifters log plates + sled), and a way to turn the calculator on for exercises the name doesn't mark as plate-loaded.
 2. Decide on the `workouts` schema gaps: FK `user_id → auth.users on delete cascade`, `created_at default now()`.
 3. Apply `20261124000000_weekly_plan_history.sql` to the live Supabase project (owner; until then the app measures
    every week by the current plan). Later, if wanted: show which plan a past week was measured by in the bar's tooltip.
 4. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
+5. The rest of the UI review (25th run): a `--fs-2xs` token for the 11 px labels, radii on the scale, decide on English type names (Push/Pull/Legs) next to Czech *Volno*, min/max labels on the 1RM chart.

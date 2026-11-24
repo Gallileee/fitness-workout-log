@@ -6,7 +6,9 @@ import { formatClock, DEFAULT_REST_SECONDS } from "../lib/restTimer"
 
 const PRESETS = [60, 90, 120, 180]
 
-function RestTimerPanel({ timer, restSeconds }) {
+// `primary`: the idle start button is the screen's main action (mid-workout). Before
+// the first exercise of the day, starting the workout is, so the timer steps back.
+function RestTimerPanel({ timer, restSeconds, primary = true }) {
   const defaultSeconds = restSeconds ?? DEFAULT_REST_SECONDS
 
   if (timer.running) {
@@ -48,7 +50,7 @@ function RestTimerPanel({ timer, restSeconds }) {
       <div className="rest-panel-label">Pauza</div>
       <button
         type="button"
-        className="btn btn-primary rest-panel-start"
+        className={`btn ${primary ? "btn-primary" : "btn-secondary"} rest-panel-start`}
         onClick={() => timer.start(defaultSeconds)}
       >
         Spustit {formatClock(defaultSeconds)}
