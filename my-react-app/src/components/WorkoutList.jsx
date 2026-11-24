@@ -8,8 +8,13 @@ import { workoutTypeLabel } from "../lib/workoutTypes"
 
 // onDelete(id) may return a promise: the card shows "Mažu…" until it settles, and if it
 // rejects, the error message stays in the card (the workout is still there).
-function WorkoutList({ workouts, units, onEdit, onDelete, emptyText = "Zatím žádné tréninky." }) {
-  const list = Array.isArray(workouts) ? workouts : []
+// `pageSize`: how many workouts to show at first; *Zobrazit další* adds as many again,
+// so the page stays short without a scroll area inside the card.
+function WorkoutList({ workouts, units, onEdit, onDelete, emptyText = "Zatím žádné tréninky.", pageSize = Infinity }) {
+  const all = Array.isArray(workouts) ? workouts : []
+  const [shown, setShown] = useState(pageSize)
+  const list = all.slice(0, shown)
+  const hidden = all.length - list.length
   const weight = (kg, decimals = 1) => formatWeight(kg, units, { decimals, locale: "cs-CZ" })
 
   // Deleting is two steps inside the card: the trash button asks, "Smazat" deletes.
@@ -64,7 +69,7 @@ function WorkoutList({ workouts, units, onEdit, onDelete, emptyText = "Zatím ž
     }
   }
 
-  if (list.length === 0) {
+  if (all.length === 0) {
     return <p className="empty">{emptyText}</p>
   }
 
@@ -164,6 +169,13 @@ function WorkoutList({ workouts, units, onEdit, onDelete, emptyText = "Zatím ž
           </li>
         )
       })}
+      {hidden > 0 && (
+        <li className="workout-more">
+          <button type="button" className="btn btn-secondary" onClick={() => setShown((n) => n + pageSize)}>
+            Zobrazit další ({Math.min(hidden, pageSize)} z {hidden})
+          </button>
+        </li>
+      )}
     </ul>
   )
 }

@@ -1,5 +1,6 @@
 // src/components/PlanAdherence.jsx
-import { currentWeekStatus, weeklyAdherence, completedWeekStreak } from "../lib/adherence"
+import { useState } from "react"
+import { currentWeekStatus, weeklyAdherence, completedWeekStreak, toIsoDate } from "../lib/adherence"
 import { parseLocalDate } from "../lib/stats"
 import { workoutTypeLabel } from "../lib/workoutTypes"
 
@@ -34,11 +35,22 @@ function dayTitle(d) {
 // This week day by day, the last weeks as bars, and the streak of complete weeks.
 // `workouts` should be all workouts, not the filtered list. `history` holds the
 // plans of past weeks (see lib/planHistory.js); without it every week uses `plan`.
+// Every day and week is a button: tapping one shows its result in the line under
+// the chart, since touch screens have no hover tooltips. Tapping it again goes
+// back to today's day.
 function PlanAdherence({ plan, workouts, history = [], today = new Date() }) {
   const days = currentWeekStatus(plan, workouts, today)
   const weeks = weeklyAdherence(plan, workouts, { weeks: WEEKS, today, history })
   const thisWeek = weeks[weeks.length - 1]
   const streak = completedWeekStreak(weeks)
+  const [selected, setSelected] = useState(null) // "day:YYYY-MM-DD" | "week:YYYY-MM-DD" | null
+
+  const toggle = (key) => setSelected((current) => (current === key ? null : key))
+  const selectedDay = days.find((d) => selected === `day:${d.date}`)
+  const selectedWeek = weeks.find((w) => selected === `week:${w.weekStart}`)
+  const todayDay = days.find((d) => d.date === toIsoDate(today))
+  const detail = dayTitle(selectedDay ?? todayDay)
+  const detailText = selectedWeek ? weekTitle(selectedWeek) : detail
 
   if (thisWeek.planned === 0) {
     return <p className="muted small adherence-empty">V plánu nejsou žádné tréninky, není co vyhodnocovat.</p>
@@ -61,32 +73,49 @@ function PlanAdherence({ plan, workouts, history = [], today = new Date() }) {
 
       <ol className="adherence-days" aria-label="Plnění plánu tento týden">
         {days.map((d) => (
-          <li key={d.date} className={`adherence-day is-${d.status}`} title={dayTitle(d)}>
-            <span className="adherence-day-name" aria-hidden="true">
-              {d.day.slice(0, 2)}
-            </span>
-            <span className="adherence-mark" aria-hidden="true">
-              {STATUS[d.status].mark}
-            </span>
-            <span className="visually-hidden">{dayTitle(d)}</span>
+          <li key={d.date}>
+            <button
+              type="button"
+              className={`adherence-day is-${d.status}`}
+              aria-pressed={selected === `day:${d.date}`}
+              onClick={() => toggle(`day:${d.date}`)}
+            >
+              <span className="adherence-day-name" aria-hidden="true">
+                {d.day.slice(0, 2)}
+              </span>
+              <span className="adherence-mark" aria-hidden="true">
+                {STATUS[d.status].mark}
+              </span>
+              <span className="visually-hidden">{dayTitle(d)}</span>
+            </button>
           </li>
         ))}
       </ol>
 
-      <div className="adherence-weeks" role="img" aria-label={weeksSummary(weeks)}>
+      <ol className="adherence-weeks" aria-label={`Plnění plánu za posledních ${weeks.length} týdnů`}>
         {weeks.map((w) => (
-          <div
-            key={w.weekStart}
-            className={weekClass(w)}
-            title={`Týden od ${shortDate(w.weekStart)}: ${weekResult(w)}`}
-          >
-            <div className="adherence-bar-track">
-              <div className="adherence-bar" style={{ height: `${Math.round((w.ratio ?? 0) * 100)}%` }} />
-            </div>
-            <span className="adherence-week-label">{shortDate(w.weekStart)}</span>
-          </div>
+          <li key={w.weekStart}>
+            <button
+              type="button"
+              className={weekClass(w)}
+              aria-pressed={selected === `week:${w.weekStart}`}
+              onClick={() => toggle(`week:${w.weekStart}`)}
+            >
+              <span className="adherence-bar-track" aria-hidden="true">
+                <span className="adherence-bar" style={{ height: `${Math.round((w.ratio ?? 0) * 100)}%` }} />
+              </span>
+              <span className="adherence-week-label" aria-hidden="true">
+                {shortDate(w.weekStart)}
+              </span>
+              <span className="visually-hidden">{weekTitle(w)}</span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ol>
+
+      <p className="adherence-detail" aria-live="polite">
+        {detailText}
+      </p>
       <p className="muted small adherence-note">
         Trénink se počítá, když je v daném týdnu zapsaný stejný typ, i v jiný den.{" "}
         {history.length
@@ -109,10 +138,8 @@ function weekResult(w) {
   return w.planned === 0 ? "bez plánovaných tréninků" : `${w.completed} z ${w.planned}`
 }
 
-function weeksSummary(weeks) {
-  return `Plnění plánu za posledních ${weeks.length} týdnů: ${weeks
-    .map((w) => `od ${shortDate(w.weekStart)} ${weekResult(w)}`)
-    .join(", ")}`
+function weekTitle(w) {
+  return `${w.current ? "Tento týden" : "Týden"} od ${shortDate(w.weekStart)}: ${weekResult(w)}`
 }
 
 export default PlanAdherence

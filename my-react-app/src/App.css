@@ -793,6 +793,12 @@ textarea.input {
    Workout list
    ========================================================================== */
 
+.workout-more {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+}
+
 .workout-list {
   list-style: none;
   margin: 0;
@@ -1200,6 +1206,22 @@ textarea.input {
   gap: var(--space-1);
 }
 
+.adherence-day,
+.adherence-week {
+  /* Buttons: tapping one shows its result under the chart. */
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.adherence-day[aria-pressed="true"],
+.adherence-week[aria-pressed="true"] .adherence-bar-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .adherence-day {
   display: flex;
   flex-direction: column;
@@ -1247,6 +1269,9 @@ textarea.input {
 }
 
 .adherence-weeks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: var(--space-1);
@@ -1257,9 +1282,14 @@ textarea.input {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
 }
 
 .adherence-bar-track {
+  display: block;
   position: relative;
   width: 100%;
   max-width: 28px;
@@ -1295,6 +1325,14 @@ textarea.input {
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.adherence-detail {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .adherence-note {
@@ -1747,6 +1785,34 @@ textarea.input {
   margin: 0;
 }
 
+.today-last {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.today-last-label {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.today-last-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--fs-md);
+}
+
+.today-start {
+  width: 100%;
+  margin-top: var(--space-4);
+  min-height: 56px;
+  font-size: var(--fs-lg);
+}
+
 .today-workout {
   display: flex;
   flex-direction: column;
@@ -2153,9 +2219,11 @@ textarea.input {
   gap: var(--space-4);
 }
 
+/* The page scrolls as a whole; no card has a scroll area of its own. */
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: var(--space-4);
 }
 
@@ -2172,17 +2240,6 @@ textarea.input {
   min-height: 0;
 }
 
-/* Flowing page (narrow or short windows): long lists scroll inside their card. */
-.panel-scroll {
-  max-height: 70vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  margin-right: calc(var(--space-2) * -1);
-  padding-right: var(--space-2);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
-}
-
 @media (min-width: 900px) {
   .dashboard-grid {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
@@ -2192,67 +2249,6 @@ textarea.input {
 @media (min-width: 1500px) {
   .dashboard-grid {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  }
-}
-
-/* Viewport-fitting dashboard: on wide and tall enough windows the dashboard
-   fills exactly one screen and only the lists inside the cards scroll. Short
-   windows (and zoomed-in pages, which have a smaller CSS viewport) skip this
-   and scroll normally instead of squeezing the content. */
-@media (min-width: 900px) and (min-height: 700px) {
-  .app-shell[data-layout="desktop"]:has(.dashboard) {
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  .dashboard {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .dashboard-grid {
-    flex: 1;
-    min-height: 0;
-    grid-template-rows: minmax(0, 1fr);
-  }
-
-  .dashboard-side {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    min-height: 0;
-  }
-
-  .panel-scroll {
-    flex: 1;
-    min-height: 0;
-    max-height: none;
-  }
-
-  /* The chart gives up height first, so the lists keep useful space. */
-  .dashboard .progress-chart {
-    height: clamp(80px, 15vh, 230px);
-  }
-}
-
-/* Fitting on a shorter screen (e.g. 1280×720, 1366×768): slimmer header
-   tiles and padding, so the scrolling lists keep more room. */
-@media (min-width: 900px) and (min-height: 700px) and (max-height: 820px) {
-  .page {
-    padding: var(--space-4) var(--space-5);
-  }
-
-  .dashboard,
-  .dashboard-grid,
-  .dashboard-side {
-    gap: var(--space-3);
-  }
-
-  .kpi {
-    padding: var(--space-2) var(--space-4);
-  }
-
-  .kpi-value {
-    font-size: var(--fs-lg);
   }
 }
 

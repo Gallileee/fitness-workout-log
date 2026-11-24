@@ -1,11 +1,13 @@
 // src/components/TodayCard.jsx
 // "Dnes" on the mobile overview: today's planned type and everything already
 // logged today, so mid-workout you can see what's done at a glance.
-// New exercises are added with the + button, which starts today's workout.
+// Before anything is logged it is the start of the workout: last time's exercises
+// of today's type and a button that opens the form for them (the same as +).
 import { workoutTypeLabel } from "../lib/workoutTypes"
 import { formatWeight } from "../lib/preferences"
+import { formatWorkoutDate } from "../lib/format"
 
-function TodayCard({ today, workouts, units, onEdit }) {
+function TodayCard({ today, workouts, units, onEdit, onStart }) {
   const planned = today.type === "off" ? "Volno" : workoutTypeLabel(today.type)
   const entry = (ex) =>
     `${ex.sets}×${ex.reps}` + (Number(ex.weight) > 0 ? ` · ${formatWeight(ex.weight, units, { locale: "cs-CZ" })}` : "")
@@ -20,7 +22,7 @@ function TodayCard({ today, workouts, units, onEdit }) {
       </div>
 
       {workouts.length === 0 ? (
-        <p className="muted today-text">Zatím nic zapsaného. Trénink začneš tlačítkem{"\u00a0"}+.</p>
+        <TodayStart today={today} planned={planned} onStart={onStart} />
       ) : (
         workouts.map((w) => (
           <div key={w.id} className="today-workout">
@@ -39,6 +41,40 @@ function TodayCard({ today, workouts, units, onEdit }) {
         ))
       )}
     </section>
+  )
+}
+
+function TodayStart({ today, planned, onStart }) {
+  if (today.type === "off") {
+    return (
+      <>
+        <p className="muted today-text">Dnes je v plánu volno.</p>
+        <button type="button" className="btn btn-secondary today-start" onClick={onStart}>
+          Zapsat trénink
+        </button>
+      </>
+    )
+  }
+
+  const names = today.exerciseNames ?? []
+  return (
+    <>
+      {names.length > 0 ? (
+        <div className="today-last">
+          <div className="today-last-label">Minule ({formatWorkoutDate(today.sourceDate)})</div>
+          <ul className="today-last-list">
+            {names.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="muted today-text">Zatím žádný předchozí trénink tohoto typu.</p>
+      )}
+      <button type="button" className="btn btn-primary today-start" onClick={onStart}>
+        Začít {planned}
+      </button>
+    </>
   )
 }
 

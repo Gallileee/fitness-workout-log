@@ -60,7 +60,32 @@ describe("PlanAdherence", () => {
     expect(days.textContent).toContain("Pondělí 2. 11.: Splněno")
     expect(days.textContent).toContain("Úterý 3. 11.: Vynecháno")
     expect(days.textContent).toContain("Středa 4. 11.: Dnes na plánu")
-    expect(screen.getByRole("img").getAttribute("aria-label")).toContain("od 26. 10. 5 z 5")
+    expect(screen.getByRole("button", { name: "Týden od 26. 10.: 5 z 5" })).toBeTruthy()
+  })
+
+  test("tapping a day or a week shows its result under the chart; tapping again goes back to today", async () => {
+    const user = userEvent.setup()
+    const workouts = ["push", "pull", "legs"].map((type) => w("2026-10-26", type))
+    render(<PlanAdherence plan={createDefaultWeeklyPlan()} workouts={workouts} today={today} />)
+    const detail = () => document.querySelector(".adherence-detail").textContent
+
+    expect(detail()).toBe("Středa 4. 11.: Dnes na plánu (plán: Legs)")
+
+    const week = screen.getByRole("button", { name: "Týden od 26. 10.: 3 z 5" })
+    await user.click(week)
+    expect(detail()).toBe("Týden od 26. 10.: 3 z 5")
+    expect(week.getAttribute("aria-pressed")).toBe("true")
+
+    const monday = screen.getByRole("button", { name: /^Pondělí 2. 11./ })
+    await user.click(monday)
+    expect(detail()).toBe("Pondělí 2. 11.: Vynecháno (plán: Push)")
+    expect(week.getAttribute("aria-pressed")).toBe("false")
+
+    await user.click(monday)
+    expect(detail()).toMatch(/^Středa 4. 11./)
+
+    await user.click(screen.getByRole("button", { name: "Tento týden od 2. 11.: 0 z 5" }))
+    expect(detail()).toBe("Tento týden od 2. 11.: 0 z 5")
   })
 
   test("uses Czech plural forms for the streak", () => {
@@ -89,9 +114,8 @@ describe("PlanAdherence", () => {
     const workouts = ["push", "pull", "legs"].map((type) => w("2026-10-19", type))
     render(<PlanAdherence plan={createDefaultWeeklyPlan()} workouts={workouts} history={history} today={today} />)
 
-    const label = screen.getByRole("img").getAttribute("aria-label")
-    expect(label).toContain("od 19. 10. 3 z 3")
-    expect(label).toContain("od 26. 10. bez plánovaných tréninků")
+    expect(screen.getByRole("button", { name: "Týden od 19. 10.: 3 z 3" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Týden od 26. 10.: bez plánovaných tréninků" })).toBeTruthy()
     // The rest week neither breaks nor extends the streak.
     expect(screen.getByText("1 týden")).toBeTruthy()
     expect(screen.getByText(/podle plánu, který tehdy platil/)).toBeTruthy()
@@ -107,6 +131,6 @@ describe("PlanAdherence", () => {
     const restPlan = createDefaultWeeklyPlan().map((d) => ({ ...d, type: "off" }))
     render(<PlanAdherence plan={restPlan} workouts={[]} today={today} />)
     expect(screen.getByText(/nejsou žádné tréninky/)).toBeTruthy()
-    expect(screen.queryByRole("img")).toBeNull()
+    expect(screen.queryByRole("list", { name: /posledních/ })).toBeNull()
   })
 })

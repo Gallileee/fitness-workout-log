@@ -118,3 +118,31 @@ describe("WorkoutList deleting", () => {
     expect(screen.getByText("Nic tu není.")).toBeTruthy()
   })
 })
+
+describe("WorkoutList paging", () => {
+  const many = Array.from({ length: 23 }, (_, i) => ({
+    id: i + 1,
+    date: `2026-10-${String(i + 1).padStart(2, "0")}`,
+    type: "push",
+    exercises: [],
+  }))
+  const cards = () => screen.getAllByRole("button", { name: /^Smazat trénink/ })
+
+  test("shows a page, and Zobrazit další adds the next one until all are shown", async () => {
+    const { user } = setup({ workouts: many, pageSize: 10 })
+    expect(cards()).toHaveLength(10)
+
+    await user.click(screen.getByRole("button", { name: "Zobrazit další (10 z 13)" }))
+    expect(cards()).toHaveLength(20)
+
+    await user.click(screen.getByRole("button", { name: "Zobrazit další (3 z 3)" }))
+    expect(cards()).toHaveLength(23)
+    expect(screen.queryByRole("button", { name: /Zobrazit další/ })).toBeNull()
+  })
+
+  test("without a page size everything is shown", () => {
+    setup({ workouts: many })
+    expect(cards()).toHaveLength(23)
+    expect(screen.queryByRole("button", { name: /Zobrazit další/ })).toBeNull()
+  })
+})

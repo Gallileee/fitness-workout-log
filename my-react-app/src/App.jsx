@@ -35,6 +35,8 @@ import { useMediaQuery } from "./lib/useMediaQuery"
 
 // Below this width "auto" layout switches to the mobile layout.
 const NARROW_VIEWPORT = "(max-width: 760px)"
+// The history list shows this many workouts, then "Zobrazit další".
+const WORKOUTS_PAGE_SIZE = 10
 
 const MOBILE_NAV = [
   { page: "overview", label: "Přehled", icon: "home" },
@@ -430,11 +432,13 @@ function App() {
         </div>
       )}
       <WorkoutList
+        key={JSON.stringify(filters)} // a new filter starts from the first page again
         workouts={filteredWorkouts}
         units={units}
         onEdit={handleEditWorkout}
         onDelete={handleDeleteWorkout}
         emptyText={emptyText}
+        pageSize={WORKOUTS_PAGE_SIZE}
       />
     </>
   )
@@ -523,12 +527,17 @@ function App() {
           {/* Gym mode: only what you need between sets. Progress is under Tréninky → Pokrok. */}
           {current.page === "overview" && (
             <>
-              <RestTimerPanel timer={restTimer} restSeconds={restSeconds} />
+              <RestTimerPanel
+                timer={restTimer}
+                restSeconds={restSeconds}
+                primary={todaysWorkouts.length > 0}
+              />
               <TodayCard
                 today={today}
                 workouts={todaysWorkouts}
                 units={units}
                 onEdit={handleEditWorkout}
+                onStart={handleNewWorkout}
               />
             </>
           )}
@@ -663,7 +672,7 @@ function App() {
                 {loading && <span className="muted small">Načítám…</span>}
               </div>
               <WorkoutFilters filters={filters} onChange={setFilters} />
-              <div className="panel-scroll">{workoutList}</div>
+              {workoutList}
             </section>
 
             <div className="dashboard-side">
@@ -695,7 +704,6 @@ function App() {
                   ))}
                 </div>
                 <div
-                  className="panel-scroll"
                   role="tabpanel"
                   id={`tabpanel-${sideTab}`}
                   aria-labelledby={`tab-${sideTab}`}
