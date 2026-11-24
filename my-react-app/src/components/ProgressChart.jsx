@@ -10,6 +10,10 @@ import { useElementSize } from "../lib/useElementSize"
 // the card width and dots stay round at any size.
 const FALLBACK_SIZE = { width: 480, height: 150 }
 const PADDING = 12
+// Left gutter for the axis labels (the highest and lowest value), in pixels.
+const AXIS_WIDTH = 40
+
+const axisNumber = (value) => value.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })
 
 function ProgressChart({ workouts, units }) {
   const gradientId = useId()
@@ -28,10 +32,18 @@ function ProgressChart({ workouts, units }) {
     date: h.date,
     value: toDisplayWeight(h.e1rm, units),
   }))
-  const { points, min, max } = scaleSeries(
+  const scaled = scaleSeries(
     history.map((h) => h.value),
-    { width: WIDTH, height: HEIGHT, padding: PADDING }
+    { width: WIDTH - AXIS_WIDTH, height: HEIGHT, padding: PADDING }
   )
+  const { min, max } = scaled
+  const points = scaled.points.map((p) => ({ x: p.x + AXIS_WIDTH, y: p.y }))
+  // Max at the top, min at the bottom; a flat series has one value, in the middle.
+  const axis =
+    min === null ? [] : max === min ? [{ value: min, y: HEIGHT / 2 }] : [
+      { value: max, y: PADDING },
+      { value: min, y: HEIGHT - PADDING },
+    ]
 
   const first = history[0]
   const last = history[history.length - 1]
@@ -42,7 +54,8 @@ function ProgressChart({ workouts, units }) {
   }
 
   const line = points.map((p) => `${p.x},${p.y}`).join(" ")
-  const area = points.length > 1 ? `${PADDING},${HEIGHT} ${line} ${WIDTH - PADDING},${HEIGHT}` : ""
+  const area =
+    points.length > 1 ? `${AXIS_WIDTH + PADDING},${HEIGHT} ${line} ${WIDTH - PADDING},${HEIGHT}` : ""
 
   return (
     <div className="progress">
@@ -90,6 +103,14 @@ function ProgressChart({ workouts, units }) {
             <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
           </linearGradient>
         </defs>
+        {axis.map((a) => (
+          <g key={a.y} className="progress-axis" aria-hidden="true">
+            <line x1={AXIS_WIDTH} x2={WIDTH} y1={a.y} y2={a.y} />
+            <text x={AXIS_WIDTH - 8} y={a.y} dominantBaseline="middle" textAnchor="end">
+              {axisNumber(a.value)}
+            </text>
+          </g>
+        ))}
         {area && <polygon points={area} fill={`url(#${gradientId})`} />}
         {points.length > 1 && (
           <polyline fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinejoin="round" points={line} />
@@ -102,11 +123,17 @@ function ProgressChart({ workouts, units }) {
       </svg>
 
       <p className="progress-caption">
-        {history.length} {history.length === 1 ? "trénink" : "tréninků"} · rozsah {min}–{max} {unit}
+        {history.length} {workoutsWord(history.length)} · osa v {unit}
         {first && history.length > 1 && ` · od ${formatWorkoutDate(first.date, { withYear: true })}`}
       </p>
     </div>
   )
+}
+
+function workoutsWord(n) {
+  if (n === 1) return "trénink"
+  if (n >= 2 && n <= 4) return "tréninky"
+  return "tréninků"
 }
 
 export default ProgressChart

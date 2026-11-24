@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-11-24 (26th run, interactive): the rest of the UI review
+
+Next step 5, which the owner asked for right after the 25th run.
+
+Done:
+- Tokens for what was off the scale: `--fs-2xs` (11 px, only for dense labels: chart axis, week labels, tab bar)
+  and `--radius-xs` (6 px: the 1RM delta badge, the adherence bars and their buttons, the Settings section icons).
+  The brand mark uses `--radius-sm` and the + button `calc(var(--radius) + 4px)`. Only the plate drawing keeps its own
+  2–3 px radii and 0.65rem labels, since it is drawn to scale.
+- 1RM chart: a 40 px axis gutter with the highest value at the top and the lowest at the bottom (one label in the
+  middle for a flat series), dashed guide lines, Czech decimal comma; the caption says *osa v kg* instead of
+  repeating the range, and uses the right plural (*3 tréninky*, *8 tréninků*).
+- 3 new tests (336 in total) for the axis labels, the comma, the gutter and the plural.
+
+Verified (Node 22): `vitest run` 336/336, ESLint clean, `vite build` passes. Browser (`fitness-demo`): at 1440×900
+the axis reads *105* / *84* at 11 px in the faint text colour (5.5:1 on the card), the delta badge has a 6 px radius;
+at 375×812 under *Tréninky → Pokrok* the labels fit beside the line.
+
+Left for the owner: whether the workout types stay English (*Push*, *Pull*, *Legs*) next to Czech *Volno*.
+
 ## 2026-11-24 (25th run, interactive): fixes from the UI/UX review
 
 The owner asked for a review of the app against the UI guidelines in the daily task, then said to fix the top three
@@ -692,4 +712,4 @@ Not verified locally: `vite build` and the UI. The local `node_modules` came fro
 3. Apply `20261124000000_weekly_plan_history.sql` to the live Supabase project (owner; until then the app measures
    every week by the current plan). Later, if wanted: show which plan a past week was measured by in the bar's tooltip.
 4. Delete the unused leftovers (`app.js`, `abl category/`, `controllers/`, `dao/`, `db.sqlite`, `users.json`) and `ajv`. Check with the owner first.
-5. The rest of the UI review (25th run): a `--fs-2xs` token for the 11 px labels, radii on the scale, decide on English type names (Push/Pull/Legs) next to Czech *Volno*, min/max labels on the 1RM chart.
+5. Owner's call from the UI review: keep the English workout types (*Push*, *Pull*, *Legs*) next to Czech *Volno*, or translate them.
